@@ -20,6 +20,35 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## API (recommended structure)
+
+This project includes a small API layer designed to be safe and universal across server + client components.
+
+- **Client wrapper**: `app/lib/api/*`
+- **Next.js backend proxy**: `app/api/_proxy/[...path]/route.ts`
+
+### Configure backend URL
+
+Create `.env.local` (or set env vars in your host) based on `.env.example`:
+
+- `API_BASE_URL=http://localhost:8081`
+
+### Usage in pages/components
+
+Call your backend via the proxy:
+
+```ts
+import { brandmastApi, tokenStore } from "@/app/lib/api";
+
+// login -> store JWT -> use it automatically in next calls
+const login = await brandmastApi.login({ login: "demo", password: "secret" });
+const token = login.data?.token;
+if (token) tokenStore.set(token);
+
+// Example: GET http://localhost:8081/api/shop/fetch through /api/_proxy/api/shop/fetch
+const shops = await brandmastApi.fetchShops();
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
