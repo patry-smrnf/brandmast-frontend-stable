@@ -273,63 +273,20 @@ function statusLabel(status: ActionStatus) {
   }
 }
 
-function getInitialSelectedDateKey(actions: BrandmasterAction[]) {
-  const dates = actions
-    .map((a) => parseIso(a.since))
-    .filter(Boolean)
-    .map((d) => toDateKey(d as Date))
-  const unique = Array.from(new Set(dates)).sort()
-  return unique[0] ?? toDateKey(new Date())
-}
-
-function ActionsBottomNav({ active }: { active: "actions" | "chat" | "profile" | "calendar" }) {
-  const items: Array<{
-    id: typeof active
-    label: string
-    icon: React.ReactNode
-  }> = [
-    { id: "calendar", label: "Kalendarz", icon: <CalendarDaysIcon className="size-5" /> },
-    { id: "actions", label: "Akcje", icon: <ListChecksIcon className="size-5" /> },
-    { id: "chat", label: "Czat", icon: <MessageSquareTextIcon className="size-5" /> },
-    { id: "profile", label: "Profil", icon: <UserIcon className="size-5" /> },
-  ]
-
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/80 backdrop-blur">
-      <div className="mx-auto w-full max-w-5xl px-4">
-        <nav className="grid grid-cols-4 py-2">
-          {items.map((it) => {
-            const isActive = it.id === active
-            return (
-              <button
-                key={it.id}
-                type="button"
-                className={cn(
-                  "relative flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs transition-colors",
-                  isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {it.icon}
-                <span className="leading-none">{it.label}</span>
-                {isActive ? (
-                  <span className="absolute -bottom-0.5 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-primary" />
-                ) : null}
-              </button>
-            )
-          })}
-        </nav>
-      </div>
-    </div>
-  )
+function getInitialSelectedDateKey(_actions: BrandmasterAction[]) {
+  // Always start on today's date; user changes the date by clicking a pill.
+  return toDateKey(new Date())
 }
 
 function DayPill({
   date,
   isActive,
+  hasAction,
   onClick,
 }: {
   date: Date
   isActive: boolean
+  hasAction: boolean
   onClick: () => void
 }) {
   const weekday = new Intl.DateTimeFormat("pl-PL", { weekday: "short" }).format(date)
@@ -340,8 +297,12 @@ function DayPill({
   return (
     <button
       type="button"
-      onClick={onClick}
       onPointerDown={(e) => {
+        try {
+          e.currentTarget.setPointerCapture(e.pointerId)
+        } catch {
+          // ignore (older browsers / already captured)
+        }
         startRef.current = { x: e.clientX, y: e.clientY }
         movedRef.current = false
       }}
@@ -357,9 +318,20 @@ function DayPill({
         e.preventDefault()
         onClick()
       }}
+      onPointerCancel={() => {
+        startRef.current = null
+        movedRef.current = false
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          onClick()
+        }
+      }}
       className={cn(
         "relative flex w-[78px] shrink-0 touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-card px-3 py-3 text-center transition-colors",
-        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+        !isActive && hasAction ? "border-accent bg-accent/90 text-foreground hover:bg-accent/70" : null
       )}
     >
       {isActive ? (
@@ -377,9 +349,8 @@ export default function BrandmasterActionsPage() {
     getInitialSelectedDateKey(data.actions)
   )
 
-  const DAYS_WINDOW = 21
-  const EDGE_BUFFER = 6
-  const SHIFT_BY = 7
+  // Fixed, larger range so scrolling is smooth and never reflows the list mid-scroll.
+  const DAYS_WINDOW = 365
 
   const selectedDate = React.useMemo(() => {
     const d = parseIso(`${selectedDateKey}T00:00:00`)
@@ -389,7 +360,6 @@ export default function BrandmasterActionsPage() {
   const headerDate = React.useMemo(() => formatHeaderDate(selectedDate), [selectedDate])
 
   const scrollerRef = React.useRef<HTMLDivElement | null>(null)
-  const rafScrollGuardRef = React.useRef<number | null>(null)
   const stepPxRef = React.useRef<number | null>(null)
 
   const [windowStart, setWindowStart] = React.useState(() =>
@@ -400,6 +370,15 @@ export default function BrandmasterActionsPage() {
     () => Array.from({ length: DAYS_WINDOW }, (_, i) => addDays(windowStart, i)),
     [windowStart]
   )
+
+  const actionDateKeys = React.useMemo(() => {
+    return new Set(
+      data.actions
+        .map((a) => parseIso(a.since))
+        .filter(Boolean)
+        .map((d) => toDateKey(d as Date))
+    )
+  }, [data.actions])
 
   const centerCalendarOnDateKey = React.useCallback(
     (dateKey: string) => {
@@ -492,44 +471,6 @@ export default function BrandmasterActionsPage() {
           <div
             ref={scrollerRef}
             className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 touch-pan-x overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            onScroll={() => {
-              if (rafScrollGuardRef.current) return
-              rafScrollGuardRef.current = window.requestAnimationFrame(() => {
-                rafScrollGuardRef.current = null
-                const scroller = scrollerRef.current
-                if (!scroller) return
-
-                const children = Array.from(scroller.children) as HTMLElement[]
-                if (children.length < 2) return
-
-                if (!stepPxRef.current) {
-                  const step = children[1].offsetLeft - children[0].offsetLeft
-                  stepPxRef.current = step > 0 ? step : null
-                }
-
-                const step = stepPxRef.current
-                if (!step) return
-
-                const containerWidth = scroller.getBoundingClientRect().width
-                const pillWidth = children[0].getBoundingClientRect().width
-                const centerPx = scroller.scrollLeft + containerWidth / 2 - pillWidth / 2
-                const centerIndex = Math.round(centerPx / step)
-
-                if (centerIndex <= EDGE_BUFFER) {
-                  setWindowStart((prev) => {
-                    const next = addDays(prev, -SHIFT_BY)
-                    scroller.scrollLeft += SHIFT_BY * step
-                    return next
-                  })
-                } else if (centerIndex >= DAYS_WINDOW - 1 - EDGE_BUFFER) {
-                  setWindowStart((prev) => {
-                    const next = addDays(prev, SHIFT_BY)
-                    scroller.scrollLeft -= SHIFT_BY * step
-                    return next
-                  })
-                }
-              })
-            }}
           >
             {weekDays.map((d) => {
               const key = toDateKey(d)
@@ -538,6 +479,7 @@ export default function BrandmasterActionsPage() {
                   key={key}
                   date={d}
                   isActive={key === selectedDateKey}
+                  hasAction={actionDateKeys.has(key)}
                   onClick={() => centerCalendarOnDateKey(key)}
                 />
               )
@@ -547,10 +489,10 @@ export default function BrandmasterActionsPage() {
 
         <Separator className="my-5" />
 
-        <section aria-label="Harmonogram" className="space-y-4">
+        <section aria-label="Dyspo" className="space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <h2 className="truncate text-lg font-semibold tracking-tight">Harmonogram</h2>
+              <h2 className="truncate text-lg font-semibold tracking-tight">Dyspo</h2>
               <p className="text-sm text-muted-foreground">
                 {actionsForSelectedDay.length > 0
                   ? `Masz ${actionsForSelectedDay.length} ${
@@ -568,12 +510,12 @@ export default function BrandmasterActionsPage() {
             {actionsForSelectedDay.length === 0 ? (
               <Card>
                 <CardHeader className="space-y-1">
-                  <CardTitle>Spokojny dzień</CardTitle>
-                  <CardDescription>Wybierz inny dzień lub dodaj nową akcję.</CardDescription>
+                  <CardTitle>Spokojny dzien</CardTitle>
+                  <CardDescription>Wybierz inny dzien lub dodaj nowa akcje</CardDescription>
                 </CardHeader>
                 <CardContent className="flex items-center justify-between gap-4">
                   <div className="text-sm text-muted-foreground">
-                    Tip: przewiń tydzień w prawo/lewo.
+                    ProTip: przewin sb w lewo lub prawo, powinno dzialacxd
                   </div>
                   <Button>
                     <PlusIcon className="size-3.5" />
@@ -657,8 +599,6 @@ export default function BrandmasterActionsPage() {
           </div>
         </section>
       </div>
-
-      <ActionsBottomNav active="actions" />
     </main>
   )
 }
