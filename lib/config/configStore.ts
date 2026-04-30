@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import type { SettingResponse } from "@/app/lib/api";
+import type { SettingResponse } from "@/lib/api";
 
 export type ConfigStatus = "idle" | "loading" | "ready" | "error";
 
@@ -23,17 +23,21 @@ let state: ConfigState = {
 const listeners = new Set<() => void>();
 
 function emit() {
-  for (const l of listeners) l();
+  for (const l of listeners)
+    l(); // wywolanie wszystkich listenerow
 }
 
+// funkcja do aktualizacji stanu
 function setState(patch: Partial<ConfigState>) {
   state = { ...state, ...patch };
   emit();
 }
 
+// funkcja do pobierania stanu
 export function getConfigState() {
   return state;
 }
+
 
 export function subscribeConfig(listener: () => void) {
   listeners.add(listener);

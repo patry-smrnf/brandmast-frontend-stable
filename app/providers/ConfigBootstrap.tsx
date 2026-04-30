@@ -4,14 +4,14 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { isAxiosError } from "axios";
 
-import { brandmastApi, tokenStore } from "@/app/lib/api";
+import { brandmastApi, tokenStore } from "@/lib/api";
 import {
   getConfigState,
   hydrateConfigFromStorage,
   setConfig,
   setConfigError,
   setConfigLoading,
-} from "@/app/lib/config/configStore";
+} from "@/lib/config/configStore";
 
 type Props = {
   /**

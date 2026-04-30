@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { brandmastApi } from "../../lib/api/generated/brandmast"
+import { brandmastApi } from "@/lib/api"
 import type { ActionStatus, ActionsPayload } from "./types"
 
 function coerceStatus(status: string | undefined | null): ActionStatus {

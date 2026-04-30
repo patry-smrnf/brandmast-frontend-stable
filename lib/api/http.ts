@@ -1,18 +1,12 @@
 import { ApiError, type ApiErrorPayload } from "./errors";
 
-type Json =
-  | null
-  | boolean
-  | number
-  | string
-  | Json[]
-  | { [key: string]: Json };
+// typ Json to uniwersalny typ JSON
+type Json =| null| boolean| number| string| Json[]| { [key: string]: Json };
 
-export type ApiFetchOptions = Omit<RequestInit, "body"> & {
-  timeoutMs?: number;
-  body?: unknown;
-};
+// typ ApiFetchOptions to opcje dla funkcji apiFetch
+export type ApiFetchOptions = Omit<RequestInit, "body"> & { timeoutMs?: number; body?: unknown };
 
+// funkcja do laczenia URL-i
 function joinUrl(base: string, path: string) {
   if (!base) return path;
   const b = base.endsWith("/") ? base.slice(0, -1) : base;
@@ -53,7 +47,8 @@ export async function apiFetch<T>(
   const url = joinUrl(baseUrl, path);
 
   try {
-    const hasBody = body !== undefined && body !== null && init.method !== "GET" && init.method !== "HEAD";
+    const hasBody =
+      body !== undefined && body !== null && init.method !== "GET" && init.method !== "HEAD";
     const res = await fetch(url, {
       ...init,
       signal: controller.signal,

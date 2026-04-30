@@ -1,4 +1,4 @@
-import { apiFetch, type ApiFetchOptions } from "./http";
+import { apiFetch, type ApiFetchOptions } from "@/lib/api/http";
 
 export type ApiClient = {
   get: <T>(path: string, options?: ApiFetchOptions) => Promise<T>;

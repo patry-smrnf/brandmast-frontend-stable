@@ -17,17 +17,16 @@ import { Separator } from "@/components/ui/separator"
 import { ActionCard } from "./_components/ActionCard"
 import { DayPill } from "./_components/DayPill"
 import { addDays, formatHeaderDate, parseIso, startOfDay, toDateKey, toMonthKey } from "./date-utils"
-import type { BrandmasterAction } from "./types"
 import { useBmActions } from "./use-bm-actions"
 
-function getInitialSelectedDateKey(_actions: BrandmasterAction[]) {
+function getInitialSelectedDateKey() {
   // Always start on today's date; user changes the date by clicking a pill.
   return toDateKey(new Date())
 }
 
 export default function BrandmasterActionsPage() {
   const [selectedDateKey, setSelectedDateKey] = React.useState(() =>
-    getInitialSelectedDateKey([])
+    getInitialSelectedDateKey()
   )
 
   // Fixed, larger range so scrolling is smooth and never reflows the list mid-scroll.
@@ -181,7 +180,7 @@ export default function BrandmasterActionsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => centerCalendarOnDateKey(getInitialSelectedDateKey(data.actions))}
+              onClick={() => centerCalendarOnDateKey(getInitialSelectedDateKey())}
             >
               Dzisiaj
             </Button>

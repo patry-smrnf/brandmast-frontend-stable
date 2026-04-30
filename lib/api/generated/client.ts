@@ -38,8 +38,7 @@ export function createBrandmastHttpClient(opts: ApiClientOptions = {}): AxiosIns
   const getToken = opts.getToken ?? (() => tokenStore.get());
 
   instance.interceptors.request.use((config) => {
-    const maybeToken =
-      (config as unknown as RequestOptions).token ?? getToken() ?? null;
+    const maybeToken = (config as unknown as RequestOptions).token ?? getToken() ?? null;
 
     if (maybeToken) {
       config.headers = config.headers ?? {};

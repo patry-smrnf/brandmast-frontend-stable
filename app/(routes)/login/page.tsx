@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { brandmastApi, roleStore, tokenStore, type UserRole } from "@/app/lib/api"
+import { brandmastApi, roleStore, tokenStore, type UserRole } from "@/lib/api"
 
 export default function LoginPage() {
   const router = useRouter()

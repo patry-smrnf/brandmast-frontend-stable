@@ -20,11 +20,23 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Project structure
+
+- **Routes (Next.js App Router)**: `app/(routes)/*`
+- **Global app shell**: `app/layout.tsx`, `app/page.tsx`, `app/globals.css`
+- **Backend proxy (Next.js Route Handler)**: `app/api/_proxy/[...path]/route.ts`
+- **Client bootstrapping/providers**: `app/providers/*`
+- **Shared UI**: `components/ui/*`
+- **Shared libs**:
+  - `lib/api/*` (typed API client + token store)
+  - `lib/config/*` (config store)
+  - `lib/utils.ts` (shared helpers like `cn`)
+
 ## API (recommended structure)
 
 This project includes a small API layer designed to be safe and universal across server + client components.
 
-- **Client wrapper**: `app/lib/api/*`
+- **Client wrapper**: `lib/api/*`
 - **Next.js backend proxy**: `app/api/_proxy/[...path]/route.ts`
 
 ### Configure backend URL
@@ -38,7 +50,7 @@ Create `.env.local` (or set env vars in your host) based on `.env.example`:
 Call your backend via the proxy:
 
 ```ts
-import { brandmastApi, tokenStore } from "@/app/lib/api";
+import { brandmastApi, tokenStore } from "@/lib/api";
 
 // login -> store JWT -> use it automatically in next calls
 const login = await brandmastApi.login({ login: "demo", password: "secret" });
