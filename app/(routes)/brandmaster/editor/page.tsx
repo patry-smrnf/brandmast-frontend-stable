@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CalendarDaysIcon, CheckIcon, ChevronLeftIcon, MapPinIcon, TimerIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -166,6 +167,14 @@ function coerceAction(a: ActionDetails | undefined): BrandmasterAction | null {
 }
 
 export default function BrandmasterEditorPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-1 items-center justify-center">Ładowanie…</div>}>
+      <BrandmasterEditorInner />
+    </Suspense>
+  )
+}
+
+function BrandmasterEditorInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const idAction = React.useMemo(() => parseActionId(searchParams.get("idAction")), [searchParams])
@@ -373,16 +382,13 @@ export default function BrandmasterEditorPage() {
           status: editingAction!.status,
         })
       } else {
-        // Create N actions (one per date). Backend currently exposes only bm/update in generated client.
-        // Convention: idAction=0 creates a new action (if backend supports it).
+        // Create N actions (one per date).
         await Promise.all(
           sinceByDate.map((since, idx) =>
-            brandmastApi.updateAction({
-              idAction: 0,
+            brandmastApi.addBMAction({
               idShop: Number(selectedShop.id),
               since,
               until: untilByDate[idx],
-              status: "PENDING",
             })
           )
         )

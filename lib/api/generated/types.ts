@@ -47,6 +47,14 @@ export interface UpdateActionRequest {
   status?: string;
 }
 
+export interface ActionRequest {
+  idAction?: number; // int64
+  idShop: number; // int64
+  since?: string; // date-time
+  until?: string; // date-time
+  status?: string;
+}
+
 export interface ApiResponseObject {
   errorCode?: string;
   message?: string;
