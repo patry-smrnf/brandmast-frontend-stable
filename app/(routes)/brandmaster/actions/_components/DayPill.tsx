@@ -53,12 +53,12 @@ export function DayPill({ date, isActive, hasAction, onClick }: DayPillProps) {
       }}
       className={cn(
         "relative flex w-[78px] shrink-0 touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-card px-3 py-3 text-center transition-colors",
-        isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+        isActive ? "text-foreground bg-gray-900 " : "text-muted-foreground hover:text-foreground",
         !isActive && hasAction ? "border-accent bg-accent/90 text-foreground hover:bg-accent/70" : null
       )}
     >
       {isActive ? (
-        <span className="absolute left-2 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full bg-primary" />
+        <span className="absolute left-2 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full bg-accent" />
       ) : null}
       <div className="text-xs font-medium uppercase tracking-wide">{weekday}</div>
       <div className="text-lg font-semibold leading-none tabular-nums">{day}</div>

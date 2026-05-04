@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import {
   AlertTriangleIcon,
   CalendarDaysIcon,
@@ -19,12 +20,46 @@ import { DayPill } from "./_components/DayPill"
 import { addDays, formatHeaderDate, parseIso, startOfDay, toDateKey, toMonthKey } from "./date-utils"
 import { useBmActions } from "./use-bm-actions"
 
+function toEditorMonthParamFromMonthKey(monthKeyYYYYMM: string) {
+  const m = /^(\d{4})-(\d{2})$/.exec(monthKeyYYYYMM)
+  if (!m) return ""
+  const yy = m[1].slice(2)
+  const mm = m[2]
+  return `${yy}-${mm}`
+}
+
 function getInitialSelectedDateKey() {
   // Always start on today's date; user changes the date by clicking a pill.
   return toDateKey(new Date())
 }
 
+function LoadingActionsSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <Card key={i} className="overflow-hidden">
+          <CardHeader className="space-y-2">
+            <div className="h-4 w-40 animate-pulse rounded-md bg-muted" />
+            <div className="h-3 w-64 animate-pulse rounded-md bg-muted" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-3 w-1/2 animate-pulse rounded-md bg-muted" />
+                <div className="h-3 w-2/3 animate-pulse rounded-md bg-muted" />
+              </div>
+            </div>
+            <div className="h-9 w-full animate-pulse rounded-md bg-muted" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
 export default function BrandmasterActionsPage() {
+  const router = useRouter()
   const [selectedDateKey, setSelectedDateKey] = React.useState(() =>
     getInitialSelectedDateKey()
   )
@@ -39,6 +74,10 @@ export default function BrandmasterActionsPage() {
 
   const headerDate = React.useMemo(() => formatHeaderDate(selectedDate), [selectedDate])
   const selectedMonthKey = React.useMemo(() => toMonthKey(selectedDate), [selectedDate])
+  const editorMonthParam = React.useMemo(
+    () => toEditorMonthParamFromMonthKey(selectedMonthKey),
+    [selectedMonthKey]
+  )
 
   const { data, isLoading, error } = useBmActions(selectedMonthKey)
 
@@ -162,7 +201,15 @@ export default function BrandmasterActionsPage() {
           </div>
 
           <div className="shrink-0">
-            <Button size="sm" className="shadow-sm">
+            <Button
+              size="sm"
+              className="shadow-sm"
+              onClick={() =>
+                router.push(
+                  editorMonthParam ? `/brandmaster/editor?month=${editorMonthParam}` : "/brandmaster/editor"
+                )
+              }
+            >
               <PlusIcon className="size-3.5" />
               Dodaj akcję
             </Button>
@@ -224,13 +271,13 @@ export default function BrandmasterActionsPage() {
                     : "Brak akcji na wybrany dzień."}
               </p>
             </div>
-            <Button variant="outline" size="sm">
-              Filtry
-            </Button>
+
           </div>
 
           <div className="space-y-3">
-            {actionsForSelectedDay.length === 0 ? (
+            {isLoading ? (
+              <LoadingActionsSkeleton />
+            ) : actionsForSelectedDay.length === 0 ? (
               <Card>
                 <CardHeader className="space-y-1">
                   <CardTitle>Spokojny dzien</CardTitle>
@@ -240,7 +287,15 @@ export default function BrandmasterActionsPage() {
                   <div className="text-sm text-muted-foreground">
                     ProTip: przewin sb w lewo lub prawo, powinno dzialacxd
                   </div>
-                  <Button>
+                  <Button
+                    onClick={() =>
+                      router.push(
+                        editorMonthParam
+                          ? `/brandmaster/editor?month=${editorMonthParam}`
+                          : "/brandmaster/editor"
+                      )
+                    }
+                  >
                     <PlusIcon className="size-3.5" />
                     Dodaj
                   </Button>

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { CalendarDaysIcon, ClockIcon, MapPinIcon, PencilIcon, XCircleIcon } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -10,6 +11,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 import { formatTime, parseIso } from "../date-utils"
 import type { ActionStatus, BrandmasterAction } from "../types"
+
+function toEditorMonthParam(d: Date) {
+  const yy = String(d.getFullYear() % 100).padStart(2, "0")
+  const mm = String(d.getMonth() + 1).padStart(2, "0")
+  return `${yy}-${mm}`
+}
 
 function statusBadgeVariant(status: ActionStatus): React.ComponentProps<typeof Badge>["variant"] {
   switch (status) {
@@ -45,11 +52,13 @@ export type ActionCardProps = {
 }
 
 export function ActionCard({ action, initials, brandmasterName, brandmasterSurname }: ActionCardProps) {
+  const router = useRouter()
   const sinceDate = parseIso(action.since) ?? new Date()
   const untilDate = parseIso(action.until) ?? sinceDate
   const timeLabel = `${formatTime(sinceDate)}–${formatTime(untilDate)}`
   const showCancel = action.status === "ACCEPTED"
   const showEdit = action.status !== "ACCEPTED"
+  const monthParam = toEditorMonthParam(sinceDate)
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-[96px_1fr] md:gap-4">
@@ -111,7 +120,13 @@ export function ActionCard({ action, initials, brandmasterName, brandmasterSurna
           {showEdit || showCancel ? (
             <div className="flex flex-wrap justify-end gap-2 pt-1">
               {showEdit ? (
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    router.push(`/brandmaster/editor?idAction=${action.idAction}&month=${monthParam}`)
+                  }
+                >
                   <PencilIcon className="size-4" />
                   Edytuj
                 </Button>
