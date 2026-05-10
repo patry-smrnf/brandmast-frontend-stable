@@ -45,6 +45,8 @@ export interface UpdateActionRequest {
   since?: string; // date-time
   until?: string; // date-time
   status?: string;
+  /** Opcjonalny tytuł — jeśli backend go obsługuje przy akceptacji. */
+  title?: string;
 }
 
 export interface ActionRequest {
