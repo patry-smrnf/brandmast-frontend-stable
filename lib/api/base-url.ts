@@ -8,25 +8,34 @@ function nonEmptyEnv(name: string): string | undefined {
 }
 
 /**
- * Browser Axios base URL from `NEXT_PUBLIC_API_BASE_URL`.
- * If the variable is present but empty, requests stay same-origin so Vercel `vercel.json` rewrites can proxy `/api/*` (deployed only).
- * Set `NEXT_PUBLIC_USE_SAME_ORIGIN_API=true` when your host UI cannot store an empty public var (e.g. Vercel).
- * On Vercel (production/preview), defaults to same-origin when no public URL is set — see `NEXT_PUBLIC_VERCEL_ENV`.
- * Locally, defaults to `http://localhost:8081`.
+ * Same idea as `getApiBaseUrl` in brandmastv3_frontend (`lib/api-client.ts`):
+ * - Optional `NEXT_PUBLIC_API_URL` wins (full base override).
+ * - In the browser: localhost / 127.0.0.1 → local API origin; otherwise same-origin `""` so `/api/*` hits `vercel.json` rewrites on Vercel.
+ * - On the server (no `window`): `VERCEL_URL` set → same-origin `""`; else local default.
+ *
+ * Paths in this app are like `/api/auth/login` (already include `/api`), so the base is an origin or empty — not `.../api` like v3.
  */
 export function getBrowserApiBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_USE_SAME_ORIGIN_API === "true") return "";
-  const v = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (v !== undefined) return v;
-  const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
-  if (vercelEnv === "production" || vercelEnv === "preview") return "";
-  return DEFAULT_DEV;
+  const explicit = nonEmptyEnv("NEXT_PUBLIC_API_URL") ?? nonEmptyEnv("NEXT_PUBLIC_API_BASE_URL");
+  if (explicit) return explicit;
+
+  if (typeof window !== "undefined") {
+    const isLocalhost =
+      window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    return isLocalhost ? DEFAULT_DEV : "";
+  }
+
+  return nonEmptyEnv("VERCEL_URL") ? "" : DEFAULT_DEV;
 }
 
 /**
- * Absolute backend URL for server-side `fetch` (proxy route). Empty values are ignored.
- * Prefer `API_BASE_URL`; falls back to non-empty `NEXT_PUBLIC_API_BASE_URL`.
+ * Absolute backend URL for server-side `fetch` (proxy route).
  */
 export function getServerApiBaseUrl(): string {
-  return nonEmptyEnv("API_BASE_URL") ?? nonEmptyEnv("NEXT_PUBLIC_API_BASE_URL") ?? DEFAULT_DEV;
+  return (
+    nonEmptyEnv("API_BASE_URL") ??
+    nonEmptyEnv("NEXT_PUBLIC_API_URL") ??
+    nonEmptyEnv("NEXT_PUBLIC_API_BASE_URL") ??
+    DEFAULT_DEV
+  );
 }
