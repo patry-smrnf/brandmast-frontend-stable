@@ -9,10 +9,12 @@ function nonEmptyEnv(name: string): string | undefined {
 
 /**
  * Browser Axios base URL from `NEXT_PUBLIC_API_BASE_URL`.
- * If the variable is present but empty, requests stay same-origin (e.g. Vercel `/api` rewrite).
+ * If the variable is present but empty, requests stay same-origin so Vercel `vercel.json` rewrites can proxy `/api/*` (deployed only).
+ * Set `NEXT_PUBLIC_USE_SAME_ORIGIN_API=true` when your host UI cannot store an empty public var (e.g. Vercel).
  * If unset, defaults to local backend.
  */
 export function getBrowserApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_USE_SAME_ORIGIN_API === "true") return "";
   const v = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (v !== undefined) return v;
   return DEFAULT_DEV;

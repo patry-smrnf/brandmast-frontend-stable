@@ -1,8 +1,9 @@
 {
-    "rewrites": [
-      {
-        "source": "/api/:path*",
-        "destination": "https://brandmast-backend-stable.onrender.com/api/:path*"
-      }
-    ]
-  }
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://brandmast-backend-stable.onrender.com/api/:path*"
+    }
+  ]
+}
