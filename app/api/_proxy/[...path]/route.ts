@@ -1,12 +1,9 @@
+import { getServerApiBaseUrl } from "@/lib/api/base-url";
+
 export const runtime = "nodejs";
 
 function getBackendBaseUrl() {
-  // Server-only by default; safe to override per environment.
-  return (
-    process.env.API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "http://localhost:8081"
-  );
+  return getServerApiBaseUrl();
 }
 
 function joinUrl(base: string, parts: string[]) {

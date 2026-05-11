@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
+import { getBrowserApiBaseUrl } from "@/lib/api/base-url";
 import { tokenStore } from "../token";
 
 export type ApiClientOptions = {
@@ -20,17 +21,9 @@ export type RequestOptions = AxiosRequestConfig & {
   token?: string | null;
 };
 
-function getDefaultBaseUrl() {
-  // If you want to call backend directly from the browser, set this in `.env.local`.
-  const direct = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (direct && direct.length > 0) return direct;
-  // Fallback (works only if backend is reachable from browser at this URL)
-  return "http://localhost:8081";
-}
-
 export function createBrandmastHttpClient(opts: ApiClientOptions = {}): AxiosInstance {
   const instance = axios.create({
-    baseURL: opts.baseURL ?? getDefaultBaseUrl(),
+    baseURL: opts.baseURL ?? getBrowserApiBaseUrl(),
     timeout: 15_000,
     withCredentials: true,
   });
