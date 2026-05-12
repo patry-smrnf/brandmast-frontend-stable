@@ -8,6 +8,9 @@ import {
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 
+/** Ustaw na `false`, gdy pełny panel ma znów być widoczny. */
+const BRANDMASTER_COMING_SOON = true
+
 type MetricRow = {
   label: string
   value: string
@@ -150,7 +153,41 @@ export default function BrandmasterPage() {
   const dailyRemaining = Math.max(0, data.goals.dailySalesTarget - totalSales)
 
   return (
-    <main className="flex flex-1 flex-col bg-background">
+    <main className="relative flex min-h-[50vh] flex-1 flex-col bg-background">
+      {BRANDMASTER_COMING_SOON ? (
+        <div
+          className="flex flex-1 flex-col items-center justify-center gap-8 px-4 py-16"
+          aria-live="polite"
+        >
+          <div className="relative flex size-24 items-center justify-center">
+            <span
+              className="absolute inline-flex size-full rounded-full bg-primary/25 motion-safe:animate-ping"
+              aria-hidden
+            />
+            <span
+              className="absolute inline-flex size-[70%] rounded-full bg-primary/15 motion-safe:animate-pulse"
+              aria-hidden
+            />
+            <span
+              className="relative size-14 rounded-full border-2 border-primary border-t-transparent motion-safe:animate-spin"
+              aria-hidden
+            />
+          </div>
+          <div className="text-center">
+            <h1 className="text-3xl font-semibold tracking-tight motion-safe:animate-pulse">
+              Coming soon
+            </h1>
+            <p className="mt-3 max-w-md text-sm text-muted-foreground">
+              Fajne bajery statystyki beda za niedlugo, na razie nacieszyc sie sekcja akcje, dodaj akcje i settings
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      <div
+        className={BRANDMASTER_COMING_SOON ? "hidden" : undefined}
+        aria-hidden={BRANDMASTER_COMING_SOON}
+      >
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
         <header className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -451,6 +488,7 @@ export default function BrandmasterPage() {
             </CardContent>
           </Card>
         </section>
+      </div>
       </div>
     </main>
   )

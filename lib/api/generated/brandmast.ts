@@ -8,6 +8,7 @@ import type {
   ApiResponseObject,
   ApiResponseSettingResponse,
   ActionRequest,
+  ConfigUpdateRequest,
   LoginRequest,
   UpdateActionRequest,
 } from "./types";
@@ -65,6 +66,14 @@ export class BrandmastApi {
    */
   async fetchConfig(options?: RequestOptions) {
     const res = await this.http.get<ApiResponseSettingResponse>("/api/config/fetch", options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/config/update
+   */
+  async updateConfig(body: ConfigUpdateRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/config/update", body, options);
     return res.data;
   }
 

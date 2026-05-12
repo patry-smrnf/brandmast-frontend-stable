@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Suspense } from "react"
+import dynamic from "next/dynamic"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CalendarDaysIcon, CheckIcon, ChevronLeftIcon, MapPinIcon, TimerIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -19,6 +20,20 @@ import { cn } from "@/lib/utils"
 import { parseIso, toDateKey, toMonthKey } from "../actions/date-utils"
 import type { BrandmasterAction } from "../actions/types"
 import type { ActionDetails, ShopResponse } from "@/lib/api/generated/types"
+
+import type { EditorShopMapMarker } from "./shops-map"
+
+const EditorShopsMap = dynamic(
+  () => import("./shops-map").then((m) => m.EditorShopsMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[220px] h-[min(52dvh,380px)] w-full items-center justify-center rounded-xl border border-border bg-muted text-sm text-muted-foreground sm:h-[min(48vh,420px)]">
+        Ładowanie mapy…
+      </div>
+    ),
+  }
+)
 
 type Step = 1 | 2 | 3;
 
@@ -58,10 +73,21 @@ function normalizeTime(raw: string): { ok: true; value: string } | { ok: false; 
   const t = raw.trim()
   if (!t) return { ok: false, reason: "Godzina jest wymagana." }
 
+  // Same hour only (1–2 digits): treat as HH:00:00
+  const hourOnly = /^(\d{1,2})$/.exec(t)
+  if (hourOnly) {
+    const hh = Number(hourOnly[1])
+    if (hh < 0 || hh > 23) return { ok: false, reason: "Godzina musi być 00–23." }
+    return {
+      ok: true,
+      value: `${String(hh).padStart(2, "0")}:00:00`,
+    }
+  }
+
   const m =
     /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(t) ??
     /^(\d{1,2})\.(\d{2})(?:\.(\d{2}))?$/.exec(t) // fallback for mobile keyboards
-  if (!m) return { ok: false, reason: "Użyj formatu HH:MM lub HH:MM:SS." }
+  if (!m) return { ok: false, reason: "Użyj formatu HH, HH:MM lub HH:MM:SS." }
 
   const hh = Number(m[1])
   const mm = Number(m[2])
@@ -102,7 +128,7 @@ function buildShopLabel(s: ShopResponse) {
   const eventName = getShopEventName(s)
 
   // address • name • eventName (skip empties)
-  return [address, name, eventName].filter(Boolean).join(" • ")
+  return [address, eventName].filter(Boolean).join(" • ")
 }
 
 function shopMatchesQuery(s: ShopResponse, q: string) {
@@ -118,6 +144,61 @@ function shopMatchesQuery(s: ShopResponse, q: string) {
     .join(" | ")
     .toLowerCase()
   return hay.includes(query)
+}
+
+function parseGeoNumber(raw: string | undefined | null): number | null {
+  if (raw == null) return null
+  const s = String(raw).trim()
+  if (!s) return null
+  const n = Number(s.replace(",", "."))
+  return Number.isFinite(n) ? n : null
+}
+
+function buildShopMapMarkersAndStats(shops: ShopResponse[]): {
+  markers: EditorShopMapMarker[]
+  stats: {
+    total: number
+    onMap: number
+    missingOrInvalid: number
+    zeroZero: number
+    notOnMap: number
+  }
+} {
+  const markers: EditorShopMapMarker[] = []
+  let missingOrInvalid = 0
+  let zeroZero = 0
+
+  for (const s of shops) {
+    const id = s.id ?? 0
+    const lat = parseGeoNumber(s.location?.geoLat)
+    const lng = parseGeoNumber(s.location?.geoLng)
+
+    if (lat == null || lng == null) {
+      missingOrInvalid++
+      continue
+    }
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      missingOrInvalid++
+      continue
+    }
+    if (Math.abs(lat) < 1e-6 && Math.abs(lng) < 1e-6) {
+      zeroZero++
+      continue
+    }
+
+    markers.push({ id, lat, lng, label: buildShopLabel(s) })
+  }
+
+  return {
+    markers,
+    stats: {
+      total: shops.length,
+      onMap: markers.length,
+      missingOrInvalid,
+      zeroZero,
+      notOnMap: missingOrInvalid + zeroZero,
+    },
+  }
 }
 
 async function fetchActionsForEditor(month: string | null) {
@@ -339,6 +420,19 @@ function BrandmasterEditorInner() {
       .map((x) => x.s)
   }, [shops, shopQuery])
 
+  const shopMapBundle = React.useMemo(() => buildShopMapMarkersAndStats(shops), [shops])
+
+  const onShopMapMarkerSelect = React.useCallback(
+    (id: number) => {
+      const s = shops.find((x) => (x.id ?? 0) === id)
+      if (!s) return
+      setSelectedShop(s)
+      setShopQuery(buildShopLabel(s))
+      setShowShopSuggestions(false)
+    },
+    [shops]
+  )
+
   function goBack() {
     if (step === 1) {
       router.back()
@@ -457,8 +551,10 @@ function BrandmasterEditorInner() {
                     <TimerIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="startTime"
-                      inputMode="numeric"
-                      placeholder="HH:MM"
+                      type="text"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="np. 8 lub 8:30"
                       className="pl-10"
                       value={startTime}
                       onChange={(e) => setStartTime(e.target.value)}
@@ -477,8 +573,10 @@ function BrandmasterEditorInner() {
                     <TimerIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="endTime"
-                      inputMode="numeric"
-                      placeholder="HH:MM"
+                      type="text"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="np. 18 lub 18:45"
                       className="pl-10"
                       value={endTime}
                       onChange={(e) => setEndTime(e.target.value)}
@@ -587,13 +685,49 @@ function BrandmasterEditorInner() {
                 <MapPinIcon className="size-5 text-muted-foreground" />
                 Lokalizacja
               </CardTitle>
-              <CardDescription>
-                Wyszukuj po adresie, nazwie sklepu albo nazwie eventu. Sugestie pokazują: adres, name i
-                eventName.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
+              <div className="relative z-0 isolate space-y-2">
+
+                {!shopsLoading && shopMapBundle.stats.total > 0 ? (
+                  <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
+                    <div className="tabular-nums">
+                      <span className="font-medium text-foreground">Na mapie:</span>{" "}
+                      {shopMapBundle.stats.onMap}
+                      <span className="text-muted-foreground"> / {shopMapBundle.stats.total}</span>
+                    </div>
+                    <div className="tabular-nums sm:text-right">
+                      <span className="font-medium text-foreground">Poza mapą</span>{" "}
+                      <span className="text-muted-foreground">(brak danych lub 0,0):</span>{" "}
+                      {shopMapBundle.stats.notOnMap}
+                    </div>
+                    {shopMapBundle.stats.notOnMap > 0 ? (
+                      <div className="w-full border-t border-border pt-2 text-[11px] sm:border-t-0 sm:border-l sm:pl-3 sm:pt-0">
+                        <span className="text-muted-foreground">Rozkład:</span> brak / błąd:{" "}
+                        {shopMapBundle.stats.missingOrInvalid}
+                        <span className="mx-1.5 text-border">·</span>
+                        współrzędne 0,0: {shopMapBundle.stats.zeroZero}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {!shopsLoading && shopMapBundle.stats.total === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Brak sklepów z serwera — mapa pokazuje domyślny widok (Polska), punkty pojawią się po
+                    załadowaniu listy.
+                  </p>
+                ) : null}
+
+                <EditorShopsMap
+                  markers={shopMapBundle.markers}
+                  selectedShopId={selectedShop?.id ?? null}
+                  onMarkerSelect={onShopMapMarkerSelect}
+                  isLoading={shopsLoading}
+                />
+              </div>
+
+              <div className="relative z-30 space-y-2">
                 <Label htmlFor="shopQuery">Adres / nazwa / event</Label>
                 <div className="relative">
                   <Input
@@ -621,7 +755,7 @@ function BrandmasterEditorInner() {
 
                   {showShopSuggestions ? (
                     <div
-                      className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg"
+                      className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg"
                       onMouseDown={(e) => {
                         // Keep focus while interacting with the panel
                         e.preventDefault()
@@ -660,7 +794,7 @@ function BrandmasterEditorInner() {
                                       <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
                                         {s.name ? <span>name: {s.name}</span> : null}
                                         {getShopEventName(s) ? (
-                                          <span>eventName: {getShopEventName(s)}</span>
+                                          <span>Event: {getShopEventName(s)}</span>
                                         ) : null}
                                       </div>
                                     </div>
@@ -689,9 +823,6 @@ function BrandmasterEditorInner() {
                   <div className="mt-1 flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{buildShopLabel(selectedShop)}</div>
-                      <div className="mt-1 text-xs text-muted-foreground tabular-nums">
-                        idShop: {selectedShop.id ?? "—"}
-                      </div>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => setSelectedShop(null)}>
                       Zmień

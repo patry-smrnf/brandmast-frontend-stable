@@ -155,6 +155,19 @@ export interface SettingResponse {
   myData?: MyData;
 }
 
+/** Body for POST /api/config/update (partial updates: only non-null fields are applied server-side). */
+export interface ConfigUpdateRequest {
+  isEditingAllowed?: boolean;
+  isAddingAllowed?: boolean;
+  isDeletingAllowed?: boolean;
+  casLogin?: string;
+  casPassword?: string;
+  requirePassword?: boolean;
+  password?: string;
+  oneTwoOnePassword?: string;
+  kasoterminalNr?: number; // int64
+}
+
 export interface ApiResponseSettingResponse {
   errorCode?: string;
   message?: string;

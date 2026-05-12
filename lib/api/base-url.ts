@@ -1,4 +1,4 @@
-const DEFAULT_DEV = "http://localhost:8081";
+const DEFAULT_DEV = "http://localhost:8000";
 
 function nonEmptyEnv(name: string): string | undefined {
   const v = process.env[name];

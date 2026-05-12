@@ -2,7 +2,13 @@
 
 import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { MoreVerticalIcon, ShieldIcon, UserIcon, LogOutIcon } from "lucide-react"
+import {
+  LogOutIcon,
+  MoreVerticalIcon,
+  SettingsIcon,
+  ShieldIcon,
+  UserIcon,
+} from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -94,6 +100,12 @@ export function RoleContextMenu() {
             label: "Akcje",
             href: "/brandmaster/actions",
             icon: <UserIcon className="size-4" />,
+          },
+          {
+            key: "bm-settings",
+            label: "Ustawienia",
+            href: "/brandmaster/settings",
+            icon: <SettingsIcon className="size-4" />,
           },
           {
             key: "bm-editor",

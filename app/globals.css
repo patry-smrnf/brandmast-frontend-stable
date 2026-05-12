@@ -196,3 +196,9 @@
     @apply font-sans;
   }
 }
+
+/* Brandmaster editor map: Leaflet divIcon default box behind custom dot */
+.leaflet-div-icon.bm-leaflet-marker {
+  background: transparent !important;
+  border: none !important;
+}
