@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ConfigBootstrap } from "@/app/providers/ConfigBootstrap";
+import { BackendWakeBanner } from "@/app/components/BackendWakeBanner";
 import { RoleContextMenu } from "@/app/components/RoleContextMenu";
 
 const geistSans = Geist({
@@ -31,6 +32,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <BackendWakeBanner />
         <ConfigBootstrap ttlMs={0} />
         <RoleContextMenu />
         {children}

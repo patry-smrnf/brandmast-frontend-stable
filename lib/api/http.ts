@@ -1,3 +1,4 @@
+import { signalBackendTimeout } from "@/lib/api/backend-timeout-signal";
 import { ApiError, type ApiErrorPayload } from "./errors";
 
 // typ Json to uniwersalny typ JSON
@@ -83,6 +84,7 @@ export async function apiFetch<T>(
   } catch (err) {
     if (err instanceof ApiError) throw err;
     if (err instanceof DOMException && err.name === "AbortError") {
+      signalBackendTimeout();
       throw new ApiError({
         message: `Request timed out after ${timeoutMs}ms`,
         status: 408,
