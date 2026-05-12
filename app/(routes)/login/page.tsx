@@ -36,7 +36,7 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    const normalizedLogin = login.trim()
+    const normalizedLogin = login.trim().toUpperCase()
     const normalizedPassword = password.trim()
 
     if (!normalizedLogin) {
