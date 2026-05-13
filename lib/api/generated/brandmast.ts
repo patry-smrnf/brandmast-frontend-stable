@@ -9,6 +9,7 @@ import type {
   ApiResponseSettingResponse,
   ActionRequest,
   ConfigUpdateRequest,
+  DeleteBmActionRequest,
   LoginRequest,
   UpdateActionRequest,
 } from "./types";
@@ -50,6 +51,14 @@ export class BrandmastApi {
    */
   async addBMAction(body: ActionRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseObject>("/api/action/bm/add", body, options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/action/bm/delete
+   */
+  async deleteBmAction(body: DeleteBmActionRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/action/bm/delete", body, options);
     return res.data;
   }
 

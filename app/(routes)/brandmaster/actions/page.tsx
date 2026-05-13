@@ -14,6 +14,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { brandmastApi } from "@/lib/api"
+import { useConfigState } from "@/lib/config/configStore"
+import { toast } from "sonner"
 
 import { ActionCard } from "./_components/ActionCard"
 import { DayPill } from "./_components/DayPill"
@@ -67,6 +70,15 @@ function LoadingActionsSkeleton() {
 
 export default function BrandmasterActionsPage() {
   const router = useRouter()
+  const { config } = useConfigState()
+  const actionsCfg = config?.actionsConfig
+  const isAddDisabled = actionsCfg?.isAddingAllowed === false
+  const isEditDisabled = actionsCfg?.isEditingAllowed === false
+  const isDeleteDisabled =
+    actionsCfg?.isDeteletingAllowed === true
+      ? false
+      : actionsCfg?.isDeteletingAllowed === false || actionsCfg?.isDeletingAllowed === false
+
   const [selectedDateKey, setSelectedDateKey] = React.useState(() =>
     getInitialSelectedDateKey()
   )
@@ -86,7 +98,7 @@ export default function BrandmasterActionsPage() {
     [selectedMonthKey]
   )
 
-  const { data, isLoading, error } = useBmActions(selectedMonthKey)
+  const { data, isLoading, error, refetch } = useBmActions(selectedMonthKey)
 
   const scrollerRef = React.useRef<HTMLDivElement | null>(null)
   const stepPxRef = React.useRef<number | null>(null)
@@ -154,6 +166,23 @@ export default function BrandmasterActionsPage() {
 
   const initials = `${data.brandmaster.name[0] ?? ""}${data.brandmaster.surname[0] ?? ""}`.toUpperCase()
 
+  const handleDeleteAction = React.useCallback(
+    async (idAction: number) => {
+      try {
+        const res = await brandmastApi.deleteBmAction({ idAction })
+        if (res?.success === false) {
+          toast.error(typeof res.message === "string" ? res.message : "Nie udało się usunąć akcji.")
+          return
+        }
+        toast.success("Akcja została usunięta.")
+        refetch()
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Nie udało się usunąć akcji.")
+      }
+    },
+    [refetch]
+  )
+
   return (
     <main className="flex flex-1 flex-col bg-background pb-24">
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
@@ -211,6 +240,7 @@ export default function BrandmasterActionsPage() {
             <Button
               size="sm"
               className="shadow-sm"
+              disabled={isAddDisabled}
               onClick={() => router.push(buildCreateEditorHref(editorMonthParam, selectedDateKey))}
             >
               <PlusIcon className="size-3.5" />
@@ -290,7 +320,10 @@ export default function BrandmasterActionsPage() {
                   <div className="text-sm text-muted-foreground">
                     ProTip: przewin sb w lewo lub prawo, powinno dzialacxd
                   </div>
-                  <Button onClick={() => router.push(buildCreateEditorHref(editorMonthParam, selectedDateKey))}>
+                  <Button
+                    disabled={isAddDisabled}
+                    onClick={() => router.push(buildCreateEditorHref(editorMonthParam, selectedDateKey))}
+                  >
                     <PlusIcon className="size-3.5" />
                     Dodaj
                   </Button>
@@ -304,6 +337,9 @@ export default function BrandmasterActionsPage() {
                   initials={initials}
                   brandmasterName={data.brandmaster.name}
                   brandmasterSurname={data.brandmaster.surname}
+                  editDisabled={isEditDisabled}
+                  deleteDisabled={isDeleteDisabled}
+                  onDelete={() => handleDeleteAction(action.idAction)}
                 />
               ))
             )}

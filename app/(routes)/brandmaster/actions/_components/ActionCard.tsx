@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDaysIcon, ClockIcon, MapPinIcon, PencilIcon, XCircleIcon } from "lucide-react"
+import { CalendarDaysIcon, ClockIcon, MapPinIcon, PencilIcon, Trash2Icon, XCircleIcon } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,8 @@ function statusBadgeVariant(status: ActionStatus): React.ComponentProps<typeof B
       return "warning"
     case "REJECTED":
       return "destructive"
+    case "EDITABLE":
+      return "outline"
     default:
       return "secondary"
   }
@@ -36,9 +38,11 @@ function statusLabel(status: ActionStatus) {
     case "ACCEPTED":
       return "Zaakceptowana"
     case "PENDING":
-      return "Oczekuje"
+      return "Oczekuje ( ZGLOS TO DO MN )"
     case "REJECTED":
       return "Odrzucona"
+    case "EDITABLE":
+      return "Edytowalna"
     default:
       return status
   }
@@ -49,16 +53,41 @@ export type ActionCardProps = {
   initials: string
   brandmasterName: string
   brandmasterSurname: string
+  editDisabled?: boolean
+  deleteDisabled?: boolean
+  onDelete?: () => void | Promise<void>
 }
 
-export function ActionCard({ action, initials, brandmasterName, brandmasterSurname }: ActionCardProps) {
+export function ActionCard({
+  action,
+  initials,
+  brandmasterName,
+  brandmasterSurname,
+  editDisabled = false,
+  deleteDisabled = false,
+  onDelete,
+}: ActionCardProps) {
   const router = useRouter()
+  const [deletePending, setDeletePending] = React.useState(false)
   const sinceDate = parseIso(action.since) ?? new Date()
   const untilDate = parseIso(action.until) ?? sinceDate
   const timeLabel = `${formatTime(sinceDate)}–${formatTime(untilDate)}`
   const showCancel = action.status === "ACCEPTED"
   const showEdit = action.status !== "ACCEPTED"
+  const showDelete = action.status === "EDITABLE"
+  const deleteButtonDisabled = deletePending || deleteDisabled || !onDelete
   const monthParam = toEditorMonthParam(sinceDate)
+
+  async function handleDelete() {
+    if (deleteButtonDisabled) return
+    if (!window.confirm("Na pewno usunąć tę akcję?")) return
+    setDeletePending(true)
+    try {
+      await onDelete()
+    } finally {
+      setDeletePending(false)
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-[96px_1fr] md:gap-4">
@@ -117,18 +146,30 @@ export function ActionCard({ action, initials, brandmasterName, brandmasterSurna
             </div>
           </div>
 
-          {showEdit || showCancel ? (
+          {(showEdit || showCancel || showDelete) ? (
             <div className="flex flex-wrap justify-end gap-2 pt-1">
               {showEdit ? (
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={editDisabled}
                   onClick={() =>
                     router.push(`/brandmaster/editor?idAction=${action.idAction}&month=${monthParam}`)
                   }
                 >
                   <PencilIcon className="size-4" />
                   Edytuj
+                </Button>
+              ) : null}
+              {showDelete ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={deleteButtonDisabled}
+                  onClick={() => void handleDelete()}
+                >
+                  <Trash2Icon className="size-4" />
+                  Usuń
                 </Button>
               ) : null}
               {showCancel ? (

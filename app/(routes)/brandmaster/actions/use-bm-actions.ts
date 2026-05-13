@@ -6,7 +6,10 @@ import { brandmastApi } from "@/lib/api"
 import type { ActionStatus, ActionsPayload } from "./types"
 
 function coerceStatus(status: string | undefined | null): ActionStatus {
-  if (status === "ACCEPTED" || status === "PENDING" || status === "REJECTED") return status
+  const u = (status ?? "").toUpperCase()
+  if (u === "ACCEPTED" || u === "PENDING" || u === "REJECTED" || u === "EDITABLE") {
+    return u as ActionStatus
+  }
   return "PENDING"
 }
 
@@ -26,6 +29,7 @@ export function useBmActions(monthKey: string) {
   const [data, setData] = React.useState<ActionsPayload>(() => emptyPayload())
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [refetchTick, setRefetchTick] = React.useState(0)
 
   React.useEffect(() => {
     let cancelled = false
@@ -88,8 +92,12 @@ export function useBmActions(monthKey: string) {
     return () => {
       cancelled = true
     }
-  }, [monthKey])
+  }, [monthKey, refetchTick])
 
-  return { data, isLoading, error }
+  const refetch = React.useCallback(() => {
+    setRefetchTick((t) => t + 1)
+  }, [])
+
+  return { data, isLoading, error, refetch }
 }
 

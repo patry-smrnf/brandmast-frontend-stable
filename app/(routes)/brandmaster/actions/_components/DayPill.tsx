@@ -54,7 +54,7 @@ export function DayPill({ date, isActive, hasAction, onClick }: DayPillProps) {
       className={cn(
         "relative flex w-[78px] shrink-0 touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-card px-3 py-3 text-center transition-colors",
         isActive ? "text-foreground bg-gray-900 " : "text-muted-foreground hover:text-foreground",
-        !isActive && hasAction ? "border-accent bg-accent/90 text-foreground hover:bg-accent/70" : null
+        !isActive && hasAction ? "border-accent bg-indigo-900/90 text-foreground hover:bg-accent/70" : null
       )}
     >
       {isActive ? (

@@ -106,6 +106,13 @@ export interface ActionsConfig {
   isEditingAllowed?: boolean;
   isAddingAllowed?: boolean;
   isDeteletingAllowed?: boolean;
+  /** Poprawna nazwa pola — część backendów zwraca zamiast `isDeteletingAllowed`. */
+  isDeletingAllowed?: boolean;
+}
+
+/** POST /api/action/bm/delete */
+export interface DeleteBmActionRequest {
+  idAction: number; // int64
 }
 
 export interface AccessConfig {
@@ -118,7 +125,7 @@ export interface MyData {
   hasTourplanner?: boolean | null;
   hasOneTwoOne?: boolean | null;
   kasoterminal?: number | null; // int64
-  casLogin?: string;
+  casLogin?: string | null;
 }
 
 export interface AreaData {
@@ -161,8 +168,10 @@ export interface ConfigUpdateRequest {
   isEditingAllowed?: boolean;
   isAddingAllowed?: boolean;
   isDeletingAllowed?: boolean;
-  casLogin?: string;
-  casPassword?: string;
+  /** Matches typo in ActionsConfig / some backends. */
+  isDeteletingAllowed?: boolean;
+  casLogin?: string | null;
+  casPassword?: string | null;
   requirePassword?: boolean;
   password?: string;
   oneTwoOnePassword?: string;

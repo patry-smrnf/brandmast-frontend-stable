@@ -44,49 +44,6 @@ function BoolBadge({ value }: { value: boolean | null | undefined }) {
   )
 }
 
-function FeatureBadge({
-  label,
-  value,
-}: {
-  label: string
-  value: boolean | null | undefined
-}) {
-  if (value === null || value === undefined) {
-    return (
-      <Badge variant="outline" className="font-normal">
-        {label}: brak danych
-      </Badge>
-    )
-  }
-  return (
-    <Badge variant={value ? "success" : "secondary"} className="font-normal">
-      {label}: {value ? "skonfigurowano" : "brak"}
-    </Badge>
-  )
-}
-
-function InfoRow({
-  label,
-  value,
-  className,
-}: {
-  label: string
-  value: React.ReactNode
-  className?: string
-}) {
-  return (
-    <div
-      className={cn(
-        "flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4",
-        className
-      )}
-    >
-      <span className="text-xs font-medium text-muted-foreground sm:text-sm">{label}</span>
-      <span className="min-w-0 wrap-break-word text-sm font-medium sm:text-right">{value}</span>
-    </div>
-  )
-}
-
 function readApiError(err: unknown): string {
   if (isAxiosError(err)) {
     const data = err.response?.data as { message?: string } | undefined
@@ -95,6 +52,8 @@ function readApiError(err: unknown): string {
   if (err instanceof Error) return err.message
   return "Nieznany błąd."
 }
+
+type ActionFlagKey = "isEditingAllowed" | "isAddingAllowed" | "isDeteletingAllowed"
 
 export default function SupervisorSettingsPage() {
   const { status, config, errorMessage } = useConfigState()
@@ -107,6 +66,18 @@ export default function SupervisorSettingsPage() {
   const [accountPwd, setAccountPwd] = React.useState("")
   const [accountPwd2, setAccountPwd2] = React.useState("")
   const [accountPwdSaving, setAccountPwdSaving] = React.useState(false)
+
+  const my = config?.myData
+  const serverCasLogin = my?.casLogin == null ? "" : String(my.casLogin)
+  const [casLoginDraft, setCasLoginDraft] = React.useState("")
+  const [casPasswordDraft, setCasPasswordDraft] = React.useState("")
+  const [casDetachSaving, setCasDetachSaving] = React.useState(false)
+  const [casConnectSaving, setCasConnectSaving] = React.useState(false)
+  const [actionSavingKey, setActionSavingKey] = React.useState<ActionFlagKey | null>(null)
+
+  React.useEffect(() => {
+    setCasLoginDraft(serverCasLogin)
+  }, [serverCasLogin])
 
   const refreshConfig = React.useCallback(async (): Promise<SettingResponse | null> => {
     const res = await brandmastApi.fetchConfig()
@@ -146,12 +117,93 @@ export default function SupervisorSettingsPage() {
   const busy = bootLoading || status === "loading"
   const requirePwd = requirePwdOverride ?? !!config?.myData?.requirePassword
 
+  const hasServerCasLogin = Boolean(serverCasLogin.trim())
+  const showConnectCas = casPasswordDraft.trim().length > 0
+
+  const team = config?.teamData
+  const territory = team?.territoryData
+  const area = territory?.areaData
+  const actions = config?.actionsConfig
+  const access = config?.accessConfig
+
+  const anyCasSaving = casDetachSaving || casConnectSaving
+  const anyActionSaving = actionSavingKey !== null
+
   async function onRefresh() {
     setBootLoading(true)
     try {
       await refreshConfig()
     } finally {
       setBootLoading(false)
+    }
+  }
+
+  async function onDetachCas() {
+    setCasDetachSaving(true)
+    try {
+      const res = await brandmastApi.updateConfig({ casLogin: null, casPassword: null })
+      if (!res.success) {
+        toast.error(res.message ?? "Nie udało się odpiąć CAS.")
+        return
+      }
+      toast.success("CAS został odpięty.")
+      setCasPasswordDraft("")
+      await refreshConfig()
+    } catch (e) {
+      toast.error(readApiError(e))
+    } finally {
+      setCasDetachSaving(false)
+    }
+  }
+
+  async function onConnectCas() {
+    const login = casLoginDraft.trim()
+    const pwd = casPasswordDraft.trim()
+    if (!login) {
+      toast.error("Podaj login CAS.")
+      return
+    }
+    if (!pwd) {
+      toast.error("Podaj hasło CAS.")
+      return
+    }
+    setCasConnectSaving(true)
+    try {
+      const res = await brandmastApi.updateConfig({ casLogin: login, casPassword: pwd })
+      if (!res.success) {
+        toast.error(res.message ?? "Nie udało się połączyć z CAS.")
+        return
+      }
+      toast.success("Połączono z CAS.")
+      setCasPasswordDraft("")
+      await refreshConfig()
+    } catch (e) {
+      toast.error(readApiError(e))
+    } finally {
+      setCasConnectSaving(false)
+    }
+  }
+
+  async function onActionToggle(key: ActionFlagKey, next: boolean) {
+    setActionSavingKey(key)
+    try {
+      const body =
+        key === "isEditingAllowed"
+          ? { isEditingAllowed: next }
+          : key === "isAddingAllowed"
+            ? { isAddingAllowed: next }
+            : { isDeteletingAllowed: next, isDeletingAllowed: next }
+      const res = await brandmastApi.updateConfig(body)
+      if (!res.success) {
+        toast.error(res.message ?? "Nie udało się zapisać uprawnień akcji.")
+        return
+      }
+      toast.success("Zapisano uprawnienia akcji.")
+      await refreshConfig()
+    } catch (e) {
+      toast.error(readApiError(e))
+    } finally {
+      setActionSavingKey(null)
     }
   }
 
@@ -203,13 +255,6 @@ export default function SupervisorSettingsPage() {
     }
   }
 
-  const team = config?.teamData
-  const territory = team?.territoryData
-  const area = territory?.areaData
-  const actions = config?.actionsConfig
-  const access = config?.accessConfig
-  const my = config?.myData
-
   return (
     <main className="flex flex-1 flex-col bg-background">
       <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-5">
@@ -228,7 +273,14 @@ export default function SupervisorSettingsPage() {
               variant="outline"
               size="sm"
               className="w-full sm:w-auto"
-              disabled={isClient && (busy || requirePwdSaving || accountPwdSaving)}
+              disabled={
+                isClient &&
+                (busy ||
+                  requirePwdSaving ||
+                  accountPwdSaving ||
+                  anyCasSaving ||
+                  anyActionSaving)
+              }
               onClick={() => void onRefresh()}
             >
               {busy ? (
@@ -256,7 +308,7 @@ export default function SupervisorSettingsPage() {
                 <UsersIcon className="size-4 text-muted-foreground" aria-hidden />
                 <CardTitle className="text-lg">Moje informacje</CardTitle>
               </div>
-              <CardDescription>Login CAS, przydział zespołu oraz status Tourplannera</CardDescription>
+              <CardDescription>Login CAS, połączenie z CAS oraz przydział zespołu</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {isClient && busy && !config ? (
@@ -266,12 +318,68 @@ export default function SupervisorSettingsPage() {
                 </div>
               ) : null}
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Konto CAS
                 </div>
-                <div className="grid grid-cols-1 gap-2">
-                  <InfoRow label="Login CAS" value={formatText(my?.casLogin)} />
+                <div className="space-y-2">
+                  <Label htmlFor="sv-cas-login">Login CAS</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Może być pusty przed pierwszym połączeniem. Zapis do serwera następuje przy
+                    „Połącz z CAS” (wraz z hasłem).
+                  </p>
+                  <Input
+                    id="sv-cas-login"
+                    autoComplete="username"
+                    value={casLoginDraft}
+                    onChange={(e) => setCasLoginDraft(e.target.value)}
+                    disabled={isClient && (busy || anyCasSaving)}
+                    className="max-w-md"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sv-cas-pwd">Hasło CAS</Label>
+                  <Input
+                    id="sv-cas-pwd"
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="Wpisz tylko przy łączeniu z CAS"
+                    value={casPasswordDraft}
+                    onChange={(e) => setCasPasswordDraft(e.target.value)}
+                    disabled={isClient && (busy || casConnectSaving)}
+                    className="max-w-md"
+                  />
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                  {hasServerCasLogin ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      disabled={isClient && (busy || anyCasSaving)}
+                      onClick={() => void onDetachCas()}
+                    >
+                      {casDetachSaving ? <Loader2Icon className="size-4 animate-spin" /> : null}
+                      <span className={cn(casDetachSaving ? "ml-2" : "")}>Odepnij CAS</span>
+                    </Button>
+                  ) : null}
+                  {showConnectCas ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      disabled={isClient && (busy || anyCasSaving)}
+                      onClick={() => void onConnectCas()}
+                    >
+                      {casConnectSaving ? <Loader2Icon className="size-4 animate-spin" /> : null}
+                      <span className={cn(casConnectSaving ? "ml-2" : "")}>Połącz z CAS</span>
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  <span>Połączenie z CAS:</span>
+                  <BoolBadge value={access?.isCasConnected} />
                 </div>
               </div>
 
@@ -282,10 +390,24 @@ export default function SupervisorSettingsPage() {
                   TEAM
                 </div>
                 <div className="grid grid-cols-1 gap-2">
-                  <InfoRow label="ID zespołu" value={formatText(team?.id)} />
-                  <InfoRow label="Terytorium" value={formatText(territory?.ident)} />
-                  <InfoRow label="Obszar" value={formatText(area?.ident)} />
-                  <InfoRow label="UUID terytorium" value={formatText(territory?.tpUuid)} />
+                  <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <span className="text-xs font-medium text-muted-foreground sm:text-sm">ID zespołu</span>
+                    <span className="text-sm font-medium sm:text-right">{formatText(team?.id)}</span>
+                  </div>
+                  <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <span className="text-xs font-medium text-muted-foreground sm:text-sm">Terytorium</span>
+                    <span className="text-sm font-medium sm:text-right">{formatText(territory?.ident)}</span>
+                  </div>
+                  <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <span className="text-xs font-medium text-muted-foreground sm:text-sm">Obszar</span>
+                    <span className="text-sm font-medium sm:text-right">{formatText(area?.ident)}</span>
+                  </div>
+                  <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                    <span className="text-xs font-medium text-muted-foreground sm:text-sm">UUID terytorium</span>
+                    <span className="min-w-0 wrap-break-word text-sm font-medium sm:text-right">
+                      {formatText(territory?.tpUuid)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -295,26 +417,62 @@ export default function SupervisorSettingsPage() {
             <CardHeader className="space-y-1">
               <CardTitle className="text-lg">Konfiguracja teamu</CardTitle>
               <CardDescription>
-                Ustawienia teamu: akcje (dodawanie, usuwanie, edycja) oraz połączenie z CAS
+                Uprawnienia do akcji w aplikacji (edycja, dodawanie, usuwanie)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Akcje (actionsConfig)
+              <div className="space-y-3">
+                <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-1">
+                    <div className="text-sm font-medium">Edycja akcji</div>
+                    <p className="text-xs text-muted-foreground">Czy brandmasterzy mogą edytować akcje</p>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {actionSavingKey === "isEditingAllowed" ? (
+                      <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                    ) : null}
+                    <Switch
+                      checked={!!actions?.isEditingAllowed}
+                      disabled={isClient && (busy || anyActionSaving)}
+                      onCheckedChange={(v) => void onActionToggle("isEditingAllowed", v === true)}
+                      aria-label="Zezwól na edycję akcji"
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  <InfoRow label="Edycja" value={<BoolBadge value={actions?.isEditingAllowed} />} />
-                  <InfoRow label="Dodawanie" value={<BoolBadge value={actions?.isAddingAllowed} />} />
-                  <InfoRow label="Usuwanie" value={<BoolBadge value={actions?.isDeteletingAllowed} />} />
+                <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-1">
+                    <div className="text-sm font-medium">Dodawanie akcji</div>
+                    <p className="text-xs text-muted-foreground">Czy można dodawać nowe akcje</p>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {actionSavingKey === "isAddingAllowed" ? (
+                      <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                    ) : null}
+                    <Switch
+                      checked={!!actions?.isAddingAllowed}
+                      disabled={isClient && (busy || anyActionSaving)}
+                      onCheckedChange={(v) => void onActionToggle("isAddingAllowed", v === true)}
+                      aria-label="Zezwól na dodawanie akcji"
+                    />
+                  </div>
                 </div>
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Dostęp (accessConfig)
+                <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-1">
+                    <div className="text-sm font-medium">Usuwanie akcji</div>
+                    <p className="text-xs text-muted-foreground">Czy można usuwać akcje</p>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {actionSavingKey === "isDeteletingAllowed" ? (
+                      <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                    ) : null}
+                    <Switch
+                      checked={!!actions?.isDeteletingAllowed}
+                      disabled={isClient && (busy || anyActionSaving)}
+                      onCheckedChange={(v) => void onActionToggle("isDeteletingAllowed", v === true)}
+                      aria-label="Zezwól na usuwanie akcji"
+                    />
+                  </div>
                 </div>
-                <InfoRow label="Połączenie z CAS" value={<BoolBadge value={access?.isCasConnected} />} />
               </div>
             </CardContent>
           </Card>
