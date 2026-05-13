@@ -17,6 +17,9 @@ export type SvActionRow = {
     status: string
     since: string
     until: string
+    createdAt: string
+    /** Z API jako `updatedAt` (ostatnia edycja). */
+    editedAt: string
     shop: { name: string; address: string }
     event: { idEvent: number; name: string }
   }
@@ -41,6 +44,8 @@ function flattenResponse(blocks: ActionsResponse[] | undefined): SvActionRow[] {
           status: (a.status ?? "").trim() || "UNKNOWN",
           since: a.since ?? "",
           until: a.until ?? "",
+          createdAt: a.createdAt ?? "",
+          editedAt: a.updatedAt ?? "",
           shop: {
             name: a.shop?.name ?? "",
             address: a.shop?.address ?? "",

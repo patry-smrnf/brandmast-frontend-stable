@@ -114,9 +114,10 @@ export interface AccessConfig {
 
 export interface MyData {
   requirePassword?: boolean;
-  hasTourplanner?: boolean;
-  hasOneTwoOne?: boolean;
-  kasoterminal?: number; // int64
+  /** Present on supervisor config; may be null when unknown. */
+  hasTourplanner?: boolean | null;
+  hasOneTwoOne?: boolean | null;
+  kasoterminal?: number | null; // int64
   casLogin?: string;
 }
 

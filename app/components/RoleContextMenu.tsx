@@ -135,6 +135,12 @@ export function RoleContextMenu() {
             href: "/supervisor",
             icon: <ShieldIcon className="size-4" />,
           },
+          {
+            key: "sv-settings",
+            label: "Ustawienia",
+            href: "/supervisor/settings",
+            icon: <SettingsIcon className="size-4" />,
+          },
           { key: "sep-1", label: "—" },
           {
             key: "logout",

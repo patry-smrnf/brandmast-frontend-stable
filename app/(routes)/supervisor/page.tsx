@@ -39,22 +39,23 @@ function pickRandomBrandmasterFromCluster(
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="overflow-hidden rounded-xl border border-border/80 bg-card p-4 pl-5 shadow-sm"
+          className="overflow-hidden rounded-lg border border-border/80 bg-card px-2.5 py-2 pl-3 shadow-sm sm:px-3 sm:py-2.5 sm:pl-3.5"
         >
-          <div className="flex justify-between gap-3">
-            <div className="h-4 w-48 animate-pulse rounded-md bg-muted" />
-            <div className="h-5 w-20 shrink-0 animate-pulse rounded-full bg-muted" />
+          <div className="flex justify-between gap-2">
+            <div className="h-3.5 w-40 animate-pulse rounded-md bg-muted sm:h-4 sm:w-48" />
+            <div className="h-5 w-16 shrink-0 animate-pulse rounded-full bg-muted sm:w-20" />
           </div>
-          <div className="mt-4 space-y-2">
-            <div className="h-4 w-full animate-pulse rounded-md bg-muted" />
-            <div className="h-4 w-40 animate-pulse rounded-md bg-muted" />
+          <div className="mt-1 space-y-1">
+            <div className="h-3 w-full animate-pulse rounded-md bg-muted sm:h-3.5" />
+            <div className="h-3 w-2/3 animate-pulse rounded-md bg-muted sm:h-3.5" />
           </div>
-          <div className="mt-4 flex justify-end">
-            <div className="h-8 w-24 animate-pulse rounded-md bg-muted" />
+          <div className="mt-1 flex items-start justify-between gap-2">
+            <div className="h-3 min-w-0 flex-1 animate-pulse rounded-md bg-muted" />
+            <div className="h-7 w-20 shrink-0 animate-pulse rounded-md bg-muted" />
           </div>
         </div>
       ))}
@@ -266,7 +267,7 @@ export default function SupervisorPage() {
           </div>
         </section>
 
-        <div className="mt-8 space-y-4">
+        <div className="mt-8 space-y-3">
           {isLoading ? (
             <LoadingSkeleton />
           ) : filteredRows.length === 0 ? (
@@ -285,25 +286,25 @@ export default function SupervisorPage() {
                 return (
                   <section
                     key={`collision-${shopId}-${clusterKey}-${clusterIdx}`}
-                    className="space-y-2 rounded-xl border border-amber-500/45 bg-amber-800/6 p-3 shadow-sm dark:border-amber-400/40 dark:bg-amber-900/4"
+                    className="space-y-1.5 rounded-lg border border-amber-500/45 bg-amber-800/6 p-2 shadow-sm dark:border-amber-400/40 dark:bg-amber-900/4 sm:space-y-2 sm:rounded-xl sm:p-3"
                   >
                     <div
                       role="alert"
-                      className="flex flex-col gap-3 rounded-lg border border-amber-500/35 bg-background/80 px-3 py-2.5 text-sm sm:flex-row sm:items-start sm:gap-3 dark:bg-background/60"
+                      className="flex flex-col gap-2 rounded-md border border-amber-500/35 bg-background/80 px-2 py-1.5 text-xs sm:flex-row sm:items-center sm:gap-2 sm:px-2.5 sm:py-2 dark:bg-background/60"
                     >
-                      <div className="flex min-w-0 flex-1 gap-2.5">
+                      <div className="flex min-w-0 flex-1 gap-1.5 sm:gap-2">
                         <AlertTriangleIcon
-                          className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
+                          className="mt-px size-3.5 shrink-0 text-amber-600 dark:text-amber-400 sm:mt-0.5 sm:size-4"
                           aria-hidden
                         />
                         <div className="min-w-0">
-                          <p className="font-medium text-amber-950 dark:text-amber-50">
+                          <p className="text-[11px] font-medium leading-tight text-amber-950 dark:text-amber-50 sm:text-xs">
                             Kolizja akcji w jednym sklepie
                           </p>
-                          <p className="mt-0.5 text-xs leading-snug text-amber-900/85 dark:text-amber-100/85">
+                          <p className="mt-0.5 text-[10px] leading-snug text-amber-900/85 dark:text-amber-100/85 sm:text-[11px]">
                             <span className="font-medium text-foreground">{shopName}</span>
-                            {" — "}
-                            {cluster.length} akcje maja nachodzące na siebie przedziały czasu.
+                            {" "}
+                            {cluster.length} akcje mają nachodzące na siebie przedziały czasu.
                           </p>
                         </div>
                       </div>
@@ -311,18 +312,18 @@ export default function SupervisorPage() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="h-8 shrink-0 gap-1.5 self-end sm:self-start"
+                        className="h-7 shrink-0 gap-1 self-end px-2.5 text-xs sm:h-8 sm:self-auto sm:px-3"
                         onClick={() => {
                           const winner = pickRandomBrandmasterFromCluster(cluster)
                           if (!winner) return
                           setCollisionDraw({ winner, shopName })
                         }}
                       >
-                        <ShuffleIcon className="size-3.5" aria-hidden />
+                        <ShuffleIcon className="size-3 sm:size-3.5" aria-hidden />
                         Wylosuj
                       </Button>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5 sm:space-y-2">
                       {cluster.map((row) => (
                         <SupervisorActionCard
                           key={row.action.idAction}
@@ -336,7 +337,7 @@ export default function SupervisorPage() {
                 )
               })}
               {singles.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {singles.map((row) => (
                     <SupervisorActionCard key={row.action.idAction} row={row} onApproved={refetch} />
                   ))}
