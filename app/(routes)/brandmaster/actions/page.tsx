@@ -28,6 +28,13 @@ function toEditorMonthParamFromMonthKey(monthKeyYYYYMM: string) {
   return `${yy}-${mm}`
 }
 
+function buildCreateEditorHref(monthParam: string, dateKey: string) {
+  const params = new URLSearchParams()
+  if (monthParam) params.set("month", monthParam)
+  params.set("day", dateKey)
+  return `/brandmaster/editor?${params.toString()}`
+}
+
 function getInitialSelectedDateKey() {
   // Always start on today's date; user changes the date by clicking a pill.
   return toDateKey(new Date())
@@ -204,11 +211,7 @@ export default function BrandmasterActionsPage() {
             <Button
               size="sm"
               className="shadow-sm"
-              onClick={() =>
-                router.push(
-                  editorMonthParam ? `/brandmaster/editor?month=${editorMonthParam}` : "/brandmaster/editor"
-                )
-              }
+              onClick={() => router.push(buildCreateEditorHref(editorMonthParam, selectedDateKey))}
             >
               <PlusIcon className="size-3.5" />
               Dodaj akcję
@@ -287,15 +290,7 @@ export default function BrandmasterActionsPage() {
                   <div className="text-sm text-muted-foreground">
                     ProTip: przewin sb w lewo lub prawo, powinno dzialacxd
                   </div>
-                  <Button
-                    onClick={() =>
-                      router.push(
-                        editorMonthParam
-                          ? `/brandmaster/editor?month=${editorMonthParam}`
-                          : "/brandmaster/editor"
-                      )
-                    }
-                  >
+                  <Button onClick={() => router.push(buildCreateEditorHref(editorMonthParam, selectedDateKey))}>
                     <PlusIcon className="size-3.5" />
                     Dodaj
                   </Button>

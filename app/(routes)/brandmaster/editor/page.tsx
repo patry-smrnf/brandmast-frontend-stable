@@ -14,10 +14,11 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
+import { pl } from "react-day-picker/locale"
 import { brandmastApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-import { parseIso, toDateKey, toMonthKey } from "../actions/date-utils"
+import { parseIso, startOfDay, toDateKey, toMonthKey } from "../actions/date-utils"
 import type { BrandmasterAction } from "../actions/types"
 import type { ActionDetails, ShopResponse } from "@/lib/api/generated/types"
 
@@ -67,6 +68,29 @@ function parseEditorMonthToBackendMonth(raw: string | null): string | null {
   }
 
   return null
+}
+
+/** Query `day` for new actions only: `YYYY-MM-DD` (same as `toDateKey`). Not sent to the API. */
+function parseEditorDayParam(raw: string | null): Date | null {
+  const s = (raw ?? "").trim()
+  if (!s) return null
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  if (!m) return null
+  const y = Number(m[1])
+  const mo = Number(m[2])
+  const d = Number(m[3])
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null
+  const dt = new Date(y, mo - 1, d)
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null
+  return dt
+}
+
+function createInitialSelectedDates(searchParams: { get: (k: string) => string | null }) {
+  if (parseActionId(searchParams.get("idAction")) != null) {
+    return [new Date()] as Date[]
+  }
+  const fromDay = parseEditorDayParam(searchParams.get("day"))
+  return fromDay ? [startOfDay(fromDay)] : [new Date()]
 }
 
 function normalizeTime(raw: string): { ok: true; value: string } | { ok: false; reason: string } {
@@ -277,7 +301,7 @@ function BrandmasterEditorInner() {
   const [endTime, setEndTime] = React.useState("")
 
   const [allowMultiDates, setAllowMultiDates] = React.useState(false)
-  const [selectedDates, setSelectedDates] = React.useState<Date[]>(() => [new Date()])
+  const [selectedDates, setSelectedDates] = React.useState<Date[]>(() => createInitialSelectedDates(searchParams))
 
   const [shopQuery, setShopQuery] = React.useState("")
   const [shops, setShops] = React.useState<ShopResponse[]>([])
@@ -621,12 +645,18 @@ function BrandmasterEditorInner() {
                     {isMultiDatesEffective ? (
                       <Calendar
                         mode="multiple"
+                        locale={pl}
+                        weekStartsOn={1}
+                        defaultMonth={selectedDates[0] ?? new Date()}
                         selected={selectedDates}
                         onSelect={(val) => setSelectedDates(val ?? [])}
                       />
                     ) : (
                       <Calendar
                         mode="single"
+                        locale={pl}
+                        weekStartsOn={1}
+                        defaultMonth={selectedDates[0] ?? new Date()}
                         selected={selectedDates[0]}
                         onSelect={(val) => setSelectedDates(val ? [val] : [])}
                       />
