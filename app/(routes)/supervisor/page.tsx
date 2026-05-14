@@ -3,6 +3,7 @@
 import * as React from "react"
 import {
   AlertTriangleIcon,
+  BanIcon,
   CalendarDaysIcon,
   ListChecksIcon,
   PenLineIcon,
@@ -21,6 +22,8 @@ import { SupervisorActionCard } from "./_components/SupervisorActionCard"
 import { getScheduleConflictLayout } from "./conflict-utils"
 import type { SvActionRow } from "./use-sv-actions"
 import { useSvActions } from "./use-sv-actions"
+
+type SvStatusFilterMode = "all" | "editable" | "cancel_requested"
 
 function pickRandomBrandmasterFromCluster(
   cluster: SvActionRow[]
@@ -66,7 +69,7 @@ function LoadingSkeleton() {
 export default function SupervisorPage() {
   const [selectedDateKey, setSelectedDateKey] = React.useState(() => toDateKey(new Date()))
   const [search, setSearch] = React.useState("")
-  const [editableOnly, setEditableOnly] = React.useState(false)
+  const [statusFilter, setStatusFilter] = React.useState<SvStatusFilterMode>("all")
   const [eventFilter, setEventFilter] = React.useState<string>("")
   const [collisionDraw, setCollisionDraw] = React.useState<{
     winner: { name: string; surname: string }
@@ -107,8 +110,10 @@ export default function SupervisorPage() {
       })
     }
 
-    if (editableOnly) {
+    if (statusFilter === "editable") {
       list = list.filter((r) => r.action.status.toUpperCase() === "EDITABLE")
+    } else if (statusFilter === "cancel_requested") {
+      list = list.filter((r) => r.action.status.toUpperCase() === "CANCEL_REQUESTED")
     }
 
     const eventId = eventFilter ? Number(eventFilter) : 0
@@ -117,7 +122,7 @@ export default function SupervisorPage() {
     }
 
     return list
-  }, [rows, selectedDateKey, search, editableOnly, eventFilter])
+  }, [rows, selectedDateKey, search, statusFilter, eventFilter])
 
   const countForDayAll = React.useMemo(() => {
     return rows.filter((r) => {
@@ -192,7 +197,7 @@ export default function SupervisorPage() {
                         <ListChecksIcon className="size-3.5" />
                         <span>
                           <span className="font-medium text-foreground">{filteredRows.length}</span>
-                          {editableOnly || search.trim() || eventFilter
+                          {statusFilter !== "all" || search.trim() || eventFilter
                             ? ` pasujących (${countForDayAll} tego dnia w sumie)`
                             : ` akcji tego dnia`}
                         </span>
@@ -230,40 +235,62 @@ export default function SupervisorPage() {
             autoComplete="off"
           />
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div
+            className="grid w-full grid-cols-3 gap-1 rounded-xl border border-border bg-muted/50 p-1 shadow-xs"
+            role="group"
+            aria-label="Filtr wg statusu akcji"
+          >
             <Button
               type="button"
-              variant={editableOnly ? "default" : "outline"}
+              variant="ghost"
               size="sm"
-              aria-pressed={editableOnly}
-              onClick={() => setEditableOnly((v) => !v)}
-              className="h-9 w-full justify-center gap-2 rounded-full shadow-xs sm:w-auto"
+              aria-pressed={statusFilter === "all"}
+              aria-label="Wszystkie akcje, niezależnie od statusu"
+              onClick={() => setStatusFilter("all")}
+              className={cn(
+                "h-9 w-full min-w-0 justify-center gap-1.5 rounded-lg px-1.5 text-[11px] font-medium sm:gap-2 sm:px-2 sm:text-xs",
+                statusFilter === "all"
+                  ? "bg-background text-foreground shadow-sm hover:bg-background"
+                  : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
+              )}
             >
-              <PenLineIcon className="size-3.5 opacity-90" aria-hidden />
-              Tylko EDITABLE
+              <ListChecksIcon className="size-3 shrink-0 opacity-90 sm:size-3.5" aria-hidden />
+              <span className="truncate">Wszystkie</span>
             </Button>
-
-            <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:min-w-[min(100%,14rem)] sm:max-w-xs">
-              <Label htmlFor="sv-event" className="text-xs text-muted-foreground sm:text-right">
-                Event name
-              </Label>
-              <select
-                id="sv-event"
-                value={eventFilter}
-                onChange={(e) => setEventFilter(e.target.value)}
-                className={cn(
-                  "h-9 w-full rounded-lg border border-input bg-background px-3 py-1 text-sm shadow-xs",
-                  "outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                )}
-              >
-                <option value="">Wszystkie eventy</option>
-                {eventOptions.map(([id, name]) => (
-                  <option key={id} value={String(id)}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-pressed={statusFilter === "editable"}
+              aria-label="Tylko akcje ze statusem EDITABLE"
+              onClick={() => setStatusFilter("editable")}
+              className={cn(
+                "h-9 w-full min-w-0 justify-center gap-1.5 rounded-lg px-1.5 text-[11px] font-medium sm:gap-2 sm:px-2 sm:text-xs",
+                statusFilter === "editable"
+                  ? "bg-background text-foreground shadow-sm hover:bg-background"
+                  : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
+              )}
+            >
+              <PenLineIcon className="size-3 shrink-0 opacity-90 sm:size-3.5" aria-hidden />
+              <span className="truncate">EDITABLE</span>
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-pressed={statusFilter === "cancel_requested"}
+              aria-label="Odwołania ze statusem CANCEL_REQUESTED"
+              onClick={() => setStatusFilter("cancel_requested")}
+              className={cn(
+                "h-9 w-full min-w-0 justify-center gap-1.5 rounded-lg px-1.5 text-[11px] font-medium sm:gap-2 sm:px-2 sm:text-xs",
+                statusFilter === "cancel_requested"
+                  ? "bg-background text-foreground shadow-sm hover:bg-background"
+                  : "text-muted-foreground hover:bg-background/70 hover:text-foreground"
+              )}
+            >
+              <BanIcon className="size-3 shrink-0 opacity-90 sm:size-3.5" aria-hidden />
+              <span className="truncate">Odwołania</span>
+            </Button>
           </div>
         </section>
 

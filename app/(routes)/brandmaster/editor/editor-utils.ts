@@ -210,7 +210,13 @@ export function coerceAction(a: ActionDetails | undefined): BrandmasterAction | 
     idAction: a.idAction ?? 0,
     status: (() => {
       const u = (a.status ?? "").toUpperCase()
-      if (u === "ACCEPTED" || u === "PENDING" || u === "REJECTED" || u === "EDITABLE") {
+      if (
+        u === "ACCEPTED" ||
+        u === "CANCEL_REQUESTED" ||
+        u === "PENDING" ||
+        u === "REJECTED" ||
+        u === "EDITABLE"
+      ) {
         return u as BrandmasterAction["status"]
       }
       return "PENDING"

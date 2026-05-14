@@ -7,7 +7,13 @@ import type { ActionStatus, ActionsPayload } from "./types"
 
 function coerceStatus(status: string | undefined | null): ActionStatus {
   const u = (status ?? "").toUpperCase()
-  if (u === "ACCEPTED" || u === "PENDING" || u === "REJECTED" || u === "EDITABLE") {
+  if (
+    u === "ACCEPTED" ||
+    u === "CANCEL_REQUESTED" ||
+    u === "PENDING" ||
+    u === "REJECTED" ||
+    u === "EDITABLE"
+  ) {
     return u as ActionStatus
   }
   return "PENDING"

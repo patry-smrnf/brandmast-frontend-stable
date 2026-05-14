@@ -1,4 +1,4 @@
-export type ActionStatus = "ACCEPTED" | "PENDING" | "REJECTED" | "EDITABLE"
+export type ActionStatus = "ACCEPTED" | "CANCEL_REQUESTED" | "PENDING" | "REJECTED" | "EDITABLE"
 
 export type BrandmasterAction = {
   idAction: number

@@ -22,6 +22,8 @@ function statusBadgeVariant(status: ActionStatus): React.ComponentProps<typeof B
   switch (status) {
     case "ACCEPTED":
       return "success"
+    case "CANCEL_REQUESTED":
+      return "warning"
     case "PENDING":
       return "warning"
     case "REJECTED":
@@ -37,6 +39,8 @@ function statusLabel(status: ActionStatus) {
   switch (status) {
     case "ACCEPTED":
       return "Zaakceptowana"
+    case "CANCEL_REQUESTED":
+      return "Prosba o odwolanie"
     case "PENDING":
       return "Oczekuje ( ZGLOS TO DO MN )"
     case "REJECTED":
@@ -56,6 +60,7 @@ export type ActionCardProps = {
   editDisabled?: boolean
   deleteDisabled?: boolean
   onDelete?: () => void | Promise<void>
+  onCancel?: () => void | Promise<void>
 }
 
 export function ActionCard({
@@ -66,9 +71,11 @@ export function ActionCard({
   editDisabled = false,
   deleteDisabled = false,
   onDelete,
+  onCancel,
 }: ActionCardProps) {
   const router = useRouter()
   const [deletePending, setDeletePending] = React.useState(false)
+  const [cancelPending, setCancelPending] = React.useState(false)
   const sinceDate = parseIso(action.since) ?? new Date()
   const untilDate = parseIso(action.until) ?? sinceDate
   const timeLabel = `${formatTime(sinceDate)}–${formatTime(untilDate)}`
@@ -76,6 +83,7 @@ export function ActionCard({
   const showEdit = action.status !== "ACCEPTED"
   const showDelete = action.status === "EDITABLE"
   const deleteButtonDisabled = deletePending || deleteDisabled || !onDelete
+  const cancelButtonDisabled = cancelPending || !onCancel
   const monthParam = toEditorMonthParam(sinceDate)
 
   async function handleDelete() {
@@ -86,6 +94,17 @@ export function ActionCard({
       await onDelete()
     } finally {
       setDeletePending(false)
+    }
+  }
+
+  async function handleCancel() {
+    if (cancelButtonDisabled) return
+    if (!window.confirm("Na pewno odwołać tę akcję?")) return
+    setCancelPending(true)
+    try {
+      await onCancel()
+    } finally {
+      setCancelPending(false)
     }
   }
 
@@ -173,7 +192,12 @@ export function ActionCard({
                 </Button>
               ) : null}
               {showCancel ? (
-                <Button variant="destructive" size="sm">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={cancelButtonDisabled}
+                  onClick={() => void handleCancel()}
+                >
                   <XCircleIcon className="size-4" />
                   Odwołaj
                 </Button>

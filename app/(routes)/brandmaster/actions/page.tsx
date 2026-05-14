@@ -43,6 +43,21 @@ function getInitialSelectedDateKey() {
   return toDateKey(new Date())
 }
 
+function actionDurationHours(sinceIso: string, untilIso: string): number {
+  const start = parseIso(sinceIso)
+  const end = parseIso(untilIso)
+  if (!start || !end) return 0
+  return Math.max(0, (end.getTime() - start.getTime()) / 3_600_000)
+}
+
+/** Wyświetlanie godzin z jedną cyfrą po przecinku (np. 7,5 h). */
+function formatHoursPl(hours: number): string {
+  if (!Number.isFinite(hours) || hours <= 0) return "0 h"
+  const rounded = Math.round(hours * 10) / 10
+  const n = Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(".", ",")
+  return `${n} h`
+}
+
 function LoadingActionsSkeleton() {
   return (
     <div className="space-y-3">
@@ -164,6 +179,22 @@ export default function BrandmasterActionsPage() {
       .sort((a, b) => (a.sinceDate!.getTime() ?? 0) - (b.sinceDate!.getTime() ?? 0))
   }, [data.actions, selectedDateKey])
 
+  const monthTotalHours = React.useMemo(() => {
+    return data.actions.reduce((sum, a) => sum + actionDurationHours(a.since, a.until), 0)
+  }, [data.actions])
+
+  /** Suma godzin akcji, które **rozpoczynają się** w wybranym dniu lub później w tym samym miesiącu (dane już są z fetch dla miesiąca). */
+  const hoursFromSelectedDayInMonth = React.useMemo(() => {
+    return data.actions.reduce((sum, a) => {
+      const d = parseIso(a.since)
+      if (!d) return sum
+      const key = toDateKey(d)
+      if (key < selectedDateKey) return sum
+      if (!key.startsWith(`${selectedMonthKey}-`)) return sum
+      return sum + actionDurationHours(a.since, a.until)
+    }, 0)
+  }, [data.actions, selectedDateKey, selectedMonthKey])
+
   const initials = `${data.brandmaster.name[0] ?? ""}${data.brandmaster.surname[0] ?? ""}`.toUpperCase()
 
   const handleDeleteAction = React.useCallback(
@@ -178,6 +209,23 @@ export default function BrandmasterActionsPage() {
         refetch()
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Nie udało się usunąć akcji.")
+      }
+    },
+    [refetch]
+  )
+
+  const handleCancelAction = React.useCallback(
+    async (idAction: number) => {
+      try {
+        const res = await brandmastApi.cancelBMAction({ idAction })
+        if (res?.success === false) {
+          toast.error(typeof res.message === "string" ? res.message : "Nie udało się odwołać akcji.")
+          return
+        }
+        toast.success("Akcja została odwołana.")
+        refetch()
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Nie udało się odwołać akcji.")
       }
     },
     [refetch]
@@ -223,12 +271,32 @@ export default function BrandmasterActionsPage() {
                       <AlertTriangleIcon className="size-3.5 text-destructive" />
                       <span className="truncate">{error}</span>
                     </span>
+                  ) : data.actions.length > 0 ? (
+                    <span className="inline-flex items-start gap-1.5">
+                      <ListChecksIcon className="mt-0.5 size-3.5 shrink-0" />
+                      <span className="flex min-w-0 flex-col gap-0.5">
+                        <span>
+                          Akcje w tym miesiącu:{" "}
+                          <span className="font-medium tabular-nums text-foreground">{data.actions.length}</span>
+                        </span>
+                        <span>
+                        godziny akcji w tym miesiącu:{" "}
+                          <span className="font-medium tabular-nums text-foreground">
+                            {formatHoursPl(monthTotalHours)}
+                          </span>
+                        </span>
+                        <span>
+                          Godziny od wybranego dnia:{" "}
+                          <span className="font-medium tabular-nums text-foreground">
+                            {formatHoursPl(hoursFromSelectedDayInMonth)}
+                          </span>
+                        </span>
+                      </span>
+                    </span>
                   ) : (
                     <span className="inline-flex items-center gap-1.5">
                       <ListChecksIcon className="size-3.5" />
-                      {data.actions.length > 0
-                        ? `Akcje w tym miesiącu: ${data.actions.length}`
-                        : "Brak akcji w tym miesiącu"}
+                      Brak akcji w tym miesiącu
                     </span>
                   )}
                 </div>
@@ -288,25 +356,6 @@ export default function BrandmasterActionsPage() {
         <Separator className="my-5" />
 
         <section aria-label="Dyspo" className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
-              <h2 className="inline-flex items-center gap-2 truncate text-lg font-semibold tracking-tight">
-                <ListChecksIcon className="size-5 text-muted-foreground" />
-                Dyspo
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {isLoading
-                  ? "Ładowanie akcji…"
-                  : actionsForSelectedDay.length > 0
-                    ? `Masz ${actionsForSelectedDay.length} ${
-                        actionsForSelectedDay.length === 1 ? "akcję" : "akcje"
-                      } tego dnia.`
-                    : "Brak akcji na wybrany dzień."}
-              </p>
-            </div>
-
-          </div>
-
           <div className="space-y-3">
             {isLoading ? (
               <LoadingActionsSkeleton />
@@ -340,6 +389,7 @@ export default function BrandmasterActionsPage() {
                   editDisabled={isEditDisabled}
                   deleteDisabled={isDeleteDisabled}
                   onDelete={() => handleDeleteAction(action.idAction)}
+                  onCancel={() => handleCancelAction(action.idAction)}
                 />
               ))
             )}

@@ -57,6 +57,11 @@ export interface ActionRequest {
   status?: string;
 }
 
+/** POST /api/action/sv/cancel, POST /api/action/bm/cancel */
+export interface ActionIdRequest {
+  idAction?: number; // int64
+}
+
 export interface ApiResponseObject {
   errorCode?: string;
   message?: string;
@@ -110,10 +115,8 @@ export interface ActionsConfig {
   isDeletingAllowed?: boolean;
 }
 
-/** POST /api/action/bm/delete */
-export interface DeleteBmActionRequest {
-  idAction: number; // int64
-}
+/** POST /api/action/bm/delete — ten sam kształt co `ActionIdRequest` */
+export type DeleteBmActionRequest = ActionIdRequest;
 
 export interface AccessConfig {
   isCasConnected?: boolean;

@@ -1,6 +1,7 @@
 import type { AxiosInstance } from "axios";
 import { createBrandmastHttpClient, type RequestOptions } from "./client";
 import type {
+  ActionIdRequest,
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
   ApiResponseListShopResponse,
@@ -39,6 +40,14 @@ export class BrandmastApi {
   }
 
   /**
+   * POST /api/action/sv/cancel
+   */
+  async cancelSvAction(body: ActionIdRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/action/sv/cancel", body, options);
+    return res.data;
+  }
+
+  /**
    * POST /api/action/bm/update
    */
   async updateAction(body: UpdateActionRequest, options?: RequestOptions) {
@@ -59,6 +68,14 @@ export class BrandmastApi {
    */
   async deleteBmAction(body: DeleteBmActionRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseObject>("/api/action/bm/delete", body, options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/action/bm/cancel
+   */
+  async cancelBMAction(body: ActionIdRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/action/bm/cancel", body, options);
     return res.data;
   }
 
