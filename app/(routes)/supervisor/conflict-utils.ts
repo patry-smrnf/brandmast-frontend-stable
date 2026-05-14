@@ -27,8 +27,15 @@ function union(parent: number[], i: number, j: number) {
   if (ri !== rj) parent[ri] = rj
 }
 
+/** True when supervisor should see this overlap as a collision (needs attention). */
+function clusterHasEditable(group: SvActionRow[]): boolean {
+  return group.some((r) => r.action.status.toUpperCase() === "EDITABLE")
+}
+
 /**
  * Groups rows that belong to the same shop and have pairwise overlapping [since, until].
+ * Overlaps where **every** action is ACCEPTED are ignored (no cluster, cards stay in singles).
+ * If at least one action is EDITABLE, the overlap is shown as a cluster like before.
  * Returns clusters of size ≥2 plus remaining rows as singles.
  */
 export function getScheduleConflictLayout(rows: SvActionRow[]): {
@@ -63,6 +70,7 @@ export function getScheduleConflictLayout(rows: SvActionRow[]): {
     const group = indices
       .map((i) => rows[i])
       .sort((a, b) => intervalMs(a).start - intervalMs(b).start)
+    if (!clusterHasEditable(group)) continue
     clusters.push(group)
     for (const r of group) conflictingActionIds.add(r.action.idAction)
   }

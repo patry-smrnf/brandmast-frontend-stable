@@ -101,24 +101,26 @@ export function SupervisorActionCard({ row, onApproved, scheduleConflict }: Supe
             <span className="text-muted-foreground/35 select-none" aria-hidden>
               ·
             </span>
-            <span className="inline-flex min-w-0 items-center gap-0.5">
-              <CalendarDaysIcon className="size-3 shrink-0" aria-hidden />
-              <span className="shrink-0 text-muted-foreground max-sm:hidden">Utworzono:</span>
-              <span className="shrink-0 text-muted-foreground sm:hidden" title="Utworzono">
-                Utw.
+            <span className="inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-md border border-border/50 bg-muted/25 px-1.5 py-px sm:py-0.5">
+              <span className="inline-flex min-w-0 items-center gap-0.5">
+                <CalendarDaysIcon className="size-3 shrink-0" aria-hidden />
+                <span className="shrink-0 text-muted-foreground max-sm:hidden">Utworzono:</span>
+                <span className="shrink-0 text-muted-foreground sm:hidden" title="Utworzono">
+                  Utw.
+                </span>
+                <span className="min-w-0 truncate text-foreground/90">{formatAuditStamp(action.createdAt)}</span>
               </span>
-              <span className="min-w-0 truncate text-foreground/90">{formatAuditStamp(action.createdAt)}</span>
-            </span>
-            <span className="text-muted-foreground/35 select-none" aria-hidden>
-              ·
-            </span>
-            <span className="inline-flex min-w-0 items-center gap-0.5">
-              <PenLineIcon className="size-3 shrink-0" aria-hidden />
-              <span className="shrink-0 text-muted-foreground max-sm:hidden">Edytowano:</span>
-              <span className="shrink-0 text-muted-foreground sm:hidden" title="Edytowano">
-                Ed.
+              <span className="text-muted-foreground/35 select-none" aria-hidden>
+                ·
               </span>
-              <span className="min-w-0 truncate text-foreground/90">{formatAuditStamp(action.editedAt)}</span>
+              <span className="inline-flex min-w-0 items-center gap-0.5">
+                <PenLineIcon className="size-3 shrink-0" aria-hidden />
+                <span className="shrink-0 text-muted-foreground max-sm:hidden">Edytowano:</span>
+                <span className="shrink-0 text-muted-foreground sm:hidden" title="Edytowano">
+                  Ed.
+                </span>
+                <span className="min-w-0 truncate text-foreground/90">{formatAuditStamp(action.editedAt)}</span>
+              </span>
             </span>
           </div>
           <Button

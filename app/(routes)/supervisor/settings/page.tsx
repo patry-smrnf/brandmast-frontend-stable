@@ -391,22 +391,12 @@ export default function SupervisorSettingsPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-2">
                   <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                    <span className="text-xs font-medium text-muted-foreground sm:text-sm">ID zespołu</span>
-                    <span className="text-sm font-medium sm:text-right">{formatText(team?.id)}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <span className="text-xs font-medium text-muted-foreground sm:text-sm">Terytorium</span>
                     <span className="text-sm font-medium sm:text-right">{formatText(territory?.ident)}</span>
                   </div>
                   <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     <span className="text-xs font-medium text-muted-foreground sm:text-sm">Obszar</span>
                     <span className="text-sm font-medium sm:text-right">{formatText(area?.ident)}</span>
-                  </div>
-                  <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                    <span className="text-xs font-medium text-muted-foreground sm:text-sm">UUID terytorium</span>
-                    <span className="min-w-0 wrap-break-word text-sm font-medium sm:text-right">
-                      {formatText(territory?.tpUuid)}
-                    </span>
                   </div>
                 </div>
               </div>
