@@ -84,16 +84,7 @@ export default function SupervisorPage() {
   const monthKey = React.useMemo(() => toMonthKey(selectedDate), [selectedDate])
   const headerDate = React.useMemo(() => formatHeaderDate(selectedDate), [selectedDate])
 
-  const { rows, isLoading, error, refetch } = useSvActions(monthKey)
-
-  const eventOptions = React.useMemo(() => {
-    const map = new Map<number, string>()
-    for (const r of rows) {
-      const id = r.action.event.idEvent
-      if (id) map.set(id, r.action.event.name || `Wydarzenie #${id}`)
-    }
-    return [...map.entries()].sort((a, b) => a[1].localeCompare(b[1], "pl"))
-  }, [rows])
+  const { rows, isLoading, error, refetch, patchSvActionRow } = useSvActions(monthKey)
 
   const filteredRows = React.useMemo(() => {
     let list = rows.filter((r) => {
@@ -358,6 +349,7 @@ export default function SupervisorPage() {
                           key={row.action.idAction}
                           row={row}
                           onApproved={refetch}
+                          onPatched={patchSvActionRow}
                           scheduleConflict
                         />
                       ))}
@@ -368,7 +360,12 @@ export default function SupervisorPage() {
               {singles.length > 0 ? (
                 <div className="space-y-2">
                   {singles.map((row) => (
-                    <SupervisorActionCard key={row.action.idAction} row={row} onApproved={refetch} />
+                    <SupervisorActionCard
+                      key={row.action.idAction}
+                      row={row}
+                      onApproved={refetch}
+                      onPatched={patchSvActionRow}
+                    />
                   ))}
                 </div>
               ) : null}

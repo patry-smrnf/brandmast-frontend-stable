@@ -8,22 +8,25 @@ import { cn } from "@/lib/utils"
 
 import { formatPlDateTimeFromIso, formatTime, parseIso } from "@/lib/dates/date-utils"
 import { getActionStatusPresentation } from "@/lib/action-status"
-import type { SvActionRow } from "../use-sv-actions"
+import type { SvActionLocalPatch, SvActionRow } from "../use-sv-actions"
 import { SupervisorApproveSheet } from "./SupervisorApproveSheet"
+import { SupervisorEditSheet } from "./SupervisorEditSheet"
 
 export type SupervisorActionCardProps = {
   row: SvActionRow
   onApproved: () => void
+  onPatched: (patch: SvActionLocalPatch) => void
   /** Nakładająca się z inną akcją w tym samym sklepie (ten sam dzień). */
   scheduleConflict?: boolean
 }
 
-export function SupervisorActionCard({ row, onApproved, scheduleConflict }: SupervisorActionCardProps) {
+export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConflict }: SupervisorActionCardProps) {
   const { brandmaster, action } = row
   const sinceDate = parseIso(action.since) ?? new Date()
   const untilDate = parseIso(action.until) ?? sinceDate
   const timeLabel = `${formatTime(sinceDate)} – ${formatTime(untilDate)}`
   const [approveOpen, setApproveOpen] = React.useState(false)
+  const [editOpen, setEditOpen] = React.useState(false)
 
   const pres = getActionStatusPresentation(action.status)
   const canApprove = pres.supervisorCanApprove
@@ -45,6 +48,18 @@ export function SupervisorActionCard({ row, onApproved, scheduleConflict }: Supe
         aria-hidden
       />
       <div className="px-2.5 py-2 pl-3 sm:px-3 sm:py-2.5 sm:pl-3.5">
+        <div
+          role="button"
+          tabIndex={0}
+          className="cursor-pointer rounded-md outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={() => setEditOpen(true)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              setEditOpen(true)
+            }
+          }}
+        >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <p className="flex min-w-0 flex-wrap items-center gap-1 text-xs font-semibold leading-tight text-foreground sm:gap-1.5 sm:text-sm sm:leading-snug">
@@ -99,10 +114,17 @@ export function SupervisorActionCard({ row, onApproved, scheduleConflict }: Supe
               </span>
             </span>
           </div>
+        </div>
+        </div>
+
+        <div className="mt-1.5 flex justify-end sm:mt-2">
           <Button
             size="sm"
             disabled={!canApprove}
-            onClick={() => setApproveOpen(true)}
+            onClick={(e) => {
+              e.stopPropagation()
+              setApproveOpen(true)
+            }}
             className="h-7 shrink-0 px-2.5 text-xs sm:h-8 sm:px-3"
           >
             Approve
@@ -115,6 +137,13 @@ export function SupervisorActionCard({ row, onApproved, scheduleConflict }: Supe
         onOpenChange={setApproveOpen}
         row={row}
         onAccepted={onApproved}
+      />
+
+      <SupervisorEditSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        row={row}
+        onPatched={onPatched}
       />
     </article>
   )

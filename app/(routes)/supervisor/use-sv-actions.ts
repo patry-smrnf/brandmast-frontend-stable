@@ -26,6 +26,16 @@ export type SvActionRow = {
   }
 }
 
+/** Lokalna aktualizacja po `updateSvAction` bez ponownego fetcha. */
+export type SvActionLocalPatch = {
+  idAction: number
+  idShop: number
+  since: string
+  until: string
+  shop: { name: string; address: string }
+  editedAt: string
+}
+
 function flattenResponse(blocks: ActionsResponse[] | undefined): SvActionRow[] {
   const out: SvActionRow[] = []
   for (const block of blocks ?? []) {
@@ -70,6 +80,26 @@ export function useSvActions(monthKey: string) {
 
   const refetch = React.useCallback(() => setTick((t) => t + 1), [])
 
+  const patchSvActionRow = React.useCallback((patch: SvActionLocalPatch) => {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.action.idAction !== patch.idAction
+          ? r
+          : {
+              ...r,
+              action: {
+                ...r.action,
+                idShop: patch.idShop,
+                since: patch.since,
+                until: patch.until,
+                editedAt: patch.editedAt,
+                shop: { ...r.action.shop, ...patch.shop },
+              },
+            }
+      )
+    )
+  }, [])
+
   React.useEffect(() => {
     let cancelled = false
 
@@ -100,5 +130,5 @@ export function useSvActions(monthKey: string) {
     }
   }, [monthKey, tick])
 
-  return { rows, isLoading, error, refetch }
+  return { rows, isLoading, error, refetch, patchSvActionRow }
 }
