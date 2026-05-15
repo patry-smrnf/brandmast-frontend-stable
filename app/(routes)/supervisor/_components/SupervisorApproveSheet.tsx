@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { brandmastApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
-import { formatTime, parseIso } from "../../brandmaster/actions/date-utils"
+import { formatTime, parseIso } from "@/lib/dates/date-utils"
 import { sanitizeActionTitle, splitActionIntoMaxFourHourSegments } from "../split-action-segments"
 import type { SvActionRow } from "../use-sv-actions"
 

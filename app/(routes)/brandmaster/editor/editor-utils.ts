@@ -1,7 +1,7 @@
 import { brandmastApi } from "@/lib/api"
 import type { ActionDetails, ShopResponse } from "@/lib/api/generated/types"
 
-import { startOfDay, toMonthKey } from "../actions/date-utils"
+import { startOfDay, toMonthKey } from "@/lib/dates/date-utils"
 import type { BrandmasterAction } from "../actions/types"
 
 import type { EditorShopMapMarker } from "./shops-map"

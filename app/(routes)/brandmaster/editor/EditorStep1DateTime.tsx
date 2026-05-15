@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { pl } from "react-day-picker/locale"
 import { cn } from "@/lib/utils"
 
-import { toDateKey } from "../actions/date-utils"
+import { toDateKey } from "@/lib/dates/date-utils"
 import { formatDatePL } from "./editor-utils"
 
 export type EditorStep1DateTimeProps = {

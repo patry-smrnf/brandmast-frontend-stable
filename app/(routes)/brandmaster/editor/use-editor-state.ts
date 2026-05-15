@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { brandmastApi } from "@/lib/api"
 import type { ShopResponse } from "@/lib/api/generated/types"
 
-import { parseIso, toDateKey } from "../actions/date-utils"
+import { parseIso, toDateKey } from "@/lib/dates/date-utils"
 import type { BrandmasterAction } from "../actions/types"
 
 import {

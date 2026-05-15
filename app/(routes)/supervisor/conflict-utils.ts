@@ -1,4 +1,4 @@
-import { parseIso } from "../brandmaster/actions/date-utils"
+import { parseIso } from "@/lib/dates/date-utils"
 import type { SvActionRow } from "./use-sv-actions"
 
 function intervalMs(row: SvActionRow): { start: number; end: number } {

@@ -1,4 +1,4 @@
-import { parseIso } from "../brandmaster/actions/date-utils"
+import { parseIso } from "@/lib/dates/date-utils"
 
 /** Maksymalna długość jednej podakcji (4 godziny). */
 export const MAX_SUBACTION_DURATION_MS = 4 * 60 * 60 * 1000

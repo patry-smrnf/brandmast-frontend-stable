@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ShopResponse } from "@/lib/api/generated/types"
 
-import { toDateKey } from "../actions/date-utils"
+import { toDateKey } from "@/lib/dates/date-utils"
 import { buildShopLabel, formatDatePL } from "./editor-utils"
 
 export type EditorStep3SummaryProps = {
