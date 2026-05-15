@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-import { formatTime, parseIso } from "../../brandmaster/actions/date-utils"
+import { formatPlDateTimeFromIso, formatTime, parseIso } from "../../brandmaster/actions/date-utils"
 import type { SvActionRow } from "../use-sv-actions"
 import { SupervisorApproveSheet } from "./SupervisorApproveSheet"
 
@@ -19,12 +19,6 @@ function statusBadgeVariant(
   if (u === "REJECTED") return "destructive"
   if (u === "EDITABLE") return "outline"
   return "secondary"
-}
-
-function formatAuditStamp(iso: string) {
-  const s = iso.trim()
-  if (!s) return "—"
-  return s.length >= 19 ? s.slice(0, 19).replace("T", " ") : s
 }
 
 function statusLabel(status: string) {
@@ -108,7 +102,7 @@ export function SupervisorActionCard({ row, onApproved, scheduleConflict }: Supe
                 <span className="shrink-0 text-muted-foreground sm:hidden" title="Utworzono">
                   Utw.
                 </span>
-                <span className="min-w-0 truncate text-foreground/90">{formatAuditStamp(action.createdAt)}</span>
+                <span className="min-w-0 truncate text-foreground/90">{formatPlDateTimeFromIso(action.createdAt)}</span>
               </span>
               <span className="text-muted-foreground/35 select-none" aria-hidden>
                 ·
@@ -119,7 +113,7 @@ export function SupervisorActionCard({ row, onApproved, scheduleConflict }: Supe
                 <span className="shrink-0 text-muted-foreground sm:hidden" title="Edytowano">
                   Ed.
                 </span>
-                <span className="min-w-0 truncate text-foreground/90">{formatAuditStamp(action.editedAt)}</span>
+                <span className="min-w-0 truncate text-foreground/90">{formatPlDateTimeFromIso(action.editedAt)}</span>
               </span>
             </span>
           </div>

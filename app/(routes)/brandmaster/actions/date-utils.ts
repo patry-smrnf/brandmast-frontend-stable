@@ -42,3 +42,22 @@ export function formatTime(d: Date) {
   return new Intl.DateTimeFormat("pl-PL", { hour: "2-digit", minute: "2-digit" }).format(d)
 }
 
+/** Data i godzina w locale pl-PL, w lokalnej strefie przeglądarki (jak {@link formatTime}). */
+export function formatPlDateTime(d: Date) {
+  return new Intl.DateTimeFormat("pl-PL", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d)
+}
+
+export function formatPlDateTimeFromIso(iso: string) {
+  const s = iso.trim()
+  if (!s) return "—"
+  const d = parseIso(s)
+  if (!d) return "—"
+  return formatPlDateTime(d)
+}
+
