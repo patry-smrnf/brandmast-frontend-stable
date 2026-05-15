@@ -1,8 +1,10 @@
-export type ActionStatus = "ACCEPTED" | "CANCEL_REQUESTED" | "PENDING" | "REJECTED" | "EDITABLE"
+export type { ActionStatus, NormalizedActionStatus } from "@/lib/action-status"
+
+import type { NormalizedActionStatus } from "@/lib/action-status"
 
 export type BrandmasterAction = {
   idAction: number
-  status: ActionStatus
+  status: NormalizedActionStatus
   since: string
   until: string
   createdAt: string
@@ -36,4 +38,3 @@ export type ActionsPayload = {
   }
   actions: BrandmasterAction[]
 }
-

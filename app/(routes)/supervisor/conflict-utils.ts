@@ -29,7 +29,7 @@ function union(parent: number[], i: number, j: number) {
 
 /** True when supervisor should see this overlap as a collision (needs attention). */
 function clusterHasEditable(group: SvActionRow[]): boolean {
-  return group.some((r) => r.action.status.toUpperCase() === "EDITABLE")
+  return group.some((r) => r.action.status === "EDITABLE")
 }
 
 /**

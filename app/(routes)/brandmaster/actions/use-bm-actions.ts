@@ -3,21 +3,8 @@
 import * as React from "react"
 
 import { brandmastApi } from "@/lib/api"
-import type { ActionStatus, ActionsPayload } from "./types"
-
-function coerceStatus(status: string | undefined | null): ActionStatus {
-  const u = (status ?? "").toUpperCase()
-  if (
-    u === "ACCEPTED" ||
-    u === "CANCEL_REQUESTED" ||
-    u === "PENDING" ||
-    u === "REJECTED" ||
-    u === "EDITABLE"
-  ) {
-    return u as ActionStatus
-  }
-  return "PENDING"
-}
+import { normalizeActionStatus } from "@/lib/action-status"
+import type { ActionsPayload } from "./types"
 
 function emptyPayload(): ActionsPayload {
   return {
@@ -61,7 +48,7 @@ export function useBmActions(monthKey: string) {
           actions:
             res.data?.actions?.map((a) => ({
               idAction: a.idAction ?? 0,
-              status: coerceStatus(a.status),
+              status: normalizeActionStatus(a.status),
               since: a.since ?? "",
               until: a.until ?? "",
               createdAt: a.createdAt ?? "",

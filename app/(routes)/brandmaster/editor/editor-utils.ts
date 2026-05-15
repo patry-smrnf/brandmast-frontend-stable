@@ -1,5 +1,6 @@
 import { brandmastApi } from "@/lib/api"
 import type { ActionDetails, ShopResponse } from "@/lib/api/generated/types"
+import { normalizeActionStatus } from "@/lib/action-status"
 
 import { startOfDay, toMonthKey } from "@/lib/dates/date-utils"
 import type { BrandmasterAction } from "../actions/types"
@@ -208,19 +209,7 @@ export function coerceAction(a: ActionDetails | undefined): BrandmasterAction | 
   if (!a) return null
   return {
     idAction: a.idAction ?? 0,
-    status: (() => {
-      const u = (a.status ?? "").toUpperCase()
-      if (
-        u === "ACCEPTED" ||
-        u === "CANCEL_REQUESTED" ||
-        u === "PENDING" ||
-        u === "REJECTED" ||
-        u === "EDITABLE"
-      ) {
-        return u as BrandmasterAction["status"]
-      }
-      return "PENDING"
-    })(),
+    status: normalizeActionStatus(a.status),
     since: a.since ?? "",
     until: a.until ?? "",
     createdAt: a.createdAt ?? "",

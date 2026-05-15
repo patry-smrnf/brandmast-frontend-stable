@@ -4,6 +4,7 @@ import * as React from "react"
 
 import { brandmastApi } from "@/lib/api"
 import type { ActionsResponse } from "@/lib/api"
+import { normalizeActionStatus, type NormalizedActionStatus } from "@/lib/action-status"
 
 export type SvActionRow = {
   brandmaster: {
@@ -14,7 +15,7 @@ export type SvActionRow = {
   action: {
     idAction: number
     idShop: number
-    status: string
+    status: NormalizedActionStatus
     since: string
     until: string
     createdAt: string
@@ -41,7 +42,7 @@ function flattenResponse(blocks: ActionsResponse[] | undefined): SvActionRow[] {
         action: {
           idAction,
           idShop,
-          status: (a.status ?? "").trim() || "UNKNOWN",
+          status: normalizeActionStatus(a.status),
           since: a.since ?? "",
           until: a.until ?? "",
           createdAt: a.createdAt ?? "",

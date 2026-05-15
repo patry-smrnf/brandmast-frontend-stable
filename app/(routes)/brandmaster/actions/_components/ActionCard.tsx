@@ -18,48 +18,15 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { getActionStatusPresentation } from "@/lib/action-status"
 
 import { formatTime, parseIso } from "@/lib/dates/date-utils"
-import type { ActionStatus, BrandmasterAction } from "../types"
+import type { BrandmasterAction } from "../types"
 
 function toEditorMonthParam(d: Date) {
   const yy = String(d.getFullYear() % 100).padStart(2, "0")
   const mm = String(d.getMonth() + 1).padStart(2, "0")
   return `${yy}-${mm}`
-}
-
-function statusBadgeVariant(status: ActionStatus): React.ComponentProps<typeof Badge>["variant"] {
-  switch (status) {
-    case "ACCEPTED":
-      return "success"
-    case "CANCEL_REQUESTED":
-      return "warning"
-    case "PENDING":
-      return "warning"
-    case "REJECTED":
-      return "destructive"
-    case "EDITABLE":
-      return "outline"
-    default:
-      return "secondary"
-  }
-}
-
-function statusLabel(status: ActionStatus) {
-  switch (status) {
-    case "ACCEPTED":
-      return "Zaakceptowana"
-    case "CANCEL_REQUESTED":
-      return "Prosba o odwolanie"
-    case "PENDING":
-      return "Oczekuje ( ZGLOS TO DO MN )"
-    case "REJECTED":
-      return "Odrzucona"
-    case "EDITABLE":
-      return "Edytowalna"
-    default:
-      return status
-  }
 }
 
 export type ActionCardProps = {
@@ -90,9 +57,10 @@ export function ActionCard({
   const sinceDate = parseIso(action.since) ?? new Date()
   const untilDate = parseIso(action.until) ?? sinceDate
   const timeLabel = `${formatTime(sinceDate)}–${formatTime(untilDate)}`
-  const showCancel = action.status === "ACCEPTED"
-  const showEdit = action.status !== "ACCEPTED"
-  const showDelete = action.status === "EDITABLE"
+  const pres = getActionStatusPresentation(action.status)
+  const showCancel = pres.brandmasterShowCancel
+  const showEdit = pres.brandmasterShowEdit
+  const showDelete = pres.brandmasterShowDelete
   const deleteButtonDisabled = deletePending || deleteDisabled || !onDelete
   const cancelButtonDisabled = cancelPending || !onCancel
   const monthParam = toEditorMonthParam(sinceDate)
@@ -142,7 +110,7 @@ export function ActionCard({
                 <CardDescription className="truncate">{action.shop.name}</CardDescription>
               </div>
               <div className="shrink-0">
-                <Badge variant={statusBadgeVariant(action.status)}>{statusLabel(action.status)}</Badge>
+                <Badge variant={pres.badgeVariant}>{pres.labelPl}</Badge>
               </div>
             </div>
           </CardHeader>

@@ -111,9 +111,9 @@ export default function SupervisorPage() {
     }
 
     if (statusFilter === "editable") {
-      list = list.filter((r) => r.action.status.toUpperCase() === "EDITABLE")
+      list = list.filter((r) => r.action.status === "EDITABLE")
     } else if (statusFilter === "cancel_requested") {
-      list = list.filter((r) => r.action.status.toUpperCase() === "CANCEL_REQUESTED")
+      list = list.filter((r) => r.action.status === "CANCEL_REQUESTED")
     }
 
     const eventId = eventFilter ? Number(eventFilter) : 0

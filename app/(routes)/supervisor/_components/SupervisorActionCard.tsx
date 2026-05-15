@@ -7,28 +7,9 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import { formatPlDateTimeFromIso, formatTime, parseIso } from "@/lib/dates/date-utils"
+import { getActionStatusPresentation } from "@/lib/action-status"
 import type { SvActionRow } from "../use-sv-actions"
 import { SupervisorApproveSheet } from "./SupervisorApproveSheet"
-
-function statusBadgeVariant(
-  status: string
-): React.ComponentProps<typeof Badge>["variant"] {
-  const u = status.toUpperCase()
-  if (u === "ACCEPTED") return "success"
-  if (u === "PENDING") return "warning"
-  if (u === "REJECTED") return "destructive"
-  if (u === "EDITABLE") return "outline"
-  return "secondary"
-}
-
-function statusLabel(status: string) {
-  const u = status.toUpperCase()
-  if (u === "ACCEPTED") return "Zaakceptowana"
-  if (u === "PENDING") return "Oczekuje"
-  if (u === "REJECTED") return "Odrzucona"
-  if (u === "EDITABLE") return "Do edycji"
-  return status
-}
 
 export type SupervisorActionCardProps = {
   row: SvActionRow
@@ -44,7 +25,8 @@ export function SupervisorActionCard({ row, onApproved, scheduleConflict }: Supe
   const timeLabel = `${formatTime(sinceDate)} – ${formatTime(untilDate)}`
   const [approveOpen, setApproveOpen] = React.useState(false)
 
-  const canApprove = action.status.toUpperCase() !== "ACCEPTED"
+  const pres = getActionStatusPresentation(action.status)
+  const canApprove = pres.supervisorCanApprove
 
   return (
     <article
@@ -74,10 +56,10 @@ export function SupervisorActionCard({ row, onApproved, scheduleConflict }: Supe
             </p>
           </div>
           <Badge
-            variant={statusBadgeVariant(action.status)}
+            variant={pres.badgeVariant}
             className="shrink-0 px-2 py-px text-[10px] leading-tight sm:px-2.5 sm:py-0.5 sm:text-xs"
           >
-            {statusLabel(action.status)}
+            {pres.labelPl}
           </Badge>
         </div>
 
