@@ -1,6 +1,7 @@
 import type { AxiosInstance } from "axios";
 import { createBrandmastHttpClient, type RequestOptions } from "./client";
 import type {
+  ActionApproveRequest,
   ActionIdRequest,
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
@@ -36,6 +37,14 @@ export class BrandmastApi {
    */
   async updateSvAction(body: UpdateActionRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseObject>("/api/action/sv/update", body, options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/action/sv/approve
+   */
+  async approveSvAction(body: ActionApproveRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/action/sv/approve", body, options);
     return res.data;
   }
 

@@ -49,6 +49,15 @@ export interface UpdateActionRequest {
   title?: string;
 }
 
+/** POST /api/action/sv/approve */
+export interface ActionApproveRequest {
+  idAction?: number; // int64
+  since?: string; // date-time
+  until?: string; // date-time
+  title?: string;
+  isActive?: boolean;
+}
+
 export interface ActionRequest {
   idAction?: number; // int64
   idShop: number; // int64

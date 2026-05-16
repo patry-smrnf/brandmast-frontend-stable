@@ -100,9 +100,7 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
   }
 
   async function handleConfirm() {
-    const sortedIdx = [...selected].sort((a, b) => a - b)
-    const chosen = sortedIdx.map((i) => segments[i]).filter(Boolean)
-    if (chosen.length === 0) {
+    if (selected.size === 0) {
       toast.error("Zaznacz co najmniej jedną podakcję.")
       return
     }
@@ -112,25 +110,26 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
     setIsSubmitting(true)
     const toastId = toast.loading("Akceptowanie…")
     try {
-      const n = chosen.length
-      // Kolejne wywołania — backend musi obsłużyć każdą część (np. osobne rekordy lub aktualizacja slotu).
-      for (let part = 0; part < n; part++) {
-        const seg = chosen[part]!
-        const partTitle = `${base} (${part + 1}/${n})`
-        const res = await brandmastApi.updateSvAction({
+      const n = segments.length
+      for (let i = 0; i < n; i++) {
+        const seg = segments[i]!
+        const partTitle = `[${i + 1}/${n}] ${base}`
+        const res = await brandmastApi.approveSvAction({
           idAction: row.action.idAction,
-          idShop: row.action.idShop,
           since: seg.since,
           until: seg.until,
-          status: "ACCEPTED",
           title: partTitle,
+          isActive: selected.has(i),
         })
         if (res.success === false) {
-          toast.error(res.message ?? `Nie udało się zapisać części ${part + 1}/${n}.`, { id: toastId })
+          toast.error(res.message ?? `Nie udało się zapisać części ${i + 1}/${n}.`, { id: toastId })
           return
         }
       }
-      toast.success(n > 1 ? `Zaakceptowano ${n} podakcji.` : "Akcja zaakceptowana.", { id: toastId })
+      const activeCount = selected.size
+      toast.success(activeCount > 1 ? `Zaakceptowano (${activeCount} aktywnych podakcji).` : "Akcja zaakceptowana.", {
+        id: toastId,
+      })
       onOpenChange(false)
       onAccepted()
     } catch (e) {
@@ -175,8 +174,8 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
               Akceptuj akcję
             </h2>
             <p id="approve-sheet-desc" className="mt-1 text-sm text-muted-foreground">
-              Akcja zostanie zapisana jako podakcje (maks. 4 h każda). Po zatwierdzeniu każda wybrana część otrzyma
-              numer w tytule: <span className="font-medium text-foreground">„… (1/N)”</span>.
+              Podakcje (maks. 4 h) trafią na serwer z Twoim tytułem oraz flagą aktywności z checkboxów. Przy więcej niż
+              jednej części tytuł dostanie numer: <span className="font-medium text-foreground">„… (1/N)”</span>.
             </p>
           </div>
 
