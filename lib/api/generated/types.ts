@@ -256,3 +256,82 @@ export interface ApiResponseListActionsResponse {
   violations?: Violation[];
 }
 
+/** POST /api/cas/sv/fetch, POST /api/cas/bm/fetch */
+export interface ActionCasRequest {
+  idEvent?: number; // int64
+  since: string; // date
+  until: string; // date
+  status?: string;
+}
+
+export interface CasAddressCreate {
+  streetAddress?: string;
+  streetNumber?: string;
+  cityName?: string;
+  postalCode?: string;
+  geoLat?: string;
+  geoLng?: string;
+}
+
+export interface CasDatetimeBlock {
+  date?: string;
+  timezone_type?: number; // int32
+  timezone?: string;
+}
+
+export interface CasIdentifiedRef {
+  uuid?: string;
+  ident?: string;
+}
+
+export interface TourPlannerActionListBrandmaster {
+  uuid?: string;
+  ident?: string;
+  firstname?: string;
+  lastname?: string;
+}
+
+export interface TourPlannerActionListEvent {
+  uuid?: string;
+  ident?: string;
+  name?: string;
+}
+
+export interface TourPlannerActionListHistory {
+  start?: CasDatetimeBlock;
+  stop?: CasDatetimeBlock;
+  totalTime?: string;
+}
+
+export interface TourPlannerActionListPoint {
+  uuid?: string;
+  name?: string;
+  address?: CasAddressCreate;
+}
+
+export interface TourPlannerActionListItem {
+  uuid?: string;
+  ident?: string;
+  name?: string;
+  since?: string;
+  until?: string;
+  startLat?: string;
+  startLng?: string;
+  area?: CasIdentifiedRef;
+  event?: TourPlannerActionListEvent;
+  territory?: CasIdentifiedRef;
+  status?: string;
+  brandmaster?: TourPlannerActionListBrandmaster;
+  point?: TourPlannerActionListPoint;
+  history?: TourPlannerActionListHistory;
+}
+
+export interface ApiResponseListTourPlannerActionListItem {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: TourPlannerActionListItem[];
+  violations?: Violation[];
+}
+

@@ -2,10 +2,12 @@ import type { AxiosInstance } from "axios";
 import { createBrandmastHttpClient, type RequestOptions } from "./client";
 import type {
   ActionApproveRequest,
+  ActionCasRequest,
   ActionIdRequest,
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
   ApiResponseListShopResponse,
+  ApiResponseListTourPlannerActionListItem,
   ApiResponseLoginResponse,
   ApiResponseObject,
   ApiResponseSettingResponse,
@@ -131,6 +133,30 @@ export class BrandmastApi {
       ...options,
       params,
     });
+    return res.data;
+  }
+
+  /**
+   * POST /api/cas/sv/fetch
+   */
+  async fetchSVActions(body: ActionCasRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
+      "/api/cas/sv/fetch",
+      body,
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/cas/bm/fetch
+   */
+  async fetchBMActions(body: ActionCasRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
+      "/api/cas/bm/fetch",
+      body,
+      options,
+    );
     return res.data;
   }
 }
