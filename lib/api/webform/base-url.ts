@@ -7,12 +7,19 @@ function nonEmptyEnv(name: string): string | undefined {
   return t.length > 0 ? t : undefined;
 }
 
-/** Absolute URL for server-side proxy to webform API. */
-export function getServerWebformApiBaseUrl(): string {
-  return nonEmptyEnv("WEBFORM_API_URL") ?? DEFAULT_WEBFORM_API_URL;
+function resolveWebformApiBaseUrl(): string {
+  return (
+    nonEmptyEnv("NEXT_PUBLIC_WEBFORM_API_URL") ??
+    nonEmptyEnv("WEBFORM_API_URL") ??
+    DEFAULT_WEBFORM_API_URL
+  );
 }
 
-/** Browser calls same-origin proxy (`/api/webform`). */
+/** Webform API — ten sam adres w przeglądarce i na serwerze (localhost i produkcja). */
+export function getServerWebformApiBaseUrl(): string {
+  return resolveWebformApiBaseUrl();
+}
+
 export function getBrowserWebformApiBaseUrl(): string {
-  return "/api/webform";
+  return resolveWebformApiBaseUrl();
 }

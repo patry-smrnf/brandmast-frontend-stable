@@ -8,7 +8,6 @@ import {
   ClockIcon,
   MapPinIcon,
   RefreshCwIcon,
-  WalletIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -28,10 +27,11 @@ import {
 } from "@/lib/dates/date-utils"
 
 import {
-  formatHoursPl,
-  formatMoneyPl,
-  type ActionWithRoundedTime,
-} from "./cas-action-utils"
+  EfficiencyCard,
+  GloSamplesCard,
+  PayoutCard,
+} from "./brandmaster-summary-sections"
+import { formatHoursPl, type ActionWithRoundedTime } from "./cas-action-utils"
 import { useBrandmasterDashboard } from "./use-brandmaster-dashboard"
 
 function DashboardSkeleton() {
@@ -117,6 +117,7 @@ function WorkTimeActionRow({ item }: { item: ActionWithRoundedTime }) {
 
 export default function BrandmasterPage() {
   const [workTimeExpanded, setWorkTimeExpanded] = React.useState(false)
+  const [payoutExpanded, setPayoutExpanded] = React.useState(false)
   const headerDate = React.useMemo(() => formatHeaderDatePoland(nowInPoland()), [])
 
   const {
@@ -131,9 +132,14 @@ export default function BrandmasterPage() {
     currentActionPointLabel,
     monthActions,
     totalRoundedHours,
+    basePayout,
     predictedPayout,
+    bonusBreakdown,
     hourlyRate,
+    sampleStatsCounts,
   } = useBrandmasterDashboard()
+
+  const currentMonth = sampleStatsCounts?.currentMonth
 
   const monthLabel = React.useMemo(() => {
     return new Intl.DateTimeFormat("pl-PL", {
@@ -227,25 +233,28 @@ export default function BrandmasterPage() {
               </Card>
             ) : null}
 
-            <Card className="shadow-sm">
-              <CardHeader className="space-y-0.5 px-3.5 py-3 pb-2 sm:px-4">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                  <WalletIcon className="size-3.5 text-muted-foreground" aria-hidden />
-                  Przewidywalna wypłata
-                </CardTitle>
-                <CardDescription className="text-xs" suppressHydrationWarning>
-                  {hourlyRate} zł × {formatHoursPl(totalRoundedHours)} · {monthLabel}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="px-3.5 pb-3.5 sm:px-4 sm:pb-4">
-                <p className="text-2xl font-semibold tabular-nums leading-none sm:text-3xl">
-                  {formatMoneyPl(predictedPayout)}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Szacunek na podstawie zaokrąglonego czasu pracy w miesiącu
-                </p>
-              </CardContent>
-            </Card>
+            <PayoutCard
+              basePayout={basePayout}
+              bonusBreakdown={bonusBreakdown}
+              predictedPayout={predictedPayout}
+              hourlyRate={hourlyRate}
+              totalRoundedHours={totalRoundedHours}
+              monthLabel={monthLabel}
+              expanded={payoutExpanded}
+              onToggle={() => setPayoutExpanded((v) => !v)}
+            />
+
+            {bonusBreakdown ? (
+              <EfficiencyCard bonus={bonusBreakdown} monthLabel={monthLabel} />
+            ) : null}
+
+            {currentMonth ? (
+              <GloSamplesCard
+                glo={currentMonth.glo}
+                veloNet={currentMonth.veloNet}
+                monthLabel={monthLabel}
+              />
+            ) : null}
 
             <Card className="overflow-hidden shadow-sm">
               <button

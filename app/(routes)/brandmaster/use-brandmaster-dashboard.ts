@@ -4,9 +4,13 @@ import * as React from "react"
 
 import { brandmastApi, fetchSampleStats } from "@/lib/api"
 import type { SampleStatsCountsByField, TourPlannerActionListItem } from "@/lib/api"
-import { getConfigState } from "@/lib/config/configStore"
+import { getConfigState, setConfig } from "@/lib/config/configStore"
 import { formatPlDateTimePoland, nowInPoland, toDateKeyInPoland } from "@/lib/dates/date-utils"
 
+import {
+  computeBrandmasterBonus,
+  type BrandmasterBonusBreakdown,
+} from "./brandmaster-bonus-utils"
 import {
   type ActionWithRoundedTime,
   formatCasAddress,
@@ -15,6 +19,7 @@ import {
   getMonthDateRange,
   mapFinishedActionsWithRoundedTime,
   parseActionFallbackStart,
+  resolveLastActionIdent,
   roundActionDurationHours,
 } from "./cas-action-utils"
 
@@ -45,18 +50,20 @@ export function useBrandmasterDashboard() {
         const today = toDateKeyInPoland(fetchNow)
         const { since: monthSince, until: monthUntil } = getMonthDateRange(fetchNow)
 
-        const [startedActionResponse, monthActionsResponse] = await Promise.all([
-          brandmastApi.fetchBMActions({
-            since: today,
-            until: today,
-            status: "started",
-          }),
-          brandmastApi.fetchBMActions({
-            since: monthSince,
-            until: monthUntil,
-            status: "finished",
-          }),
-        ])
+        const [startedActionResponse, monthActionsResponse, configResponse] =
+          await Promise.all([
+            brandmastApi.fetchBMActions({
+              since: today,
+              until: today,
+              status: "started",
+            }),
+            brandmastApi.fetchBMActions({
+              since: monthSince,
+              until: monthUntil,
+              status: "finished",
+            }),
+            brandmastApi.fetchConfig(),
+          ])
 
         if (cancelled) return
 
@@ -81,9 +88,15 @@ export function useBrandmasterDashboard() {
         const startedItems = startedActionResponse.data ?? []
         const finishedItems = monthActionsResponse.data ?? []
 
-        const current = startedItems[0] ?? null
-        const hostessCode = getConfigState().config?.brandmasterData?.login?.trim() ?? ""
-        const currentActionIdent = current?.ident?.trim() ?? ""
+        if (configResponse.success && configResponse.data) {
+          setConfig(configResponse.data)
+        }
+
+        const hostessCode =
+          configResponse.data?.brandmasterData?.login?.trim() ??
+          getConfigState().config?.brandmasterData?.login?.trim() ??
+          ""
+        const currentActionIdent = resolveLastActionIdent(startedItems, finishedItems)
 
         let nextSampleStats: SampleStatsCountsByField | null = null
         if (hostessCode && currentActionIdent) {
@@ -130,7 +143,19 @@ export function useBrandmasterDashboard() {
     [monthActions],
   )
 
-  const predictedPayout = totalRoundedHours * HOURLY_RATE
+  const basePayout = totalRoundedHours * HOURLY_RATE
+
+  const bonusBreakdown = React.useMemo((): BrandmasterBonusBreakdown | null => {
+    if (!sampleStatsCounts || totalRoundedHours <= 0) return null
+    const month = sampleStatsCounts.currentMonth
+    return computeBrandmasterBonus({
+      glo: month.glo,
+      veloNet: month.veloNet,
+      roundedHours: totalRoundedHours,
+    })
+  }, [sampleStatsCounts, totalRoundedHours])
+
+  const predictedPayout = basePayout + (bonusBreakdown?.totalBonus ?? 0)
 
   const currentAction = startedActions[0] ?? null
 
@@ -180,7 +205,9 @@ export function useBrandmasterDashboard() {
     currentActionPointLabel,
     monthActions,
     totalRoundedHours,
+    basePayout,
     predictedPayout,
+    bonusBreakdown,
     hourlyRate: HOURLY_RATE,
     sampleStatsCounts,
   }

@@ -108,3 +108,26 @@ export function parseActionFallbackStart(item: TourPlannerActionListItem): Date 
 export function getCasActionTitle(item: TourPlannerActionListItem): string {
   return item.name?.trim() || item.event?.name?.trim() || item.ident?.trim() || "Akcja w toku"
 }
+
+/** Ident najnowszej akcji (started lub finished) po dacie startu. */
+export function resolveLastActionIdent(
+  started: TourPlannerActionListItem[],
+  finished: TourPlannerActionListItem[],
+): string {
+  let bestIdent = ""
+  let bestTime = 0
+
+  for (const action of [...started, ...finished]) {
+    const ident = action.ident?.trim()
+    if (!ident) continue
+    const start = parseActionFallbackStart(action)
+    if (!start) continue
+    const time = start.getTime()
+    if (time >= bestTime) {
+      bestTime = time
+      bestIdent = ident
+    }
+  }
+
+  return bestIdent
+}
