@@ -7,6 +7,7 @@ import {
   MoreVerticalIcon,
   SettingsIcon,
   ShieldIcon,
+  StoreIcon,
   UserIcon,
 } from "lucide-react"
 
@@ -134,6 +135,12 @@ export function RoleContextMenu() {
             label: "Panel Supervisor",
             href: "/supervisor",
             icon: <ShieldIcon className="size-4" />,
+          },
+          {
+            key: "sv-shops",
+            label: "Sklepy",
+            href: "/supervisor/shops",
+            icon: <StoreIcon className="size-4" />,
           },
           {
             key: "sv-settings",

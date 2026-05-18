@@ -107,6 +107,11 @@ export interface ShopResponse {
   event?: Event;
 }
 
+/** POST /api/shop/delete */
+export interface ShopIdRequest {
+  id?: number; // int64
+}
+
 export interface ApiResponseListShopResponse {
   errorCode?: string;
   message?: string;

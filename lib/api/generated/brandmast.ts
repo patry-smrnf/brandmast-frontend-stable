@@ -15,6 +15,7 @@ import type {
   ConfigUpdateRequest,
   DeleteBmActionRequest,
   LoginRequest,
+  ShopIdRequest,
   UpdateActionRequest,
 } from "./types";
 
@@ -95,6 +96,14 @@ export class BrandmastApi {
    */
   async fetchShops(options?: RequestOptions) {
     const res = await this.http.get<ApiResponseListShopResponse>("/api/shop/fetch", options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/shop/delete
+   */
+  async deleteShop(body: ShopIdRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/shop/delete", body, options);
     return res.data;
   }
 
