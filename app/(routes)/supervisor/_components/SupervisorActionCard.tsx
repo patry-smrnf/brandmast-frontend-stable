@@ -2,8 +2,10 @@
 
 import * as React from "react"
 import { ArrowRightIcon, CalendarDaysIcon, ClockIcon, MapPinIcon, PenLineIcon } from "lucide-react"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { brandmastApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 import { formatPlDateTimeFromIso, formatTime, parseIso } from "@/lib/dates/date-utils"
@@ -27,9 +29,29 @@ export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConfl
   const timeLabel = `${formatTime(sinceDate)} – ${formatTime(untilDate)}`
   const [approveOpen, setApproveOpen] = React.useState(false)
   const [editOpen, setEditOpen] = React.useState(false)
+  const [isCancelling, setIsCancelling] = React.useState(false)
 
   const pres = getActionStatusPresentation(action.status)
   const canApprove = pres.supervisorCanApprove
+  const isCancelRequested = action.status === "CANCEL_REQUESTED"
+
+  async function handleRevoke() {
+    setIsCancelling(true)
+    const toastId = toast.loading("Odwoływanie…")
+    try {
+      const res = await brandmastApi.cancelSvAction({ idAction: action.idAction })
+      if (res.success === false) {
+        toast.error(res.message ?? "Nie udało się odwołać akcji.", { id: toastId })
+        return
+      }
+      toast.success("Akcja została odwołana.", { id: toastId })
+      onApproved()
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Nie udało się odwołać akcji.", { id: toastId })
+    } finally {
+      setIsCancelling(false)
+    }
+  }
 
   return (
     <article
@@ -118,17 +140,32 @@ export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConfl
         </div>
 
         <div className="mt-1.5 flex justify-end sm:mt-2">
-          <Button
-            size="sm"
-            disabled={!canApprove}
-            onClick={(e) => {
-              e.stopPropagation()
-              setApproveOpen(true)
-            }}
-            className="h-7 shrink-0 px-2.5 text-xs sm:h-8 sm:px-3"
-          >
-            Approve
-          </Button>
+          {isCancelRequested ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={!canApprove || isCancelling}
+              onClick={(e) => {
+                e.stopPropagation()
+                void handleRevoke()
+              }}
+              className="h-7 shrink-0 px-2.5 text-xs sm:h-8 sm:px-3"
+            >
+              {isCancelling ? "Odwoływanie…" : "Odwolaj"}
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              disabled={!canApprove}
+              onClick={(e) => {
+                e.stopPropagation()
+                setApproveOpen(true)
+              }}
+              className="h-7 shrink-0 px-2.5 text-xs sm:h-8 sm:px-3"
+            >
+              Approve
+            </Button>
+          )}
         </div>
       </div>
 

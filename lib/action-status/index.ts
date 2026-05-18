@@ -1,6 +1,7 @@
 export const ACTION_STATUSES = [
   "ACCEPTED",
   "CANCEL_REQUESTED",
+  "CANCELLED",
   "PENDING",
   "REJECTED",
   "EDITABLE",
@@ -37,6 +38,14 @@ export type ActionStatusPresentation = {
 }
 
 export const statusPresentation: Record<NormalizedActionStatus, ActionStatusPresentation> = {
+  CANCELLED: {
+    badgeVariant: "destructive",
+    labelPl: "Odwołana",
+    brandmasterShowEdit: false,
+    brandmasterShowDelete: false,
+    brandmasterShowCancel: false,
+    supervisorCanApprove: false,
+  },
   ACCEPTED: {
     badgeVariant: "success",
     labelPl: "Zaakceptowana",
