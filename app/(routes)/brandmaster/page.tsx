@@ -10,6 +10,9 @@ import {
   RefreshCwIcon,
 } from "lucide-react"
 
+import { fetchSampleStats } from "@/lib/api"
+import type { SampleStatsFieldCounts } from "@/lib/api"
+
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -26,6 +29,7 @@ import {
   POLAND_TIMEZONE,
 } from "@/lib/dates/date-utils"
 
+import { BrandmasterPageSkeleton } from "./brandmaster-page-skeleton"
 import {
   EfficiencyCard,
   GloSamplesCard,
@@ -34,22 +38,87 @@ import {
 import { formatHoursPl, type ActionWithRoundedTime } from "./cas-action-utils"
 import { useBrandmasterDashboard } from "./use-brandmaster-dashboard"
 
-function DashboardSkeleton() {
+function getActionSampleMetrics(stats: SampleStatsFieldCounts) {
+  return [
+    { label: "Hilo", value: stats.glo.hilo },
+    { label: "Hilo+", value: stats.glo.hiloPlus },
+    { label: "Velo", value: stats.veloNet },
+  ] as const
+}
+
+function getActionRowKey(item: ActionWithRoundedTime): string {
   return (
-    <div className="space-y-3">
+    item.actionIdent ??
+    item.action.uuid ??
+    `${item.startLabel}-${item.stopLabel}-${item.shopName}`
+  )
+}
+
+function ActionSampleStatsSkeleton() {
+  return (
+    <div className="flex h-7 animate-pulse overflow-hidden rounded-md border border-border/50 bg-muted/40">
       {Array.from({ length: 3 }).map((_, i) => (
         <div
           key={i}
-          className="h-[88px] animate-pulse rounded-xl border border-border/80 bg-card"
+          className={cn("min-w-0 flex-1 bg-muted/70", i > 0 && "border-l border-border/40")}
         />
       ))}
     </div>
   )
 }
 
-function WorkTimeActionRow({ item }: { item: ActionWithRoundedTime }) {
+function ActionSampleStatsPanel({ stats }: { stats: SampleStatsFieldCounts }) {
+  const metrics = getActionSampleMetrics(stats)
+
   return (
-    <div className="rounded-lg border border-border/80 bg-muted/30 px-3 py-2.5">
+    <div
+      className="flex items-stretch divide-x divide-primary/15 overflow-hidden rounded-md border border-primary/20 bg-primary/5"
+      role="group"
+      aria-label="Wyniki akcji"
+    >
+      {metrics.map(({ label, value }) => (
+        <div
+          key={label}
+          className="flex min-w-0 flex-1 items-baseline justify-center gap-1 px-1.5 py-1.5 sm:gap-1.5 sm:px-2"
+        >
+          <span className="truncate text-[10px] font-medium text-muted-foreground">{label}</span>
+          <span className="shrink-0 text-sm font-semibold tabular-nums leading-none">{value}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function WorkTimeActionRow({
+  item,
+  expanded,
+  statsLoading,
+  stats,
+  statsError,
+  onToggle,
+}: {
+  item: ActionWithRoundedTime
+  expanded: boolean
+  statsLoading: boolean
+  stats: SampleStatsFieldCounts | null
+  statsError: string | null
+  onToggle: () => void
+}) {
+  const showPanel = expanded
+
+  return (
+    <div
+      className={cn(
+        "overflow-hidden rounded-lg border bg-muted/30 transition-colors",
+        expanded ? "border-primary/40 ring-1 ring-primary/15" : "border-border/80",
+      )}
+    >
+      <button
+        type="button"
+        className="w-full px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        onClick={onToggle}
+        aria-expanded={expanded}
+      >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">
           {(() => {
@@ -111,6 +180,26 @@ function WorkTimeActionRow({ item }: { item: ActionWithRoundedTime }) {
           {formatHoursPl(item.roundedHours)}
         </p>
       </div>
+      </button>
+
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-out",
+          showPanel ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t border-border/60 px-3 py-1.5">
+            {statsLoading ? (
+              <ActionSampleStatsSkeleton />
+            ) : statsError ? (
+              <p className="text-[11px] leading-snug text-destructive">{statsError}</p>
+            ) : stats ? (
+              <ActionSampleStatsPanel stats={stats} />
+            ) : null}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -118,6 +207,11 @@ function WorkTimeActionRow({ item }: { item: ActionWithRoundedTime }) {
 export default function BrandmasterPage() {
   const [workTimeExpanded, setWorkTimeExpanded] = React.useState(false)
   const [payoutExpanded, setPayoutExpanded] = React.useState(false)
+  const [selectedActionKey, setSelectedActionKey] = React.useState<string | null>(null)
+  const [actionStatsLoading, setActionStatsLoading] = React.useState(false)
+  const [actionStats, setActionStats] = React.useState<SampleStatsFieldCounts | null>(null)
+  const [actionStatsError, setActionStatsError] = React.useState<string | null>(null)
+  const actionStatsRequestRef = React.useRef(0)
   const headerDate = React.useMemo(() => formatHeaderDatePoland(nowInPoland()), [])
 
   const {
@@ -137,7 +231,62 @@ export default function BrandmasterPage() {
     bonusBreakdown,
     hourlyRate,
     sampleStatsCounts,
+    hostessCode,
   } = useBrandmasterDashboard()
+
+  const handleActionToggle = React.useCallback(
+    (item: ActionWithRoundedTime) => {
+      const key = getActionRowKey(item)
+
+      if (selectedActionKey === key) {
+        actionStatsRequestRef.current += 1
+        setSelectedActionKey(null)
+        setActionStats(null)
+        setActionStatsError(null)
+        setActionStatsLoading(false)
+        return
+      }
+
+      setSelectedActionKey(key)
+      setActionStats(null)
+      setActionStatsError(null)
+
+      const ident = item.actionIdent?.trim()
+      if (!ident) {
+        setActionStatsError("Brak identyfikatora akcji.")
+        return
+      }
+
+      if (!hostessCode) {
+        setActionStatsError("Brak loginu hostessy w konfiguracji.")
+        return
+      }
+
+      const requestId = ++actionStatsRequestRef.current
+      setActionStatsLoading(true)
+
+      void (async () => {
+        try {
+          const result = await fetchSampleStats({
+            hostessCode,
+            currentAction: ident,
+          })
+          if (actionStatsRequestRef.current !== requestId) return
+          setActionStats(result.counts.currentAction)
+        } catch (e) {
+          if (actionStatsRequestRef.current !== requestId) return
+          setActionStatsError(
+            e instanceof Error ? e.message : "Nie udało się pobrać wyników akcji.",
+          )
+        } finally {
+          if (actionStatsRequestRef.current === requestId) {
+            setActionStatsLoading(false)
+          }
+        }
+      })()
+    },
+    [hostessCode, selectedActionKey],
+  )
 
   const currentMonth = sampleStatsCounts?.currentMonth
 
@@ -152,40 +301,45 @@ export default function BrandmasterPage() {
   return (
     <main className="flex-1 bg-background">
       <div className="mx-auto w-full max-w-lg px-3 py-4 sm:max-w-xl sm:px-4 sm:py-5">
-        <header className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-xs text-muted-foreground">Panel Brandmastera</p>
-            <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-              Podsumowanie
-            </h1>
-            <div className="mt-1.5 flex items-baseline gap-2.5">
-              <span
-                className="text-3xl font-semibold tabular-nums leading-none sm:text-4xl"
-                suppressHydrationWarning
-              >
-                {headerDate.day}
-              </span>
-              <span
-                className="min-w-0 truncate text-sm font-medium capitalize text-muted-foreground"
-                suppressHydrationWarning
-              >
-                {headerDate.rest}
-              </span>
-            </div>
+        {isLoading ? (
+          <BrandmasterPageSkeleton />
+        ) : (
+          <>
+            <header className="min-w-0 pr-11">
+          <p className="text-xs text-muted-foreground">Panel home</p>
+          <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
+            Podsumowanie
+          </h1>
+          <div className="mt-1.5 flex items-baseline gap-2.5">
+            <span
+              className="text-3xl font-semibold tabular-nums leading-none sm:text-4xl"
+              suppressHydrationWarning
+            >
+              {headerDate.day}
+            </span>
+            <span
+              className="min-w-0 truncate text-sm font-medium capitalize text-muted-foreground"
+              suppressHydrationWarning
+            >
+              {headerDate.rest}
+            </span>
           </div>
+        </header>
+
+        <Separator className="my-4" />
+
+        <div className="mb-3 flex">
           <Button
             variant="outline"
             size="sm"
-            className="h-8 shrink-0 px-2.5"
+            className="h-8 gap-1.5 px-3"
             onClick={() => refetch()}
             disabled={isRefreshing}
           >
             <RefreshCwIcon className={cn("size-3.5", isRefreshing && "animate-spin")} />
-            <span className="sr-only sm:not-sr-only sm:ml-1.5">Odśwież</span>
+            Odśwież dane
           </Button>
-        </header>
-
-        <Separator className="my-4" />
+        </div>
 
         {error ? (
           <div className="mb-3 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
@@ -194,10 +348,7 @@ export default function BrandmasterPage() {
           </div>
         ) : null}
 
-        {isLoading ? (
-          <DashboardSkeleton />
-        ) : (
-          <div className="space-y-3">
+            <div className="space-y-3">
             {currentAction ? (
               <Card className="border-primary/30 bg-primary/5 shadow-sm">
                 <CardHeader className="space-y-1 px-3.5 py-3 pb-2 sm:px-4">
@@ -271,10 +422,10 @@ export default function BrandmasterPage() {
                         Czas pracy
                       </CardTitle>
                       <CardDescription className="text-xs" suppressHydrationWarning>
-                        {monthActions.length}{" "}
-                        {monthActions.length === 1
+                        {totalRoundedHours / 4}{" "}
+                        {totalRoundedHours / 4 === 1
                           ? "akcja"
-                          : monthActions.length > 1 && monthActions.length < 5
+                          : totalRoundedHours / 4 > 1 && totalRoundedHours / 4< 5
                             ? "akcje"
                             : "akcji"}{" "}
                         · {monthLabel}
@@ -303,26 +454,34 @@ export default function BrandmasterPage() {
                       Brak zakończonych akcji w tym miesiącu.
                     </p>
                   ) : (
-                    monthActions.map((item) => (
-                      <WorkTimeActionRow
-                        key={
-                          item.action.uuid ??
-                          `${item.startLabel}-${item.stopLabel}-${item.shopName}`
-                        }
-                        item={item}
-                      />
-                    ))
+                    monthActions.map((item) => {
+                      const rowKey = getActionRowKey(item)
+                      const isSelected = selectedActionKey === rowKey
+                      return (
+                        <WorkTimeActionRow
+                          key={rowKey}
+                          item={item}
+                          expanded={isSelected}
+                          statsLoading={isSelected && actionStatsLoading}
+                          stats={isSelected ? actionStats : null}
+                          statsError={isSelected ? actionStatsError : null}
+                          onToggle={() => handleActionToggle(item)}
+                        />
+                      )
+                    })
                   )}
                 </CardContent>
               ) : (
                 <CardContent className="px-3.5 pb-3 pt-0 sm:px-4">
                   <p className="text-xs text-muted-foreground">
-                    Kliknij, aby zobaczyć listę akcji z zaokrąglonym czasem.
+                    Kliknij, aby zobaczyć listę akcji. Wybierz akcję, aby zobaczyć wyniki Hilo,
+                    Hilo+ i Velo.
                   </p>
                 </CardContent>
               )}
             </Card>
-          </div>
+            </div>
+          </>
         )}
       </div>
     </main>

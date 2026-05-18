@@ -154,7 +154,7 @@ export function GloSamplesCard({
       <CardHeader className="space-y-0.5 px-3.5 py-3 pb-2 sm:px-4">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
           <PackageIcon className="size-3.5 text-muted-foreground" aria-hidden />
-          Próbki Glo
+          Wyniki
         </CardTitle>
         <CardDescription className="text-xs" suppressHydrationWarning>
           Bieżący miesiąc · {monthLabel}
@@ -178,7 +178,7 @@ export function GloSamplesCard({
         </div>
         {veloNet != null ? (
           <p className="text-center text-xs text-muted-foreground">
-            Velo netto (miesiąc):{" "}
+            Velo:{" "}
             <span className="font-semibold tabular-nums text-foreground">{veloNet}</span>
           </p>
         ) : null}
@@ -208,7 +208,7 @@ export function EfficiencyCard({
           Efektywność
         </CardTitle>
         <CardDescription className="text-xs" suppressHydrationWarning>
-          {monthLabel} · ilość ÷ (czas ÷ 4)
+          {monthLabel} · efektywność 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2.5 px-3.5 pb-3.5 sm:px-4 sm:pb-4">
@@ -233,8 +233,7 @@ export function EfficiencyCard({
           </div>
         </div>
         <p className="text-[11px] leading-snug text-muted-foreground">
-          Zaokrąglony czas: {formatHoursPl(e.roundedHours)} (dzielnik: czas ÷ 4 ={" "}
-          {timeDivisorLabel})
+          Schematyka liczenia efektywności: Sprzedaz / (czas / 4)
         </p>
       </CardContent>
     </Card>
@@ -292,7 +291,7 @@ export function PayoutCard({
         </CardHeader>
         <CardContent className="px-3.5 pb-3 pt-0 sm:px-4">
           <p className="text-2xl font-semibold tabular-nums leading-none sm:text-3xl">
-            {formatMoneyPl(predictedPayout)}
+            {formatMoneyPl(basePayout + (bonusBreakdown?.qualitative.total ?? 0) )}
           </p>
           <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
             <span>
@@ -300,7 +299,7 @@ export function PayoutCard({
             </span>
             {bonusBreakdown ? (
               <span className="font-medium text-foreground/90">
-                Bonus: {formatMoneyPl(bonusTotal)}
+                Bonus: {formatMoneyPl(bonusBreakdown.qualitative.total)}
               </span>
             ) : null}
           </p>
@@ -320,12 +319,6 @@ export function PayoutCard({
             <>
               <RegularBonusSection regular={bonusBreakdown.regular} />
               <QualitativeBonusSection qualitative={bonusBreakdown.qualitative} />
-              <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2.5 text-xs">
-                <span className="font-semibold">Bonus łącznie (zwykły + jakościowy)</span>
-                <span className="text-sm font-semibold tabular-nums">
-                  {formatMoneyPl(bonusTotal)}
-                </span>
-              </div>
             </>
           ) : (
             <p className="text-xs text-muted-foreground">

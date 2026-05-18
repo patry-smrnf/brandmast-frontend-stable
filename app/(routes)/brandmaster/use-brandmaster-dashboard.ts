@@ -35,6 +35,7 @@ export function useBrandmasterDashboard() {
   const [polandNow, setPolandNow] = React.useState<Date | null>(null)
   const [sampleStatsCounts, setSampleStatsCounts] =
     React.useState<SampleStatsCountsByField | null>(null)
+  const [hostessCode, setHostessCode] = React.useState("")
 
   const refetch = React.useCallback(() => setTick((t) => t + 1), [])
 
@@ -73,6 +74,7 @@ export function useBrandmasterDashboard() {
           setStartedActions([])
           setMonthActions([])
           setSampleStatsCounts(null)
+          setHostessCode("")
           return
         }
 
@@ -82,6 +84,7 @@ export function useBrandmasterDashboard() {
           setStartedActions([])
           setMonthActions([])
           setSampleStatsCounts(null)
+          setHostessCode("")
           return
         }
 
@@ -92,17 +95,17 @@ export function useBrandmasterDashboard() {
           setConfig(configResponse.data)
         }
 
-        const hostessCode =
+        const resolvedHostessCode =
           configResponse.data?.brandmasterData?.login?.trim() ??
           getConfigState().config?.brandmasterData?.login?.trim() ??
           ""
         const currentActionIdent = resolveLastActionIdent(startedItems, finishedItems)
 
         let nextSampleStats: SampleStatsCountsByField | null = null
-        if (hostessCode && currentActionIdent) {
+        if (resolvedHostessCode && currentActionIdent) {
           try {
             const sampleStats = await fetchSampleStats({
-              hostessCode,
+              hostessCode: resolvedHostessCode,
               currentAction: currentActionIdent,
             })
             nextSampleStats = sampleStats.counts
@@ -116,6 +119,7 @@ export function useBrandmasterDashboard() {
         setPolandNow(nowInPoland())
         setStartedActions(startedItems)
         setMonthActions(mapFinishedActionsWithRoundedTime(finishedItems))
+        setHostessCode(resolvedHostessCode)
         setSampleStatsCounts(nextSampleStats)
       } catch (e) {
         if (cancelled) return
@@ -124,6 +128,7 @@ export function useBrandmasterDashboard() {
         setStartedActions([])
         setMonthActions([])
         setSampleStatsCounts(null)
+        setHostessCode("")
       } finally {
         if (!cancelled) {
           setIsLoading(false)
@@ -210,5 +215,6 @@ export function useBrandmasterDashboard() {
     bonusBreakdown,
     hourlyRate: HOURLY_RATE,
     sampleStatsCounts,
+    hostessCode,
   }
 }
