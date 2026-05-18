@@ -5,6 +5,7 @@ import {
   AlertTriangleIcon,
   LayoutListIcon,
   MapIcon,
+  PlusIcon,
   RefreshCwIcon,
   StoreIcon,
 } from "lucide-react"
@@ -15,6 +16,7 @@ import { Separator } from "@/components/ui/separator"
 import { shopMatchesQuery } from "@/lib/shops/shop-utils"
 import { cn } from "@/lib/utils"
 
+import { AddShopsSheet } from "./_components/AddShopsSheet"
 import { ShopsListView } from "./_components/ShopsListView"
 import { ShopsMapView } from "./_components/ShopsMapView"
 import { useShops } from "./use-shops"
@@ -37,6 +39,7 @@ function LoadingSkeleton() {
 export default function SupervisorShopsPage() {
   const [viewMode, setViewMode] = React.useState<ViewMode>("list")
   const [search, setSearch] = React.useState("")
+  const [addShopsOpen, setAddShopsOpen] = React.useState(false)
   const { shops, isLoading, error, refetch, removeShopLocally } = useShops()
 
   const filteredShops = React.useMemo(
@@ -77,18 +80,37 @@ export default function SupervisorShopsPage() {
             </p>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full shrink-0 sm:w-auto"
-            disabled={isLoading}
-            onClick={() => void refetch()}
-          >
-            <RefreshCwIcon className={cn("size-4", isLoading ? "animate-spin" : null)} />
-            <span className="ml-2">Odśwież</span>
-          </Button>
+          <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
+            <Button
+              type="button"
+              size="sm"
+              className="w-full sm:w-auto"
+              disabled={isLoading}
+              onClick={() => setAddShopsOpen(true)}
+            >
+              <PlusIcon className="size-4" />
+              <span className="ml-2">Dodaj sklepy</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto"
+              disabled={isLoading}
+              onClick={() => void refetch()}
+            >
+              <RefreshCwIcon className={cn("size-4", isLoading ? "animate-spin" : null)} />
+              <span className="ml-2">Odśwież</span>
+            </Button>
+          </div>
         </header>
+
+        <AddShopsSheet
+          open={addShopsOpen}
+          onOpenChange={setAddShopsOpen}
+          existingShops={shops}
+          onShopsAdded={() => void refetch()}
+        />
 
         <Separator className="my-6" />
 

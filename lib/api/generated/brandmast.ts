@@ -6,8 +6,10 @@ import type {
   ActionIdRequest,
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
+  ApiResponseListEvent,
   ApiResponseListShopResponse,
   ApiResponseListTourPlannerActionListItem,
+  ApiResponseListTourPlannerPointListItem,
   ApiResponseLoginResponse,
   ApiResponseObject,
   ApiResponseSettingResponse,
@@ -15,6 +17,7 @@ import type {
   ConfigUpdateRequest,
   DeleteBmActionRequest,
   LoginRequest,
+  PointCasRequest,
   ShopIdRequest,
   UpdateActionRequest,
 } from "./types";
@@ -92,6 +95,14 @@ export class BrandmastApi {
   }
 
   /**
+   * GET /api/event/fetch
+   */
+  async fetchEvents(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListEvent>("/api/event/fetch", options);
+    return res.data;
+  }
+
+  /**
    * GET /api/shop/fetch
    */
   async fetchShops(options?: RequestOptions) {
@@ -146,11 +157,11 @@ export class BrandmastApi {
   }
 
   /**
-   * POST /api/cas/sv/fetch
+   * POST /api/cas/point/sv/fetch
    */
-  async fetchSVActions(body: ActionCasRequest, options?: RequestOptions) {
-    const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
-      "/api/cas/sv/fetch",
+  async fetchSVPoints(body: PointCasRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseListTourPlannerPointListItem>(
+      "/api/cas/point/sv/fetch",
       body,
       options,
     );
@@ -158,11 +169,23 @@ export class BrandmastApi {
   }
 
   /**
-   * POST /api/cas/bm/fetch
+   * POST /api/cas/action/sv/fetch
+   */
+  async fetchSVActions(body: ActionCasRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
+      "/api/cas/action/sv/fetch",
+      body,
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/cas/action/bm/fetch
    */
   async fetchBMActions(body: ActionCasRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
-      "/api/cas/bm/fetch",
+      "/api/cas/action/bm/fetch",
       body,
       options,
     );

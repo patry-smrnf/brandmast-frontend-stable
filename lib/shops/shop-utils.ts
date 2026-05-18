@@ -12,6 +12,20 @@ export function getShopTourplannerIdent(s: ShopResponse) {
   return s.tourplanner?.ident?.trim() ?? ""
 }
 
+/** Tourplanner point UUID — matches `TourPlannerPointListItem.uuid` from CAS. */
+export function getShopTourplannerId(s: ShopResponse) {
+  return s.tourplanner?.id?.trim() ?? ""
+}
+
+export function buildExistingShopTpIdSet(shops: ShopResponse[]) {
+  const ids = new Set<string>()
+  for (const s of shops) {
+    const id = getShopTourplannerId(s)
+    if (id) ids.add(id)
+  }
+  return ids
+}
+
 export function buildShopLabel(s: ShopResponse) {
   const address = getShopAddress(s)
   const eventName = getShopEventName(s)

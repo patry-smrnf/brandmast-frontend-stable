@@ -323,7 +323,7 @@ export default function SupervisorPage() {
                           </p>
                           <p className="text-[11px] leading-snug text-amber-900/90 dark:text-amber-100/88 sm:text-xs sm:leading-relaxed">
                             <span className="font-medium text-foreground">{shopName}</span>
-                            {" — "}
+                            {" "}
                             {cluster.length} akcje mają nachodzące na siebie przedziały czasu.
                           </p>
                         </div>

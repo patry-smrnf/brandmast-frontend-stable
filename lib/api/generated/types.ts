@@ -99,6 +99,16 @@ export interface Event {
   tpEventId?: string;
 }
 
+/** GET /api/event/fetch */
+export interface ApiResponseListEvent {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: Event[];
+  violations?: Violation[];
+}
+
 export interface ShopResponse {
   id?: number; // int64
   name?: string;
@@ -261,12 +271,40 @@ export interface ApiResponseListActionsResponse {
   violations?: Violation[];
 }
 
-/** POST /api/cas/sv/fetch, POST /api/cas/bm/fetch */
+/** POST /api/cas/point/sv/fetch */
+export interface PointCasRequest {
+  idEvent: number; // int64
+}
+
+/** POST /api/cas/action/sv/fetch, POST /api/cas/action/bm/fetch */
 export interface ActionCasRequest {
   idEvent?: number; // int64
   since: string; // date
   until: string; // date
   status?: string;
+}
+
+export interface TourPlannerPointListAddress {
+  streetAddress?: string;
+  cityName?: string;
+  geoLat?: string;
+  geoLng?: string;
+}
+
+export interface TourPlannerPointListItem {
+  uuid?: string;
+  ident?: string;
+  name?: string;
+  address?: TourPlannerPointListAddress;
+}
+
+export interface ApiResponseListTourPlannerPointListItem {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: TourPlannerPointListItem[];
+  violations?: Violation[];
 }
 
 export interface CasAddressCreate {
