@@ -1,5 +1,4 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
-import { signalBackendTimeout } from "@/lib/api/backend-timeout-signal";
 import { getBrowserApiBaseUrl } from "@/lib/api/base-url";
 import { tokenStore } from "../token";
 
@@ -41,19 +40,6 @@ export function createBrandmastHttpClient(opts: ApiClientOptions = {}): AxiosIns
     }
     return config;
   });
-
-  instance.interceptors.response.use(
-    (res) => res,
-    (error: unknown) => {
-      if (axios.isAxiosError(error)) {
-        const msg = (error.message ?? "").toLowerCase();
-        if (error.code === "ECONNABORTED" || msg.includes("timeout")) {
-          signalBackendTimeout();
-        }
-      }
-      return Promise.reject(error);
-    },
-  );
 
   return instance;
 }
