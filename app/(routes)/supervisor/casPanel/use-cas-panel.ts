@@ -62,8 +62,14 @@ export function useCasPanelActions(dateKey: string) {
     async (ident: string, status: CasActionStatus): Promise<{ synced: boolean }> => {
       patchActionStatus(ident, status)
 
+      const action = actions.find((item) => item.ident?.trim() === ident)
+      const uuid = action?.uuid?.trim()
+      if (!uuid) {
+        return { synced: false }
+      }
+
       try {
-        const res = await brandmastApi.updateSVCasActionStatus({ ident, status })
+        const res = await brandmastApi.updateStatus({ uuid, ident: status })
         if (res.success === false) {
           return { synced: false }
         }
@@ -72,7 +78,7 @@ export function useCasPanelActions(dateKey: string) {
         return { synced: false }
       }
     },
-    [patchActionStatus],
+    [actions, patchActionStatus],
   )
 
   return {

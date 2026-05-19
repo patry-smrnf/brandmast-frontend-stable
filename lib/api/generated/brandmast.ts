@@ -4,7 +4,7 @@ import type {
   ActionApproveRequest,
   ActionCasRequest,
   ActionIdRequest,
-  CasActionStatusUpdateRequest,
+  CasActionChangeStatusRequest,
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
   ApiResponseListBrandmastersResponse,
@@ -225,12 +225,11 @@ export class BrandmastApi {
   }
 
   /**
-   * POST /api/cas/action/sv/status/update
-   * Aktualizacja statusu akcji CAS (endpoint w przygotowaniu).
+   * POST /api/cas/action/sv/update-status
    */
-  async updateSVCasActionStatus(body: CasActionStatusUpdateRequest, options?: RequestOptions) {
+  async updateStatus(body: CasActionChangeStatusRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseObject>(
-      "/api/cas/action/sv/status/update",
+      "/api/cas/action/sv/update-status",
       body,
       options,
     );

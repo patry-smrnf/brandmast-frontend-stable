@@ -336,10 +336,10 @@ export interface ActionCasRequest {
   status?: string;
 }
 
-/** POST /api/cas/action/sv/status/update (w przygotowaniu po stronie backendu) */
-export interface CasActionStatusUpdateRequest {
-  ident: string;
-  status: string;
+/** POST /api/cas/action/sv/update-status */
+export interface CasActionChangeStatusRequest {
+  uuid?: string;
+  ident?: string;
 }
 
 export interface TourPlannerPointListAddress {
