@@ -114,6 +114,41 @@ export function getShopEventName(s: ShopResponse) {
   return s.event?.name ?? ""
 }
 
+export function getShopEventId(s: ShopResponse) {
+  return s.event?.id ?? 0
+}
+
+export type ShopEventFilterOption = {
+  id: number
+  name: string
+  count: number
+}
+
+export function buildShopEventFilterOptions(shops: ShopResponse[]): ShopEventFilterOption[] {
+  const byId = new Map<number, { name: string; count: number }>()
+
+  for (const s of shops) {
+    const id = getShopEventId(s)
+    if (!id) continue
+    const name = getShopEventName(s).trim() || `Event #${id}`
+    const prev = byId.get(id)
+    if (prev) {
+      prev.count++
+    } else {
+      byId.set(id, { name, count: 1 })
+    }
+  }
+
+  return Array.from(byId.entries())
+    .map(([id, { name, count }]) => ({ id, name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name, "pl"))
+}
+
+export function filterShopsByEventId(shops: ShopResponse[], eventId: number | null) {
+  if (eventId == null) return shops
+  return shops.filter((s) => getShopEventId(s) === eventId)
+}
+
 export function buildShopLabel(s: ShopResponse) {
   const address = getShopAddress(s)
   const eventName = getShopEventName(s)

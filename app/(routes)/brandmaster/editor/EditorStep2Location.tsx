@@ -36,6 +36,7 @@ export type EditorStep2LocationProps = EditorStep2MapSectionProps & {
 }
 
 export function EditorStep2Location({
+  shops,
   shopsLoading,
   shopMapBundle,
   selectedShop,
@@ -60,6 +61,7 @@ export function EditorStep2Location({
       </CardHeader>
       <CardContent className="space-y-4">
         <EditorStep2MapSection
+          shops={shops}
           shopsLoading={shopsLoading}
           shopMapBundle={shopMapBundle}
           selectedShop={selectedShop}

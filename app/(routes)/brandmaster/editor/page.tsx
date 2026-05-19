@@ -88,6 +88,7 @@ function BrandmasterEditorInner() {
           />
         ) : s.step === 2 ? (
           <EditorStep2Location
+            shops={s.shops}
             shopsLoading={s.shopsLoading}
             shopMapBundle={s.shopMapBundle}
             selectedShop={s.selectedShop}
