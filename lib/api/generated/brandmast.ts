@@ -8,6 +8,7 @@ import type {
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
   ApiResponseListBrandmastersResponse,
+  ApiResponseListTourPlannerBrandmasterListItem,
   ApiResponseListEvent,
   ApiResponseListShopResponse,
   ApiResponseListTourPlannerActionListItem,
@@ -113,6 +114,17 @@ export class BrandmastApi {
   async fetchBrandmasters(options?: RequestOptions) {
     const res = await this.http.get<ApiResponseListBrandmastersResponse>(
       "/api/brandmaster/sv/fetch",
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * GET /api/cas/brandmaster/sv/fetch
+   */
+  async fetchCasBrandmasters(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListTourPlannerBrandmasterListItem>(
+      "/api/cas/brandmaster/sv/fetch",
       options,
     );
     return res.data;

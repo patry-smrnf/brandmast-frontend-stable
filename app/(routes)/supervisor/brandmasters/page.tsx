@@ -6,6 +6,7 @@ import {
   BarChart3Icon,
   CalendarDaysIcon,
   LayoutListIcon,
+  PlusIcon,
   RefreshCwIcon,
   UsersIcon,
 } from "lucide-react"
@@ -20,6 +21,7 @@ import { toDateKey, toMonthKey } from "@/lib/dates/date-utils"
 import { cn } from "@/lib/utils"
 
 import { useSvActions } from "../use-sv-actions"
+import { AddBrandmasterSheet } from "./_components/AddBrandmasterSheet"
 import { BrandmastersDetailPanel } from "./_components/BrandmastersDetailPanel"
 import { BrandmastersListView } from "./_components/BrandmastersListView"
 import { BrandmastersStatsView } from "./_components/BrandmastersStatsView"
@@ -70,6 +72,7 @@ function lastDateKeyOfMonth(monthKey: string) {
 
 export default function SupervisorBrandmastersPage() {
   const [viewMode, setViewMode] = React.useState<ViewMode>("list")
+  const [addBrandmasterOpen, setAddBrandmasterOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const [selected, setSelected] = React.useState<BrandmastersResponse | null>(null)
   const [statsMonthKey, setStatsMonthKey] = React.useState(() => toMonthKey(new Date()))
@@ -203,6 +206,18 @@ export default function SupervisorBrandmastersPage() {
           </div>
 
           <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
+            {!isStatsView ? (
+              <Button
+                type="button"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={listBusy}
+                onClick={() => setAddBrandmasterOpen(true)}
+              >
+                <PlusIcon className="size-4" />
+                <span className="ml-2">Dodaj brandmastera</span>
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -216,6 +231,13 @@ export default function SupervisorBrandmastersPage() {
             </Button>
           </div>
         </header>
+
+        <AddBrandmasterSheet
+          open={addBrandmasterOpen}
+          onOpenChange={setAddBrandmasterOpen}
+          existingBrandmasters={brandmasters}
+          onBrandmasterAdded={() => void refetch()}
+        />
 
         <Separator className="my-6" />
 

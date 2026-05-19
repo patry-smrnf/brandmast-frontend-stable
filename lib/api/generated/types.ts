@@ -436,3 +436,27 @@ export interface ApiResponseListTourPlannerActionListItem {
   violations?: Violation[];
 }
 
+/** GET /api/cas/brandmaster/sv/fetch */
+export interface TourPlannerBrandmasterListCreated {
+  date?: string;
+}
+
+export interface TourPlannerBrandmasterListItem {
+  uuid?: string;
+  ident?: string;
+  firstname?: string;
+  lastname?: string;
+  username?: string;
+  emailAddress?: string;
+  created?: TourPlannerBrandmasterListCreated;
+}
+
+export interface ApiResponseListTourPlannerBrandmasterListItem {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: TourPlannerBrandmasterListItem[];
+  violations?: Violation[];
+}
+
