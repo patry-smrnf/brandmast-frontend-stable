@@ -128,7 +128,7 @@ export function computeRegularBonus(
     items.push(lineItem("Urządzenia Glo (łącznie)", gloCount, 0))
   }
   if (veloCount > 0 && veloRatePerUnit > 0) {
-    items.push(lineItem("Velo netto", veloCount, veloRatePerUnit))
+    items.push(lineItem("Velo ", veloCount, veloRatePerUnit))
   }
 
   const total = items.reduce((sum, item) => sum + item.amount, 0)
@@ -172,7 +172,7 @@ export function computeQualitativeBonus(
     items.push(lineItem("Hilo+", input.glo.hiloPlus, hiloPlusRate))
   }
   if (efficiency.veloCount > 0) {
-    items.push(lineItem("Velo netto", efficiency.veloCount, veloRatePerUnit))
+    items.push(lineItem("Velo", efficiency.veloCount, veloRatePerUnit))
   }
 
   const total = items.reduce((sum, item) => sum + item.amount, 0)

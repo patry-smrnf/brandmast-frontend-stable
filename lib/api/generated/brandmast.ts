@@ -4,6 +4,7 @@ import type {
   ActionApproveRequest,
   ActionCasRequest,
   ActionIdRequest,
+  CasActionStatusUpdateRequest,
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
   ApiResponseListBrandmastersResponse,
@@ -214,9 +215,22 @@ export class BrandmastApi {
   /**
    * POST /api/cas/action/sv/fetch
    */
-  async fetchSVActions(body: ActionCasRequest, options?: RequestOptions) {
+  async fetchSVCasActions(body: ActionCasRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
       "/api/cas/action/sv/fetch",
+      body,
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/cas/action/sv/status/update
+   * Aktualizacja statusu akcji CAS (endpoint w przygotowaniu).
+   */
+  async updateSVCasActionStatus(body: CasActionStatusUpdateRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>(
+      "/api/cas/action/sv/status/update",
       body,
       options,
     );

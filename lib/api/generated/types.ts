@@ -336,6 +336,12 @@ export interface ActionCasRequest {
   status?: string;
 }
 
+/** POST /api/cas/action/sv/status/update (w przygotowaniu po stronie backendu) */
+export interface CasActionStatusUpdateRequest {
+  ident: string;
+  status: string;
+}
+
 export interface TourPlannerPointListAddress {
   streetAddress?: string;
   cityName?: string;

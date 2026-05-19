@@ -69,7 +69,7 @@ export function useBrandmasterDashboard() {
         if (cancelled) return
 
         if (startedActionResponse.success === false) {
-          setError(startedActionResponse.message ?? "Nie udało się pobrać akcji w toku.")
+          setError(startedActionResponse.message ?? "Nie udało się pobrać akcji rozpoczetej")
           setPolandNow(null)
           setStartedActions([])
           setMonthActions([])

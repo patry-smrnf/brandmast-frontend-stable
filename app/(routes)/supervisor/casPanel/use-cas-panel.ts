@@ -1,0 +1,86 @@
+"use client"
+
+import * as React from "react"
+
+import { brandmastApi } from "@/lib/api"
+import type { TourPlannerActionListItem } from "@/lib/api/generated/types"
+import type { CasActionStatus } from "@/lib/cas-status"
+export function useCasPanelActions(dateKey: string) {
+  const [actions, setActions] = React.useState<TourPlannerActionListItem[]>([])
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [tick, setTick] = React.useState(0)
+
+  const refetch = React.useCallback(() => setTick((t) => t + 1), [])
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      setIsLoading(true)
+      setError(null)
+
+      try {
+        const res = await brandmastApi.fetchSVCasActions({
+          since: dateKey,
+          until: dateKey,
+        })
+
+        if (cancelled) return
+
+        if (res.success === false) {
+          setActions([])
+          setError(res.message ?? "Nie udało się pobrać akcji CAS.")
+          return
+        }
+
+        setActions(res.data ?? [])
+      } catch (e) {
+        if (cancelled) return
+        setActions([])
+        setError(e instanceof Error ? e.message : "Nie udało się pobrać akcji CAS.")
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [dateKey, tick])
+
+  const patchActionStatus = React.useCallback((ident: string, status: CasActionStatus) => {
+    setActions((prev) =>
+      prev.map((action) =>
+        action.ident?.trim() === ident ? { ...action, status } : action,
+      ),
+    )
+  }, [])
+
+  const updateActionStatus = React.useCallback(
+    async (ident: string, status: CasActionStatus): Promise<{ synced: boolean }> => {
+      patchActionStatus(ident, status)
+
+      try {
+        const res = await brandmastApi.updateSVCasActionStatus({ ident, status })
+        if (res.success === false) {
+          return { synced: false }
+        }
+        return { synced: true }
+      } catch {
+        return { synced: false }
+      }
+    },
+    [patchActionStatus],
+  )
+
+  return {
+    actions,
+    isLoading,
+    error,
+    refetch,
+    updateActionStatus,
+    patchActionStatus,
+  }
+}

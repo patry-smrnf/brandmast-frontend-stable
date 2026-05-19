@@ -106,7 +106,7 @@ export function parseActionFallbackStart(item: TourPlannerActionListItem): Date 
 }
 
 export function getCasActionTitle(item: TourPlannerActionListItem): string {
-  return item.name?.trim() || item.event?.name?.trim() || item.ident?.trim() || "Akcja w toku"
+  return item.name?.trim() || item.event?.name?.trim() || item.ident?.trim() || "Akcja rozpoczeta"
 }
 
 /** Ident najnowszej akcji (started lub finished) po dacie startu. */
