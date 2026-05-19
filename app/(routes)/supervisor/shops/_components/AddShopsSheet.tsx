@@ -17,7 +17,12 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { brandmastApi } from "@/lib/api"
-import type { Event, ShopResponse, TourPlannerPointListItem } from "@/lib/api/generated/types"
+import type {
+  Event,
+  ShopAddRequest,
+  ShopResponse,
+  TourPlannerPointListItem,
+} from "@/lib/api/generated/types"
 import {
   casPointMatchesQuery,
   formatCasPointAddress,
@@ -48,21 +53,57 @@ type CasPointRow = {
   alreadyAdded: boolean
 }
 
-/**
- * Wywołuje API po jednym żądaniu na sklep — podłącz docelowy endpoint w jednym miejscu.
- */
+function buildShopAddRequest(point: TourPlannerPointListItem, idEvent: number): ShopAddRequest {
+  const addr = point.address
+  return {
+    tpUuid: point.uuid?.trim(),
+    tpIdent: point.ident?.trim(),
+    name: point.name?.trim(),
+    street_address: addr?.streetAddress?.trim(),
+    cityName: addr?.cityName?.trim(),
+    geoLat: addr?.geoLat?.trim(),
+    geoLng: addr?.geoLng?.trim(),
+    idEvent,
+  }
+}
+
+function shopAddLabel(point: TourPlannerPointListItem, index: number) {
+  return point.name?.trim() || point.ident?.trim() || `sklep ${index + 1}`
+}
+
+/** Jedno żądanie POST /api/shop/sv/add na każdy wybrany punkt. */
 async function addShopsViaApi(
-  _event: Event,
+  event: Event,
   points: TourPlannerPointListItem[],
 ): Promise<{ ok: boolean; message?: string }> {
-  for (const point of points) {
-    // TODO: np. await brandmastApi.addShop({ tpPointUuid: point.uuid, idEvent: event.id })
-    void point
+  const idEvent = event.id
+  if (idEvent == null) {
+    return { ok: false, message: "Brak identyfikatora eventu." }
   }
-  return {
-    ok: false,
-    message: "Endpoint dodawania sklepów nie jest jeszcze podłączony.",
+
+  const total = points.length
+  for (let i = 0; i < total; i++) {
+    const point = points[i]!
+    const body = buildShopAddRequest(point, idEvent)
+    if (!body.tpUuid) {
+      return {
+        ok: false,
+        message: `${shopAddLabel(point, i)}: brak UUID Tourplannera.`,
+      }
+    }
+
+    const res = await brandmastApi.addShop(body)
+    if (res.success === false) {
+      const label = shopAddLabel(point, i)
+      const suffix = total > 1 ? ` (${i + 1}/${total})` : ""
+      return {
+        ok: false,
+        message: res.message ?? `Nie udało się dodać: ${label}${suffix}.`,
+      }
+    }
   }
+
+  return { ok: true }
 }
 
 export function AddShopsSheet({
@@ -271,9 +312,7 @@ export function AddShopsSheet({
       onOpenChange(false)
       onShopsAdded?.()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nie udało się dodać sklepów.", {
-        id: toastId,
-      })
+      toast.error(readApiError(e), { id: toastId })
     } finally {
       setIsSubmitting(false)
     }

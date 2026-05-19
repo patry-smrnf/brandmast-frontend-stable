@@ -117,9 +117,21 @@ export interface ShopResponse {
   event?: Event;
 }
 
-/** POST /api/shop/delete */
-export interface ShopIdRequest {
-  id?: number; // int64
+/** POST /api/shop/sv/delete */
+export interface ShopDeleteRequest {
+  idShop?: number; // int64
+}
+
+/** POST /api/shop/sv/add */
+export interface ShopAddRequest {
+  tpUuid?: string;
+  tpIdent?: string;
+  name?: string;
+  street_address?: string;
+  cityName?: string;
+  geoLat?: string;
+  geoLng?: string;
+  idEvent?: number; // int64
 }
 
 export interface ApiResponseListShopResponse {

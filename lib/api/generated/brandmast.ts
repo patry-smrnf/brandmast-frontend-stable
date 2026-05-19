@@ -18,7 +18,8 @@ import type {
   DeleteBmActionRequest,
   LoginRequest,
   PointCasRequest,
-  ShopIdRequest,
+  ShopAddRequest,
+  ShopDeleteRequest,
   UpdateActionRequest,
 } from "./types";
 
@@ -111,10 +112,18 @@ export class BrandmastApi {
   }
 
   /**
-   * POST /api/shop/delete
+   * POST /api/shop/sv/add
    */
-  async deleteShop(body: ShopIdRequest, options?: RequestOptions) {
-    const res = await this.http.post<ApiResponseObject>("/api/shop/delete", body, options);
+  async addShop(body: ShopAddRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/shop/sv/add", body, options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/shop/sv/delete
+   */
+  async deleteShop(body: ShopDeleteRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/shop/sv/delete", body, options);
     return res.data;
   }
 

@@ -103,7 +103,7 @@ export function ShopsMapView({ shops, isLoading, onShopDeleted }: ShopsMapViewPr
     if (!id) return
     setDeleting(true)
     try {
-      const res = await brandmastApi.deleteShop({ id })
+      const res = await brandmastApi.deleteShop({ idShop: id })
       if (!res.success) {
         toast.error(res.message ?? "Nie udało się usunąć sklepu.")
         return
