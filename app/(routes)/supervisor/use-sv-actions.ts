@@ -72,7 +72,8 @@ function flattenResponse(blocks: ActionsResponse[] | undefined): SvActionRow[] {
   return out
 }
 
-export function useSvActions(monthKey: string) {
+export function useSvActions(monthKey: string, options?: { enabled?: boolean }) {
+  const enabled = options?.enabled !== false
   const [rows, setRows] = React.useState<SvActionRow[]>([])
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -101,6 +102,8 @@ export function useSvActions(monthKey: string) {
   }, [])
 
   React.useEffect(() => {
+    if (!enabled) return
+
     let cancelled = false
 
     async function run() {
@@ -128,7 +131,7 @@ export function useSvActions(monthKey: string) {
     return () => {
       cancelled = true
     }
-  }, [monthKey, tick])
+  }, [monthKey, tick, enabled])
 
   return { rows, isLoading, error, refetch, patchSvActionRow }
 }

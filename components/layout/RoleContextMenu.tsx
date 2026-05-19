@@ -133,7 +133,7 @@ export function RoleContextMenu() {
       : [
           {
             key: "sv-home",
-            label: "Panel Supervisor",
+            label: "Dashboard",
             href: "/supervisor",
             icon: <ShieldIcon className="size-4" />,
           },
