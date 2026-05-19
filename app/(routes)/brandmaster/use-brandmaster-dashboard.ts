@@ -172,7 +172,7 @@ export function useBrandmasterDashboard() {
   const currentActionStartLabel = React.useMemo(() => {
     if (!currentAction) return null
     const start = parseActionFallbackStart(currentAction)
-    return start ? formatPlDateTimePoland(start) : "—"
+    return start ? formatPlDateTimePoland(start) : "-"
   }, [currentAction])
 
   const currentActionRoundedHours = React.useMemo(() => {
@@ -191,7 +191,7 @@ export function useBrandmasterDashboard() {
     if (!currentAction) return null
     const name = currentAction.point?.name?.trim()
     const address = formatCasAddress(currentAction.point?.address)
-    if (name && address !== "—") return `${name} · ${address}`
+    if (name && address !== "-") return `${name} · ${address}`
     return name || address
   }, [currentAction])
 

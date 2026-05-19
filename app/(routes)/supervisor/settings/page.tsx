@@ -23,7 +23,7 @@ import type { SettingResponse } from "@/lib/api/generated/types"
 import { setConfig, useConfigState } from "@/lib/config/configStore"
 import { cn } from "@/lib/utils"
 
-function formatText(value: string | number | null | undefined, empty = "—") {
+function formatText(value: string | number | null | undefined, empty = "-") {
   if (value === null || value === undefined) return empty
   const s = String(value).trim()
   return s.length ? s : empty
@@ -263,7 +263,7 @@ export default function SupervisorSettingsPage() {
             <div className="text-xs text-muted-foreground">Panel Supervisora</div>
             <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Ustawienia</h1>
             <p className="max-w-prose text-sm text-muted-foreground">
-              Dane i uprawnienia z konfiguracji konta. Zmiany zapisują się od razu — po sukcesie lista
+              Dane i uprawnienia z konfiguracji konta. Zmiany zapisują się od razu - po sukcesie lista
               odświeża się automatycznie.
             </p>
           </div>

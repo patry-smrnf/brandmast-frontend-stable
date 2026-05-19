@@ -117,7 +117,7 @@ export function CasActionDetailSheet({
       if (synced) {
         toast.success("Status zaktualizowany.", { id: toastId })
       } else {
-        toast.message("Status zapisany lokalnie — synchronizacja z API wkrótce.", {
+        toast.message("Status zapisany lokalnie - synchronizacja z API wkrótce.", {
           id: toastId,
         })
       }
@@ -177,8 +177,8 @@ export function CasActionDetailSheet({
             ) : null}
           </div>
           <Separator className="bg-border/70" />
-          <DetailRow label="Event" value={action.event?.name?.trim() || "—"} />
-          <DetailRow label="Sklep" value={action.point?.name?.trim() || "—"} />
+          <DetailRow label="Event" value={action.event?.name?.trim() || "-"} />
+          <DetailRow label="Sklep" value={action.point?.name?.trim() || "-"} />
           <DetailRow label="Adres" value={formatCasAddress(action.point?.address)} />
           <DetailRow
             label="Start / stop (historia)"

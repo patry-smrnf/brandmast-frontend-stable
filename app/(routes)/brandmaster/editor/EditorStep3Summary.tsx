@@ -79,7 +79,7 @@ export default function EditorStep3Summary({
                 <>
                   <div className="text-sm font-medium">{buildShopLabel(selectedShop)}</div>
                   <div className="mt-1 text-xs text-muted-foreground tabular-nums">
-                    idShop: {selectedShop.id ?? "—"}
+                    idShop: {selectedShop.id ?? "-"}
                   </div>
                 </>
               ) : (

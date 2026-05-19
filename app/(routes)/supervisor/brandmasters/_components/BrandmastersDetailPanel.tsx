@@ -54,7 +54,7 @@ export function BrandmastersDetailPanel({ selected, onDeleted }: BrandmastersDet
   async function onDelete() {
     const id = selected?.brandmasterId
     if (!id) {
-      toast.error("Brak identyfikatora brandmastera — odśwież listę.")
+      toast.error("Brak identyfikatora brandmastera - odśwież listę.")
       return
     }
     setDeleting(true)
@@ -87,19 +87,19 @@ export function BrandmastersDetailPanel({ selected, onDeleted }: BrandmastersDet
         {selected ? (
           <div className="space-y-4">
             <div className="space-y-3 rounded-lg border border-border/70 bg-muted/25 p-3">
-              <DetailRow label="Imię i nazwisko" value={getBrandmasterFullName(selected) || "—"} />
-              <DetailRow label="Login" value={selected.login?.trim() || "—"} mono />
-              <DetailRow label="E-mail (TP)" value={getBrandmasterTpEmail(selected) || "—"} />
+              <DetailRow label="Imię i nazwisko" value={getBrandmasterFullName(selected) || "-"} />
+              <DetailRow label="Login" value={selected.login?.trim() || "-"} mono />
+              <DetailRow label="E-mail (TP)" value={getBrandmasterTpEmail(selected) || "-"} />
               <DetailRow
                 label="Kasoterminal"
-                value={selected.kasoterminal != null ? String(selected.kasoterminal) : "—"}
+                value={selected.kasoterminal != null ? String(selected.kasoterminal) : "-"}
                 mono
               />
               <DetailRow label="121" value={selected.has121 ? "Tak" : "Nie"} />
-              <DetailRow label="Tourplanner UUID" value={getBrandmasterTpUuid(selected) || "—"} mono />
+              <DetailRow label="Tourplanner UUID" value={getBrandmasterTpUuid(selected) || "-"} mono />
               <DetailRow
                 label="ID"
-                value={selected.brandmasterId != null ? String(selected.brandmasterId) : "—"}
+                value={selected.brandmasterId != null ? String(selected.brandmasterId) : "-"}
                 mono
               />
             </div>

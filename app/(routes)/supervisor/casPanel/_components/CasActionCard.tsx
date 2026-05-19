@@ -25,7 +25,7 @@ export function CasActionCard({ action, onClick }: CasActionCardProps) {
   const pres = getCasStatusPresentationFromRaw(action.status)
   const title = getCasActionTitle(action)
   const bmName = getBrandmasterDisplayName(action)
-  const shopName = action.point?.name?.trim() || "—"
+  const shopName = action.point?.name?.trim() || "-"
   const address = formatCasAddress(action.point?.address)
   const timeLabel = getCasActionTimeLabel(action)
   const ident = action.ident?.trim()

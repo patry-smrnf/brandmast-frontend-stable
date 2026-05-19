@@ -35,9 +35,9 @@ export function getCasActionRowKey(action: TourPlannerActionListItem): string {
 
 export function getBrandmasterDisplayName(action: TourPlannerActionListItem): string {
   const bm = action.brandmaster
-  if (!bm) return "—"
+  if (!bm) return "-"
   const name = [bm.firstname, bm.lastname].filter(Boolean).join(" ").trim()
-  return name || bm.ident?.trim() || "—"
+  return name || bm.ident?.trim() || "-"
 }
 
 export function filterCasActionsForDisplay(
@@ -84,11 +84,11 @@ export function sortCasActions(actions: TourPlannerActionListItem[]): TourPlanne
 export function getCasActionTimeLabel(action: TourPlannerActionListItem): string {
   const start = formatCasTime(action.history?.start)
   const stop = formatCasTime(action.history?.stop)
-  if (start !== "—" || stop !== "—") return `${start} – ${stop}`
+  if (start !== "-" || stop !== "-") return `${start} – ${stop}`
   const since = action.since?.trim()
   const until = action.until?.trim()
   if (since && until) return `${since} – ${until}`
-  return since ?? until ?? "—"
+  return since ?? until ?? "-"
 }
 
 export type CasDayStatsSummary = {

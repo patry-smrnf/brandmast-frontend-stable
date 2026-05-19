@@ -16,7 +16,7 @@ export type CompactGroupedListProps<T> = {
   className?: string
   /** Nagłówki grup zwijają / rozwijają listę pozycji */
   collapsible?: boolean
-  /** Gdy collapsible — domyślnie wszystkie grupy zwinięte */
+  /** Gdy collapsible - domyślnie wszystkie grupy zwinięte */
   defaultCollapsed?: boolean
 }
 

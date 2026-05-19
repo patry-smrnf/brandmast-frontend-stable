@@ -76,7 +76,7 @@ export default function LoginPage() {
 
       if (isPasswordRequired) {
         setShowPassword(true)
-        toast.info("To konto wymaga hasła — wpisz je i spróbuj ponownie.", {
+        toast.info("To konto wymaga hasła - wpisz je i spróbuj ponownie.", {
           id: toastId,
         })
         return
@@ -95,7 +95,7 @@ export default function LoginPage() {
 
         if (isPasswordRequired) {
           setShowPassword(true)
-          toast.info("To konto wymaga hasła — wpisz je i spróbuj ponownie.", {
+          toast.info("To konto wymaga hasła - wpisz je i spróbuj ponownie.", {
             id: toastId,
           })
           return

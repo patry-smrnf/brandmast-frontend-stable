@@ -124,10 +124,10 @@ function WorkTimeActionRow({
           {(() => {
             const primaryTitle =
               item.actionName ??
-              (item.shopName !== "—" ? item.shopName : null) ??
+              (item.shopName !== "-" ? item.shopName : null) ??
               item.actionIdent
             const showShopSubtitle =
-              item.shopName !== "—" &&
+              item.shopName !== "-" &&
               item.actionName != null &&
               item.shopName !== item.actionName
             return (

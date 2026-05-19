@@ -271,7 +271,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
                   <span className="shrink-0 text-muted-foreground">Event</span>
                   <span className="min-w-0 font-medium text-foreground sm:text-end">
-                    {action.event.name?.trim() || "—"}
+                    {action.event.name?.trim() || "-"}
                   </span>
                 </div>
                 {!isEditableStatus ? (
@@ -279,7 +279,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
                     <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
                       <span className="shrink-0 text-muted-foreground">Sklep</span>
                       <span className="min-w-0 text-end sm:max-w-[70%]">
-                        <span className="font-medium text-foreground">{action.shop.name?.trim() || "—"}</span>
+                        <span className="font-medium text-foreground">{action.shop.name?.trim() || "-"}</span>
                         {action.shop.address ? (
                           <span className="mt-0.5 block text-[11px] font-normal text-muted-foreground sm:mt-0 sm:inline">
                             <span className="text-muted-foreground/50 sm:mx-1" aria-hidden>
@@ -394,7 +394,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
                                       </div>
                                     </div>
                                     <span className="shrink-0 tabular-nums text-[10px] text-muted-foreground">
-                                      {s.id ?? "—"}
+                                      {s.id ?? "-"}
                                     </span>
                                   </div>
                                 </button>

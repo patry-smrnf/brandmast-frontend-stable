@@ -66,7 +66,7 @@ export function EditorStep2MapSection({
 
       {!shopsLoading && shopMapBundle.stats.total === 0 ? (
         <p className="text-xs text-muted-foreground">
-          Brak sklepów z serwera — mapa pokazuje domyślny widok (Polska), punkty pojawią się po załadowaniu
+          Brak sklepów z serwera - mapa pokazuje domyślny widok (Polska), punkty pojawią się po załadowaniu
           listy.
         </p>
       ) : null}

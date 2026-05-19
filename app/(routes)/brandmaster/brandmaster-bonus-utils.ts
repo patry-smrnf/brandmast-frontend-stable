@@ -85,7 +85,7 @@ function getRegularGloRatePerDevice(
   gloEfficiency: number,
 ): { rate: number; tierLabel: string } {
   if (veloEfficiency < 5.0) {
-    return { rate: 0, tierLabel: "Velo < 5,0 — brak bonusu Glo" }
+    return { rate: 0, tierLabel: "Velo < 5,0 czyli brak bonusu Glo" }
   }
   if (veloEfficiency < 6.0) {
     const rate =
@@ -219,7 +219,7 @@ export function computeBrandmasterBonus(
 }
 
 export function formatEfficiencyPl(value: number): string {
-  if (!Number.isFinite(value)) return "—"
+  if (!Number.isFinite(value)) return "-"
   return value.toLocaleString("pl-PL", {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,

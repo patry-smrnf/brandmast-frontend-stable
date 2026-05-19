@@ -45,7 +45,7 @@ export interface UpdateActionRequest {
   since?: string; // date-time
   until?: string; // date-time
   status?: string;
-  /** Opcjonalny tytuł — jeśli backend go obsługuje przy akceptacji. */
+  /** Opcjonalny tytuł - jeśli backend go obsługuje przy akceptacji. */
   title?: string;
 }
 
@@ -147,11 +147,11 @@ export interface ActionsConfig {
   isEditingAllowed?: boolean;
   isAddingAllowed?: boolean;
   isDeteletingAllowed?: boolean;
-  /** Poprawna nazwa pola — część backendów zwraca zamiast `isDeteletingAllowed`. */
+  /** Poprawna nazwa pola - część backendów zwraca zamiast `isDeteletingAllowed`. */
   isDeletingAllowed?: boolean;
 }
 
-/** POST /api/action/bm/delete — ten sam kształt co `ActionIdRequest` */
+/** POST /api/action/bm/delete - ten sam kształt co `ActionIdRequest` */
 export type DeleteBmActionRequest = ActionIdRequest;
 
 export interface AccessConfig {
@@ -212,7 +212,7 @@ export interface TourplannerData {
   email?: string;
 }
 
-/** GET /api/brandmaster/sv/fetch — element listy */
+/** GET /api/brandmaster/sv/fetch - element listy */
 export interface BrandmastersResponse {
   brandmasterId?: number; // int64
   login?: string;

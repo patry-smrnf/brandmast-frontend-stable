@@ -12,7 +12,7 @@ export function getShopTourplannerIdent(s: ShopResponse) {
   return s.tourplanner?.ident?.trim() ?? ""
 }
 
-/** Tourplanner point UUID — matches `TourPlannerPointListItem.uuid` from CAS. */
+/** Tourplanner point UUID - matches `TourPlannerPointListItem.uuid` from CAS. */
 export function getShopTourplannerId(s: ShopResponse) {
   return s.tourplanner?.id?.trim() ?? ""
 }
@@ -60,7 +60,7 @@ export function getShopGroupLabel(key: string) {
 export function formatShopCoords(s: ShopResponse) {
   const lat = s.location?.geoLat?.trim()
   const lng = s.location?.geoLng?.trim()
-  if (!lat && !lng) return "—"
+  if (!lat && !lng) return "-"
   if (lat && lng) return `${lat}, ${lng}`
-  return lat || lng || "—"
+  return lat || lng || "-"
 }

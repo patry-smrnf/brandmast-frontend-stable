@@ -117,7 +117,7 @@ export function RoleContextMenu() {
             disabled: isEditorDisabled,
             icon: <UserIcon className="size-4" />,
           },
-          { key: "sep-1", label: "—" },
+          { key: "sep-1", label: "-" },
           {
             key: "logout",
             label: "Wyloguj",
@@ -162,7 +162,7 @@ export function RoleContextMenu() {
             href: "/supervisor/settings",
             icon: <SettingsIcon className="size-4" />,
           },
-          { key: "sep-1", label: "—" },
+          { key: "sep-1", label: "-" },
           {
             key: "logout",
             label: "Wyloguj",
@@ -250,7 +250,7 @@ export function RoleContextMenu() {
           <div className="h-px bg-border" />
           <div className="py-1">
             {items.map((item) => {
-              if (item.label === "—") {
+              if (item.label === "-") {
                 return <div key={item.key} className="my-1 h-px bg-border" />
               }
               return (

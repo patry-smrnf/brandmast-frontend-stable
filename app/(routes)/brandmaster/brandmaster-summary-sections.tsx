@@ -198,7 +198,7 @@ export function EfficiencyCard({
   const timeDivisorLabel =
     e.timeDivisor > 0
       ? e.timeDivisor.toLocaleString("pl-PL", { maximumFractionDigits: 2 })
-      : "—"
+      : "-"
 
   return (
     <Card className="shadow-sm">
@@ -322,7 +322,7 @@ export function PayoutCard({
             </>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Brak statystyk próbek — bonus nie został policzony (wymagany login z konfiguracji
+              Brak statystyk bonus nie został policzony (wymagany login z konfiguracji
               oraz ident ostatniej akcji).
             </p>
           )}

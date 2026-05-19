@@ -19,7 +19,7 @@ export function normalizeActionStatus(raw: string | null | undefined): Normalize
   return "UNKNOWN"
 }
 
-/** Wariant `Badge` (shadcn) — bez importu UI w konsumentach. */
+/** Wariant `Badge` (shadcn) - bez importu UI w konsumentach. */
 export type ActionStatusBadgeVariant =
   | "default"
   | "secondary"

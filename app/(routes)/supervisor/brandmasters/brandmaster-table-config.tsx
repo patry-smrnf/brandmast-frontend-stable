@@ -24,7 +24,7 @@ export const brandmasterTableColumns: DataColumn<BrandmastersResponse>[] = [
       return full ? (
         <span className="font-medium">{full}</span>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       )
     },
   },
@@ -35,7 +35,7 @@ export const brandmasterTableColumns: DataColumn<BrandmastersResponse>[] = [
       bm.login?.trim() ? (
         <span className="font-mono text-xs">{bm.login.trim()}</span>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       ),
   },
   {
@@ -46,7 +46,7 @@ export const brandmasterTableColumns: DataColumn<BrandmastersResponse>[] = [
       return email ? (
         <span className="line-clamp-1 max-w-xs text-sm">{email}</span>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       )
     },
   },
@@ -57,7 +57,7 @@ export const brandmasterTableColumns: DataColumn<BrandmastersResponse>[] = [
       bm.kasoterminal != null ? (
         <span className="tabular-nums">{bm.kasoterminal}</span>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       ),
   },
   {
@@ -69,7 +69,7 @@ export const brandmasterTableColumns: DataColumn<BrandmastersResponse>[] = [
           Tak
         </Badge>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       ),
   },
   {
@@ -82,7 +82,7 @@ export const brandmasterTableColumns: DataColumn<BrandmastersResponse>[] = [
           {uuid}
         </span>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       )
     },
   },

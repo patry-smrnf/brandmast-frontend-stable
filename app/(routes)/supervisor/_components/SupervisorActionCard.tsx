@@ -102,7 +102,7 @@ export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConfl
 
         <div className="mt-1 flex gap-1.5 text-[11px] leading-snug text-muted-foreground sm:mt-1.5 sm:text-xs">
           <MapPinIcon className="mt-px size-3 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="min-w-0 text-foreground line-clamp-2">{action.shop.address || "—"}</span>
+          <span className="min-w-0 text-foreground line-clamp-2">{action.shop.address || "-"}</span>
         </div>
 
         <div className="mt-1 flex items-start justify-between gap-2 sm:mt-1.5">

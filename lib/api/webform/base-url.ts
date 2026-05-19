@@ -15,7 +15,7 @@ function resolveWebformApiBaseUrl(): string {
   );
 }
 
-/** Webform API — ten sam adres w przeglądarce i na serwerze (localhost i produkcja). */
+/** Webform API - ten sam adres w przeglądarce i na serwerze (localhost i produkcja). */
 export function getServerWebformApiBaseUrl(): string {
   return resolveWebformApiBaseUrl();
 }

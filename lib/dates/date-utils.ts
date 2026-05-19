@@ -108,8 +108,8 @@ export function formatPlDateTimePoland(d: Date) {
 
 export function formatPlDateTimeFromIso(iso: string) {
   const s = iso.trim()
-  if (!s) return "—"
+  if (!s) return "-"
   const d = parseIso(s)
-  if (!d) return "—"
+  if (!d) return "-"
   return formatPlDateTime(d)
 }

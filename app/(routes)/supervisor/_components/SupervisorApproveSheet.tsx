@@ -174,8 +174,7 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
               Akceptuj akcję
             </h2>
             <p id="approve-sheet-desc" className="mt-1 text-sm text-muted-foreground">
-              Podakcje (maks. 4 h) trafią na serwer z Twoim tytułem oraz flagą aktywności z checkboxów. Przy więcej niż
-              jednej części tytuł dostanie numer: <span className="font-medium text-foreground">„… (1/N)”</span>.
+              Podakcje (maks. 4 h) trafią do tourplannera z podanym tutaj tytułem oraz statusem ( checkbox zaznaczony oznacza gotowa do odpalenia ). Kazda z akcji jest numerowana [1/1]: <span className="font-medium text-foreground">„… (a/N)”</span>.
             </p>
           </div>
 
@@ -193,7 +192,7 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
           </div>
 
           {segments.length === 0 ? (
-            <p className="text-sm text-destructive">Nie udało się podzielić przedziału czasu — sprawdź daty akcji.</p>
+            <p className="text-sm text-destructive">Nie udało się podzielić przedziału czasu - sprawdź daty akcji.</p>
           ) : (
             <fieldset className="min-w-0 space-y-2">
               <legend className="text-sm font-medium text-foreground">Podakcje (max 4 h)</legend>

@@ -107,7 +107,7 @@ export default function EditorStep2ShopFields({
                               </div>
                             </div>
                             <div className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                              {s.id ?? "—"}
+                              {s.id ?? "-"}
                             </div>
                           </div>
                         </button>

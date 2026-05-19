@@ -35,15 +35,15 @@ export function parseCasDatetime(block?: CasDatetimeBlock): Date | null {
 }
 
 export function formatCasAddress(address?: CasAddressCreate): string {
-  if (!address) return "—"
+  if (!address) return "-"
   const street = [address.streetAddress, address.streetNumber].filter(Boolean).join(" ")
   const city = [address.postalCode, address.cityName].filter(Boolean).join(" ")
-  return [street, city].filter(Boolean).join(", ") || "—"
+  return [street, city].filter(Boolean).join(", ") || "-"
 }
 
 export function formatCasTime(block?: CasDatetimeBlock): string {
   const d = parseCasDatetime(block)
-  if (!d) return "—"
+  if (!d) return "-"
   return formatTime(d)
 }
 
@@ -90,7 +90,7 @@ export function mapFinishedActionsWithRoundedTime(
       startLabel: formatCasTime(action.history?.start),
       stopLabel: formatCasTime(action.history?.stop),
       addressLabel: formatCasAddress(action.point?.address),
-      shopName: action.point?.name?.trim() || "—",
+      shopName: action.point?.name?.trim() || "-",
       actionName: action.name?.trim() || null,
       actionIdent: action.ident?.trim() || null,
     })
@@ -100,7 +100,7 @@ export function mapFinishedActionsWithRoundedTime(
   return mapped
 }
 
-/** Fallback gdy brak history — since/until z poziomu akcji. */
+/** Fallback gdy brak history - since/until z poziomu akcji. */
 export function parseActionFallbackStart(item: TourPlannerActionListItem): Date | null {
   return parseCasDatetime(item.history?.start) ?? (item.since ? parseIso(item.since) : null)
 }

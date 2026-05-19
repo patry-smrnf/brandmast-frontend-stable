@@ -22,7 +22,7 @@ export const shopTableColumns: DataColumn<ShopResponse>[] = [
     id: "name",
     header: "Nazwa",
     cell: (s) => (
-      <span className="font-medium">{s.name?.trim() || <span className="text-muted-foreground">—</span>}</span>
+      <span className="font-medium">{s.name?.trim() || <span className="text-muted-foreground">-</span>}</span>
     ),
   },
   {
@@ -33,7 +33,7 @@ export const shopTableColumns: DataColumn<ShopResponse>[] = [
       return addr ? (
         <span className="line-clamp-2 max-w-xs">{addr}</span>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       )
     },
   },
@@ -47,7 +47,7 @@ export const shopTableColumns: DataColumn<ShopResponse>[] = [
           {ev}
         </Badge>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       )
     },
   },
@@ -59,7 +59,7 @@ export const shopTableColumns: DataColumn<ShopResponse>[] = [
       return ident ? (
         <span className="font-mono text-xs">{ident}</span>
       ) : (
-        <span className="text-muted-foreground">—</span>
+        <span className="text-muted-foreground">-</span>
       )
     },
   },
@@ -75,7 +75,7 @@ export const shopTableColumns: DataColumn<ShopResponse>[] = [
     header: "ID",
     headerClassName: "text-right",
     cellClassName: "text-right",
-    cell: (s) => <span className="tabular-nums text-muted-foreground">{s.id ?? "—"}</span>,
+    cell: (s) => <span className="tabular-nums text-muted-foreground">{s.id ?? "-"}</span>,
   },
 ]
 

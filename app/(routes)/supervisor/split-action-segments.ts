@@ -10,7 +10,7 @@ export type ActionTimeSegment = {
 
 /**
  * Dzieli przedział [since, until] na kolejne sloty o długości co najwyżej 4h (ostatni może być krótszy).
- * Używa znaczników czasu UTC z `Date` — ISO wysyłane do API są spójne z `toISOString()`.
+ * Używa znaczników czasu UTC z `Date` - ISO wysyłane do API są spójne z `toISOString()`.
  */
 export function splitActionIntoMaxFourHourSegments(
   sinceIso: string,

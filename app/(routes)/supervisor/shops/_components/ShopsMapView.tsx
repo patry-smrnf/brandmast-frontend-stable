@@ -200,15 +200,15 @@ export function ShopsMapView({ shops, isLoading, onShopDeleted }: ShopsMapViewPr
           {selectedShop ? (
             <div className="space-y-4">
               <div className="space-y-3 rounded-lg border border-border/70 bg-muted/25 p-3">
-                <DetailRow label="Nazwa" value={selectedShop.name?.trim() || "—"} />
-                <DetailRow label="Adres" value={getShopAddress(selectedShop) || "—"} />
-                <DetailRow label="Event" value={getShopEventName(selectedShop) || "—"} />
+                <DetailRow label="Nazwa" value={selectedShop.name?.trim() || "-"} />
+                <DetailRow label="Adres" value={getShopAddress(selectedShop) || "-"} />
+                <DetailRow label="Event" value={getShopEventName(selectedShop) || "-"} />
                 <DetailRow
                   label="Tourplanner"
-                  value={getShopTourplannerIdent(selectedShop) || "—"}
+                  value={getShopTourplannerIdent(selectedShop) || "-"}
                 />
                 <DetailRow label="GPS" value={formatShopCoords(selectedShop)} mono />
-                <DetailRow label="ID" value={String(selectedShop.id ?? "—")} mono />
+                <DetailRow label="ID" value={String(selectedShop.id ?? "-")} mono />
               </div>
 
               {!confirmDelete ? (
