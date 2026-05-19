@@ -5,7 +5,7 @@ import { subscribeBackendTimeout } from "@/lib/api/backend-timeout-signal";
 import { Button } from "@/components/ui/button";
 
 /** Tymczasowy URL do „budzenia” instancji Render w testach. */
-const WAKE_SERVER_URL = "https://brandmast-backend-stable.onrender.com/";
+const WAKE_SERVER_URL = "https://whispering-cynthia-brandmast-9a13ee72.koyeb.app";
 
 export function BackendWakeBanner() {
   const [open, setOpen] = useState(false);
