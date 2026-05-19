@@ -1,4 +1,11 @@
-import { formatPlDatePoland, formatTime, parseIso, toDateKey } from "@/lib/dates/date-utils"
+import {
+  formatPlDatePoland,
+  formatTimePoland,
+  parseIso,
+  parseWallClockInTimeZone,
+  POLAND_TIMEZONE,
+  toDateKey,
+} from "@/lib/dates/date-utils"
 import type {
   CasAddressCreate,
   CasDatetimeBlock,
@@ -27,10 +34,23 @@ export function getMonthDateRange(reference: Date) {
   return { since, until }
 }
 
+const HAS_OFFSET_RE = /([Zz]|[+-]\d{2}(?::?\d{2})?)$/
+
 export function parseCasDatetime(block?: CasDatetimeBlock): Date | null {
   const raw = block?.date?.trim()
   if (!raw) return null
-  const d = new Date(raw)
+
+  if (HAS_OFFSET_RE.test(raw)) {
+    const d = new Date(raw)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+
+  const tz = block?.timezone?.trim() || POLAND_TIMEZONE
+  const wallClock = parseWallClockInTimeZone(raw, tz)
+  if (wallClock) return wallClock
+
+  const normalized = raw.includes("T") ? raw : raw.replace(" ", "T")
+  const d = new Date(normalized)
   return Number.isNaN(d.getTime()) ? null : d
 }
 
@@ -44,16 +64,28 @@ export function formatCasAddress(address?: CasAddressCreate): string {
 export function formatCasTime(block?: CasDatetimeBlock): string {
   const d = parseCasDatetime(block)
   if (!d) return "-"
-  return formatTime(d)
+  return formatTimePoland(d)
 }
 
-/** Zaokrąglenie do najbliższej 0,5 h, minimum 1 h (np. 48 min → 1 h, 1h20 → 1,5 h). */
+const HALF_HOUR_BLOCK_MS = 30 * 60 * 1000
+/** Pierwsze 0,5 h liczy się dopiero w ostatnich 12 min pierwszego bloku 30 min (np. start 14:31 → od 14:49). */
+const FIRST_HALF_BLOCK_MS = HALF_HOUR_BLOCK_MS - 12 * 60 * 1000
+
+/**
+ * Godziny rozliczeniowe w blokach po 0,5 h (30 min każdy).
+ * Kolejny blok liczy się, gdy akcja trwa do 12 min przed końcem danego bloku (18., 48., 78. min…).
+ */
 export function roundActionDurationHours(start: Date, stop: Date): number {
   const ms = stop.getTime() - start.getTime()
   if (ms <= 0) return 0
-  const hours = ms / 3_600_000
-  const nearestHalf = Math.round(hours * 2) / 2
-  return Math.max(1, nearestHalf)
+
+  let halfHourBlocks = 0
+  let thresholdMs = FIRST_HALF_BLOCK_MS
+  while (ms >= thresholdMs) {
+    halfHourBlocks += 1
+    thresholdMs += HALF_HOUR_BLOCK_MS
+  }
+  return halfHourBlocks * 0.5
 }
 
 export function formatHoursPl(hours: number): string {
@@ -74,8 +106,10 @@ export function mapFinishedActionsWithRoundedTime(
   const mapped: ActionWithRoundedTime[] = []
 
   for (const action of items) {
-    const start = parseCasDatetime(action.history?.start)
-    const stop = parseCasDatetime(action.history?.stop)
+    const start =
+      parseCasDatetime(action.history?.start) ?? (action.since ? parseIso(action.since) : null)
+    const stop =
+      parseCasDatetime(action.history?.stop) ?? (action.until ? parseIso(action.until) : null)
     if (!start || !stop) continue
 
     const roundedHours = roundActionDurationHours(start, stop)
@@ -87,8 +121,8 @@ export function mapFinishedActionsWithRoundedTime(
       stop,
       roundedHours,
       dateLabel: formatPlDatePoland(start),
-      startLabel: formatCasTime(action.history?.start),
-      stopLabel: formatCasTime(action.history?.stop),
+      startLabel: formatTimePoland(start),
+      stopLabel: formatTimePoland(stop),
       addressLabel: formatCasAddress(action.point?.address),
       shopName: action.point?.name?.trim() || "-",
       actionName: action.name?.trim() || null,

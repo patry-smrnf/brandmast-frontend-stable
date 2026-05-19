@@ -83,6 +83,71 @@ export function formatTime(d: Date) {
   return new Intl.DateTimeFormat("pl-PL", { hour: "2-digit", minute: "2-digit" }).format(d)
 }
 
+/** Godzina w strefie Polski (Europe/Warsaw). */
+export function formatTimePoland(d: Date) {
+  return new Intl.DateTimeFormat("pl-PL", {
+    timeZone: POLAND_TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d)
+}
+
+const WALL_CLOCK_RE =
+  /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/
+
+/**
+ * Parsuje napis bez offsetu (np. z CAS/PHP) jako czas ścienny w podanej strefie.
+ */
+export function parseWallClockInTimeZone(
+  dateTimeStr: string,
+  timeZone: string = POLAND_TIMEZONE,
+): Date | null {
+  const trimmed = dateTimeStr.trim()
+  const match = WALL_CLOCK_RE.exec(trimmed)
+  if (!match) return null
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const hour = Number(match[4])
+  const minute = Number(match[5])
+  const second = Number(match[6] ?? "0")
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+
+  let guessMs = Date.UTC(year, month - 1, day, hour, minute, second)
+
+  for (let i = 0; i < 4; i++) {
+    const parts = Object.fromEntries(
+      formatter.formatToParts(new Date(guessMs)).map((p) => [p.type, p.value]),
+    ) as Record<string, string>
+
+    const py = Number(parts.year)
+    const pmo = Number(parts.month)
+    const pd = Number(parts.day)
+    const ph = Number(parts.hour)
+    const pmi = Number(parts.minute)
+    const ps = Number(parts.second)
+
+    if (py === year && pmo === month && pd === day && ph === hour && pmi === minute && ps === second) {
+      return new Date(guessMs)
+    }
+
+    guessMs += Date.UTC(year, month - 1, day, hour, minute, second) - Date.UTC(py, pmo - 1, pd, ph, pmi, ps)
+  }
+
+  return new Date(guessMs)
+}
+
 /** Data i godzina w locale pl-PL, w lokalnej strefie przeglądarki (jak {@link formatTime}). */
 export function formatPlDateTime(d: Date) {
   return new Intl.DateTimeFormat("pl-PL", {
