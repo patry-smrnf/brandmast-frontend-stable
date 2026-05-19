@@ -186,7 +186,7 @@ export default function LoginPage() {
                   href="#"
                   className="font-medium text-foreground underline-offset-4 hover:underline"
                 >
-                  Skontaktuj sie ze mna na whatsapp 
+                  Skontaktuj sie z swoim teamleaderem
                 </Link>
                 .
               </p>
