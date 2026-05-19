@@ -193,6 +193,46 @@ export interface BrandmasterData {
   mail?: string;
 }
 
+/** POST /api/brandmaster/sv/delete */
+export interface BrandmasterDeleteRequest {
+  brandmasterId?: number; // int64
+}
+
+/** POST /api/brandmaster/sv/add */
+export interface BrandmasterAddRequest {
+  name?: string;
+  surname?: string;
+  tpUuid?: string;
+  email?: string;
+  login?: string;
+}
+
+export interface TourplannerData {
+  uuid?: string;
+  email?: string;
+}
+
+/** GET /api/brandmaster/sv/fetch — element listy */
+export interface BrandmastersResponse {
+  brandmasterId?: number; // int64
+  login?: string;
+  name?: string;
+  surname?: string;
+  kasoterminal?: number; // int64
+  tourplannerData?: TourplannerData;
+  has121?: boolean;
+}
+
+/** GET /api/brandmaster/sv/fetch */
+export interface ApiResponseListBrandmastersResponse {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: BrandmastersResponse[];
+  violations?: Violation[];
+}
+
 export interface SettingResponse {
   id?: number; // int64
   brandmasterData?: BrandmasterData;

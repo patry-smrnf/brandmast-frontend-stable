@@ -6,6 +6,7 @@ import type {
   ActionIdRequest,
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
+  ApiResponseListBrandmastersResponse,
   ApiResponseListEvent,
   ApiResponseListShopResponse,
   ApiResponseListTourPlannerActionListItem,
@@ -14,6 +15,8 @@ import type {
   ApiResponseObject,
   ApiResponseSettingResponse,
   ActionRequest,
+  BrandmasterAddRequest,
+  BrandmasterDeleteRequest,
   ConfigUpdateRequest,
   DeleteBmActionRequest,
   LoginRequest,
@@ -100,6 +103,37 @@ export class BrandmastApi {
    */
   async fetchEvents(options?: RequestOptions) {
     const res = await this.http.get<ApiResponseListEvent>("/api/event/fetch", options);
+    return res.data;
+  }
+
+  /**
+   * GET /api/brandmaster/sv/fetch
+   */
+  async fetchBrandmasters(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListBrandmastersResponse>(
+      "/api/brandmaster/sv/fetch",
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/brandmaster/sv/add
+   */
+  async addBrandmaster(body: BrandmasterAddRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/brandmaster/sv/add", body, options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/brandmaster/sv/delete
+   */
+  async deleteBrandmaster(body: BrandmasterDeleteRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>(
+      "/api/brandmaster/sv/delete",
+      body,
+      options,
+    );
     return res.data;
   }
 

@@ -9,6 +9,7 @@ import {
   ShieldIcon,
   StoreIcon,
   UserIcon,
+  UsersIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -141,6 +142,12 @@ export function RoleContextMenu() {
             label: "Sklepy",
             href: "/supervisor/shops",
             icon: <StoreIcon className="size-4" />,
+          },
+          {
+            key: "sv-brandmasters",
+            label: "Brandmasterzy",
+            href: "/supervisor/brandmasters",
+            icon: <UsersIcon className="size-4" />,
           },
           {
             key: "sv-settings",
