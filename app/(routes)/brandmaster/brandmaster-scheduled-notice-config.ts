@@ -10,7 +10,7 @@ export const BRANDMASTER_SCHEDULED_NOTICE = {
   windows: [
     {
       start: "2026-05-19T00:00:00",
-      end: "2026-05-20T00:00:00",
+      end: "2026-05-22T00:00:00",
     },
   ] satisfies readonly PolandScheduleWindow[],
 } as const
