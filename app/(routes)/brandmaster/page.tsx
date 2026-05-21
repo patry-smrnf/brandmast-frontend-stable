@@ -29,6 +29,7 @@ import {
   POLAND_TIMEZONE,
 } from "@/lib/dates/date-utils"
 
+import { BrandmasterScheduledNotice } from "./BrandmasterScheduledNotice"
 import { BrandmasterPageSkeleton } from "./brandmaster-page-skeleton"
 import {
   EfficiencyCard,
@@ -301,6 +302,7 @@ export default function BrandmasterPage() {
   return (
     <main className="flex-1 bg-background">
       <div className="mx-auto w-full max-w-lg px-3 py-4 sm:max-w-xl sm:px-4 sm:py-5">
+        <BrandmasterScheduledNotice />
         {isLoading ? (
           <BrandmasterPageSkeleton />
         ) : (

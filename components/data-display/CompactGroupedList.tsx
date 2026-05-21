@@ -18,9 +18,19 @@ export type CompactGroupedListProps<T> = {
   collapsible?: boolean
   /** Gdy collapsible - domyślnie wszystkie grupy zwinięte */
   defaultCollapsed?: boolean
+  /** Gdy collapsible - klucze grup rozwiniętych na starcie (nadpisuje defaultCollapsed) */
+  defaultExpandedKeys?: string[]
 }
 
-function initialCollapsedKeys(groups: DataGroup<unknown>[], defaultCollapsed: boolean) {
+function initialCollapsedKeys(
+  groups: DataGroup<unknown>[],
+  defaultCollapsed: boolean,
+  defaultExpandedKeys?: string[],
+) {
+  if (defaultExpandedKeys?.length) {
+    const expanded = new Set(defaultExpandedKeys)
+    return new Set(groups.map((g) => g.key).filter((key) => !expanded.has(key)))
+  }
   if (!defaultCollapsed) return new Set<string>()
   return new Set(groups.map((g) => g.key))
 }
@@ -34,9 +44,10 @@ export function CompactGroupedList<T>({
   className,
   collapsible = false,
   defaultCollapsed = false,
+  defaultExpandedKeys,
 }: CompactGroupedListProps<T>) {
   const [collapsedKeys, setCollapsedKeys] = React.useState<Set<string>>(() =>
-    initialCollapsedKeys(groups as DataGroup<unknown>[], defaultCollapsed)
+    initialCollapsedKeys(groups as DataGroup<unknown>[], defaultCollapsed, defaultExpandedKeys)
   )
 
   React.useEffect(() => {

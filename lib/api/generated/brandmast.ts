@@ -13,6 +13,12 @@ import type {
   ApiResponseListShopResponse,
   ApiResponseListTourPlannerActionListItem,
   ApiResponseListTourPlannerPointListItem,
+  ApiResponseListOneTwoOneAplikacjaZgloszenie,
+  ApiResponseListOneTwoOneRivoVirto,
+  ApiResponseListOneTwoOneSampling,
+  ApiResponseListOneTwoOneTeam,
+  ApiResponseOneTwoOneAplikacjaZgloszenieCreated,
+  ApiResponseOneTwoOneSamplingCreated,
   ApiResponseLoginResponse,
   ApiResponseObject,
   ApiResponseSettingResponse,
@@ -26,6 +32,8 @@ import type {
   ShopAddRequest,
   ShopDeleteRequest,
   UpdateActionRequest,
+  ZgloszeniaAplikacjeAddRequest,
+  ZgloszeniaSamplingAddRequest,
 } from "./types";
 
 export class BrandmastApi {
@@ -254,6 +262,74 @@ export class BrandmastApi {
   async fetchBMActions(body: ActionCasRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
       "/api/cas/action/bm/fetch",
+      body,
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * GET /api/121/zgloszeniaSampling/fetch
+   */
+  async fetchZgloszeniaSampling(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListOneTwoOneSampling>(
+      "/api/121/zgloszeniaSampling/fetch",
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * GET /api/121/zgloszeniaAplikacje/fetch
+   */
+  async fetchZgloszeniaAplikacje(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListOneTwoOneAplikacjaZgloszenie>(
+      "/api/121/zgloszeniaAplikacje/fetch",
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * GET /api/121/teams/fetch
+   */
+  async fetchTeam(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListOneTwoOneTeam>(
+      "/api/121/teams/fetch",
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * GET /api/121/products/rivoVirto/fetch
+   */
+  async fetchProductsRivoVirto(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListOneTwoOneRivoVirto>(
+      "/api/121/products/rivoVirto/fetch",
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/121/zgloszeniaSampling/add
+   */
+  async addZgloszeniaSampling(body: ZgloszeniaSamplingAddRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseOneTwoOneSamplingCreated>(
+      "/api/121/zgloszeniaSampling/add",
+      body,
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/121/zgloszeniaAplikacje/add
+   */
+  async addZgloszeniaAplikacje(body: ZgloszeniaAplikacjeAddRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseOneTwoOneAplikacjaZgloszenieCreated>(
+      "/api/121/zgloszeniaAplikacje/add",
       body,
       options,
     );

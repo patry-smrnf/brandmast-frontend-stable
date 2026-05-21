@@ -11,6 +11,8 @@ import {
   UserIcon,
   UsersIcon,
   ClipboardListIcon,
+  DockIcon,
+  PlusIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -88,6 +90,7 @@ export function RoleContextMenu() {
 
   const isAddingAllowed = config?.actionsConfig?.isAddingAllowed
   const isEditorDisabled = isAddingAllowed === false
+  const is121SamplingDisabled = config?.myData?.hasOneTwoOne === false
 
   const items: MenuItem[] =
     role === "brandmaster"
@@ -102,7 +105,7 @@ export function RoleContextMenu() {
             key: "bm-actions",
             label: "Akcje",
             href: "/brandmaster/actions",
-            icon: <UserIcon className="size-4" />,
+            icon: <DockIcon className="size-4" />,
           },
           {
             key: "bm-settings",
@@ -115,7 +118,21 @@ export function RoleContextMenu() {
             label: "Dodaj akcje",
             href: "/brandmaster/editor",
             disabled: isEditorDisabled,
-            icon: <UserIcon className="size-4" />,
+            icon: <PlusIcon className="size-4" />,
+          },
+          {
+            key: "bm-121-sampling",
+            label: "121 Sampling",
+            href: "/brandmaster/121Sampling",
+            disabled: is121SamplingDisabled,
+            icon: <ClipboardListIcon className="size-4" />,
+          },
+          {
+            key: "bm-121-aplikacje",
+            label: "121 Aplikacje",
+            href: "/brandmaster/121Aplikacje",
+            disabled: is121SamplingDisabled,
+            icon: <ClipboardListIcon className="size-4" />,
           },
           { key: "sep-1", label: "-" },
           {
@@ -268,7 +285,12 @@ export function RoleContextMenu() {
                 >
                   {item.icon ? <span className="shrink-0">{item.icon}</span> : null}
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {item.key === "bm-editor" && item.disabled ? (
+                  {(item.key === "bm-editor" || item.key === "bm-121-sampling") && item.disabled ? (
+                    <span className="shrink-0 text-[10px] text-muted-foreground">
+                      disabled
+                    </span>
+                  ) : null}
+                  {(item.key === "bm-editor" || item.key === "bm-121-aplikacje") && item.disabled ? (
                     <span className="shrink-0 text-[10px] text-muted-foreground">
                       disabled
                     </span>

@@ -460,3 +460,148 @@ export interface ApiResponseListTourPlannerBrandmasterListItem {
   violations?: Violation[];
 }
 
+/** GET /api/121/zgloszeniaSampling/fetch */
+export interface OneTwoOneSampling {
+  id?: number; // int64
+  nr_akcji_pelen?: string;
+  data_wpisu?: string;
+  data_modyfikacji?: string;
+  region_id?: number; // int32
+  data_paczki?: string;
+  login?: string;
+  oferta_samp_prod_1?: number; // int32
+}
+
+export interface ApiResponseListOneTwoOneSampling {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneSampling[];
+  violations?: Violation[];
+}
+
+/** GET /api/121/zgloszeniaAplikacje/fetch */
+export interface OneTwoOneAplikacjaZgloszenie {
+  id?: number; // int64
+  nr_akcji_pelen?: string;
+  mail_konsumenta?: string;
+  data_wpisu?: string;
+  data_modyfikacji?: string;
+  oferta_rivo_virto_prod_1?: number; // int32
+  login?: string;
+}
+
+export interface ApiResponseListOneTwoOneAplikacjaZgloszenie {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneAplikacjaZgloszenie[];
+  violations?: Violation[];
+}
+
+/** GET /api/121/teams/fetch */
+export interface OneTwoOneTeam {
+  id?: number; // int32
+  nazwa?: string;
+  inst_id?: number; // int32
+  czy_aktywny?: number; // int32
+  lp?: number; // int32
+}
+
+export interface ApiResponseListOneTwoOneTeam {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneTeam[];
+  violations?: Violation[];
+}
+
+/** GET /api/121/products/rivoVirto/fetch */
+export interface OneTwoOneRivoVirto {
+  id?: number; // int32
+  nazwa?: string;
+  lp?: number; // int32
+}
+
+export interface ApiResponseListOneTwoOneRivoVirto {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneRivoVirto[];
+  violations?: Violation[];
+}
+
+/** POST /api/121/zgloszeniaSampling/add */
+export interface ZgloszeniaSamplingAddRequest {
+  data_paczki?: string;
+  region_id?: number; // int32
+  nr_akcji?: string;
+  nr_akcji_koncowka?: string;
+  oferta_samp_prod_1?: number; // int32
+}
+
+export interface OneTwoOneSamplingCreated {
+  id?: number; // int64
+  data_paczki?: string;
+  data_wpisu?: string;
+  data_modyfikacji?: string;
+  uzytkownik_wpisu_id?: number; // int32
+  uzytkownik_modyfikacji_id?: number; // int32
+  region_id?: number; // int32
+  rodzaj?: string;
+  nr_akcji?: string;
+  nr_akcji_koncowka?: string;
+  nr_akcji_pelen?: string;
+  oferta_samp_prod_1?: string;
+  czy_bm?: string;
+  czy_velo?: string;
+  czy_sampling?: string;
+}
+
+export interface ApiResponseOneTwoOneSamplingCreated {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneSamplingCreated;
+  violations?: Violation[];
+}
+
+/** POST /api/121/zgloszeniaAplikacje/add */
+export interface ZgloszeniaAplikacjeAddRequest {
+  nr_akcji?: string;
+  nr_akcji_koncowka?: string;
+  mail_konsumenta?: string;
+  oferta_rivo_virto_prod_1?: number; // int32
+}
+
+export interface OneTwoOneAplikacjaZgloszenieCreated {
+  id?: number; // int64
+  data_wpisu?: string;
+  data_modyfikacji?: string;
+  uzytkownik_wpisu_id?: number; // int32
+  uzytkownik_modyfikacji_id?: number; // int32
+  nr_akcji?: string;
+  nr_akcji_koncowka?: string;
+  nr_akcji_pelen?: string;
+  mail_konsumenta?: string;
+  oferta_rivo_virto_prod_1?: string;
+  czy_rivo_virto?: string;
+  czy_bm?: string;
+  czy_velo?: string;
+  czy_sampling?: string;
+}
+
+export interface ApiResponseOneTwoOneAplikacjaZgloszenieCreated {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneAplikacjaZgloszenieCreated;
+  violations?: Violation[];
+}
+

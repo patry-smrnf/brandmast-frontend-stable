@@ -178,3 +178,28 @@ export function formatPlDateTimeFromIso(iso: string) {
   if (!d) return "-"
   return formatPlDateTime(d)
 }
+
+/** Okno czasu ściennego w {@link POLAND_TIMEZONE}, np. `2026-05-21 09:00:00`. */
+export type PolandScheduleWindow = {
+  start: string
+  end: string
+}
+
+function normalizeWallClockForPoland(value: string) {
+  return value.trim().replace("T", " ")
+}
+
+/** Czy `now` mieści się w którymkolwiek oknie (granice: start włącznie, end wyłącznie). */
+export function isNowWithinPolandSchedule(
+  windows: readonly PolandScheduleWindow[],
+  now: Date = nowInPoland(),
+): boolean {
+  const t = now.getTime()
+  for (const { start, end } of windows) {
+    const startAt = parseWallClockInTimeZone(normalizeWallClockForPoland(start))
+    const endAt = parseWallClockInTimeZone(normalizeWallClockForPoland(end))
+    if (!startAt || !endAt) continue
+    if (t >= startAt.getTime() && t < endAt.getTime()) return true
+  }
+  return false
+}

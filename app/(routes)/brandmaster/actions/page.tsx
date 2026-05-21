@@ -18,6 +18,7 @@ import { brandmastApi } from "@/lib/api"
 import { useConfigState } from "@/lib/config/configStore"
 import { toast } from "sonner"
 
+import { BrandmasterScheduledNotice } from "../BrandmasterScheduledNotice"
 import { ActionCard } from "./_components/ActionCard"
 import { DayPill } from "./_components/DayPill"
 import { addDays, formatHeaderDate, parseIso, startOfDay, toDateKey, toMonthKey } from "@/lib/dates/date-utils"
@@ -234,6 +235,7 @@ export default function BrandmasterActionsPage() {
   return (
     <main className="flex flex-1 flex-col bg-background pb-24">
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
+        <BrandmasterScheduledNotice />
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
