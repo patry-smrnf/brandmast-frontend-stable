@@ -12,6 +12,7 @@ import {
   UsersIcon,
   ClipboardListIcon,
   DockIcon,
+  FileSpreadsheetIcon,
   PlusIcon,
 } from "lucide-react"
 
@@ -172,6 +173,12 @@ export function RoleContextMenu() {
             label: "Panel CAS",
             href: "/supervisor/casPanel",
             icon: <ClipboardListIcon className="size-4" />,
+          },
+          {
+            key: "sv-excel",
+            label: "Eksport Excel",
+            href: "/supervisor/excel",
+            icon: <FileSpreadsheetIcon className="size-4" />,
           },
           {
             key: "sv-settings",

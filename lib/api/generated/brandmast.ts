@@ -335,6 +335,32 @@ export class BrandmastApi {
     );
     return res.data;
   }
+
+  /**
+   * GET /api/excel/sv/export/brandmasters.xlsx
+   */
+  async exportBrandmastersExcel(options?: RequestOptions) {
+    const res = await this.http.get<Blob>("/api/excel/sv/export/brandmasters.xlsx", {
+      ...options,
+      responseType: "blob",
+    });
+    return res.data;
+  }
+
+  /**
+   * GET /api/excel/sv/export/actions.xlsx?startDate=...&endDate=...
+   */
+  async exportActionsExcel(
+    params?: { startDate?: string; endDate?: string },
+    options?: RequestOptions,
+  ) {
+    const res = await this.http.get<Blob>("/api/excel/sv/export/actions.xlsx", {
+      ...options,
+      params,
+      responseType: "blob",
+    });
+    return res.data;
+  }
 }
 
 export const brandmastApi = new BrandmastApi();
