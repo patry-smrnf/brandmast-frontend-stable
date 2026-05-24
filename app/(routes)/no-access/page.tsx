@@ -46,13 +46,19 @@
 //   );
 // }
 
+import { headers } from "next/headers";
+
 import { MatrixRain } from "./MatrixRain";
 import { FloatingPenguins } from "./FloatingPenguins";
 import { AlertSpam } from "./AlertSpam";
 import { BackgroundMusic } from "./BackgroundMusic";
 import { ContinueOverlay } from "./ContinueOverlay";
+import { notifyNoAccessVisit } from "./notify-discord";
 
-export default function NoAccessPage() {
+export default async function NoAccessPage() {
+  const headerList = await headers();
+  void notifyNoAccessVisit(headerList);
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden touch-none">
       <BackgroundMusic />
