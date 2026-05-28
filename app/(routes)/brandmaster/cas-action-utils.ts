@@ -67,25 +67,32 @@ export function formatCasTime(block?: CasDatetimeBlock): string {
   return formatTimePoland(d)
 }
 
-const HALF_HOUR_BLOCK_MS = 30 * 60 * 1000
-/** Pierwsze 0,5 h liczy się dopiero w ostatnich 12 min pierwszego bloku 30 min (np. start 14:31 → od 14:49). */
-const FIRST_HALF_BLOCK_MS = HALF_HOUR_BLOCK_MS - 12 * 60 * 1000
+/** Dopłata za niepełną godzinę (minuty ponad pełne godziny). */
+const PARTIAL_HOUR_NO_EXTRA_MAX_MINUTES = 14
+const PARTIAL_HOUR_HALF_EXTRA_MAX_MINUTES = 44
 
 /**
- * Godziny rozliczeniowe w blokach po 0,5 h (30 min każdy).
- * Kolejny blok liczy się, gdy akcja trwa do 12 min przed końcem danego bloku (18., 48., 78. min…).
+ * Godziny rozliczeniowe: pełne godziny + niepełna końcówka w krokach co 15 min (0 / 30 / 60 min).
+ * Np. 1 h 46 min → 2 h, 2 h 14 min → 2 h, 2 h 28 min → 2,5 h, 2 h 59 min lub 3 h → 3 h.
  */
 export function roundActionDurationHours(start: Date, stop: Date): number {
   const ms = stop.getTime() - start.getTime()
   if (ms <= 0) return 0
 
-  let halfHourBlocks = 0
-  let thresholdMs = FIRST_HALF_BLOCK_MS
-  while (ms >= thresholdMs) {
-    halfHourBlocks += 1
-    thresholdMs += HALF_HOUR_BLOCK_MS
+  const totalMinutes = Math.floor(ms / 60_000)
+  const fullHours = Math.floor(totalMinutes / 60)
+  const partialMinutes = totalMinutes % 60
+
+  let billedMinutes = fullHours * 60
+  if (partialMinutes > PARTIAL_HOUR_NO_EXTRA_MAX_MINUTES) {
+    if (partialMinutes <= PARTIAL_HOUR_HALF_EXTRA_MAX_MINUTES) {
+      billedMinutes += 30
+    } else {
+      billedMinutes += 60
+    }
   }
-  return halfHourBlocks * 0.5
+
+  return billedMinutes / 60
 }
 
 export function formatHoursPl(hours: number): string {
