@@ -19,11 +19,18 @@ import { cn } from "@/lib/utils"
 
 import { formatHeaderDate, parseIso, toDateKey, toMonthKey } from "@/lib/dates/date-utils"
 import { SupervisorActionCard } from "./_components/SupervisorActionCard"
+import { SupervisorBulkApproveDialog } from "./_components/SupervisorBulkApproveDialog"
+import { SupervisorBulkToolbar } from "./_components/SupervisorBulkToolbar"
 import { getScheduleConflictLayout } from "./conflict-utils"
+import { EXCLUDED_BULK_APPROVE_EVENT_ID } from "./supervisor-constants"
 import type { SvActionRow } from "./use-sv-actions"
 import { useSvActions } from "./use-sv-actions"
 
 type SvStatusFilterMode = "all" | "editable" | "cancel_requested"
+
+function isBulkApproveEligible(row: SvActionRow): boolean {
+  return row.action.event.idEvent !== EXCLUDED_BULK_APPROVE_EVENT_ID
+}
 
 function pickRandomBrandmasterFromCluster(
   cluster: SvActionRow[]
@@ -75,6 +82,10 @@ export default function SupervisorPage() {
     winner: { name: string; surname: string }
     shopName: string
   } | null>(null)
+  const [bulkApproveEnabled, setBulkApproveEnabled] = React.useState(false)
+  const [bulkSelectedIds, setBulkSelectedIds] = React.useState<Set<number>>(() => new Set())
+  const [bulkDialogOpen, setBulkDialogOpen] = React.useState(false)
+  const [bulkDialogRows, setBulkDialogRows] = React.useState<SvActionRow[]>([])
 
   const selectedDate = React.useMemo(() => {
     const d = parseIso(`${selectedDateKey}T12:00:00`)
@@ -127,6 +138,78 @@ export default function SupervisorPage() {
     [filteredRows]
   )
 
+  const bulkEligibleSingles = React.useMemo(
+    () => singles.filter(isBulkApproveEligible),
+    [singles]
+  )
+
+  const bulkEligibleIdsKey = React.useMemo(
+    () => bulkEligibleSingles.map((r) => r.action.idAction).join(","),
+    [bulkEligibleSingles]
+  )
+
+  const bulkSelectedCount = React.useMemo(() => {
+    const eligibleIds = new Set(bulkEligibleSingles.map((r) => r.action.idAction))
+    let count = 0
+    for (const id of bulkSelectedIds) {
+      if (eligibleIds.has(id)) count++
+    }
+    return count
+  }, [bulkEligibleSingles, bulkSelectedIds])
+
+  const bulkSelectedRows = React.useMemo(
+    () => bulkEligibleSingles.filter((r) => bulkSelectedIds.has(r.action.idAction)),
+    [bulkEligibleSingles, bulkSelectedIds]
+  )
+
+  React.useEffect(() => {
+    if (statusFilter !== "editable") {
+      setBulkApproveEnabled(false)
+      setBulkSelectedIds(new Set())
+      setBulkDialogOpen(false)
+    }
+  }, [statusFilter])
+
+  React.useEffect(() => {
+    if (!bulkApproveEnabled || !bulkEligibleIdsKey) return
+    const eligibleIds = new Set(
+      bulkEligibleIdsKey
+        .split(",")
+        .filter(Boolean)
+        .map((id) => Number(id))
+    )
+    setBulkSelectedIds((prev) => new Set([...prev].filter((id) => eligibleIds.has(id))))
+  }, [bulkApproveEnabled, bulkEligibleIdsKey])
+
+  function handleBulkApproveToggle(checked: boolean | "indeterminate") {
+    if (checked === "indeterminate") return
+    setBulkApproveEnabled(checked)
+    if (checked) {
+      setBulkSelectedIds(new Set(bulkEligibleSingles.map((r) => r.action.idAction)))
+    } else {
+      setBulkSelectedIds(new Set())
+    }
+  }
+
+  function handleBulkCardSelect(idAction: number, selected: boolean) {
+    setBulkSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (selected) next.add(idAction)
+      else next.delete(idAction)
+      return next
+    })
+  }
+
+  function handleStartBulkApprove() {
+    if (bulkSelectedRows.length === 0) return
+    setBulkDialogRows(bulkSelectedRows)
+    setBulkDialogOpen(true)
+  }
+
+  const handleBulkComplete = React.useCallback(() => {
+    void refetch()
+  }, [refetch])
+
   React.useEffect(() => {
     if (!collisionDraw) return
     const onKey = (e: KeyboardEvent) => {
@@ -146,7 +229,12 @@ export default function SupervisorPage() {
   }, [collisionDraw])
 
   return (
-    <main className="flex flex-1 flex-col bg-background pb-24">
+    <main
+      className={cn(
+        "flex flex-1 flex-col bg-background pb-24",
+        bulkApproveEnabled && "max-sm:pb-44"
+      )}
+    >
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
@@ -283,6 +371,16 @@ export default function SupervisorPage() {
               <span className="truncate">Odwołania</span>
             </Button>
           </div>
+
+          {statusFilter === "editable" ? (
+            <SupervisorBulkToolbar
+              enabled={bulkApproveEnabled}
+              selectedCount={bulkSelectedCount}
+              eligibleCount={bulkEligibleSingles.length}
+              onEnabledChange={handleBulkApproveToggle}
+              onStart={handleStartBulkApprove}
+            />
+          ) : null}
         </section>
 
         <div className="mt-8 space-y-3">
@@ -365,6 +463,9 @@ export default function SupervisorPage() {
                       row={row}
                       onApproved={refetch}
                       onPatched={patchSvActionRow}
+                      bulkSelectMode={bulkApproveEnabled && isBulkApproveEligible(row)}
+                      bulkSelected={bulkSelectedIds.has(row.action.idAction)}
+                      onBulkSelectChange={(selected) => handleBulkCardSelect(row.action.idAction, selected)}
                     />
                   ))}
                 </div>
@@ -403,6 +504,13 @@ export default function SupervisorPage() {
           </div>
         </div>
       ) : null}
+
+      <SupervisorBulkApproveDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        rows={bulkDialogRows}
+        onComplete={handleBulkComplete}
+      />
     </main>
   )
 }

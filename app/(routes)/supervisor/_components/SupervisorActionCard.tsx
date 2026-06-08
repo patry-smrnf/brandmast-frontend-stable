@@ -20,9 +20,20 @@ export type SupervisorActionCardProps = {
   onPatched: (patch: SvActionLocalPatch) => void
   /** Nakładająca się z inną akcją w tym samym sklepie (ten sam dzień). */
   scheduleConflict?: boolean
+  bulkSelectMode?: boolean
+  bulkSelected?: boolean
+  onBulkSelectChange?: (selected: boolean) => void
 }
 
-export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConflict }: SupervisorActionCardProps) {
+export function SupervisorActionCard({
+  row,
+  onApproved,
+  onPatched,
+  scheduleConflict,
+  bulkSelectMode,
+  bulkSelected,
+  onBulkSelectChange,
+}: SupervisorActionCardProps) {
   const { brandmaster, action } = row
   const sinceDate = parseIso(action.since) ?? new Date()
   const untilDate = parseIso(action.until) ?? sinceDate
@@ -30,10 +41,12 @@ export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConfl
   const [approveOpen, setApproveOpen] = React.useState(false)
   const [editOpen, setEditOpen] = React.useState(false)
   const [isCancelling, setIsCancelling] = React.useState(false)
+  const bulkCheckboxId = `sv-bulk-card-${action.idAction}`
 
   const pres = getActionStatusPresentation(action.status)
   const canApprove = pres.supervisorCanApprove
   const isCancelRequested = action.status === "CANCEL_REQUESTED"
+  const showBulkCheckbox = bulkSelectMode === true
 
   async function handleRevoke() {
     setIsCancelling(true)
@@ -56,20 +69,43 @@ export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConfl
   return (
     <article
       className={cn(
-        "relative overflow-hidden rounded-lg border bg-card shadow-sm",
+        "relative isolate rounded-xl border bg-card shadow-sm transition-[border-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
+        showBulkCheckbox && "pl-12",
+        showBulkCheckbox && bulkSelected && "border-primary/30 shadow-[0_0_0_1px] shadow-primary/15",
         scheduleConflict
           ? "border-amber-500/55 bg-amber-500/4 dark:border-amber-400/45 dark:bg-amber-500/10"
           : "border-border/80"
       )}
     >
+      {showBulkCheckbox ? (
+        <label
+          htmlFor={bulkCheckboxId}
+          className="absolute inset-y-0 left-0 z-20 flex w-12 cursor-pointer items-center justify-center animate-sv-fade-in motion-reduce:animate-none"
+        >
+          <input
+            id={bulkCheckboxId}
+            type="checkbox"
+            checked={bulkSelected === true}
+            className="size-5 shrink-0 cursor-pointer accent-primary"
+            aria-label={`Zaznacz akcję ${row.brandmaster.name} ${row.brandmaster.surname}`}
+            onChange={(e) => {
+              e.stopPropagation()
+              onBulkSelectChange?.(e.target.checked)
+            }}
+          />
+        </label>
+      ) : null}
+
       <div
         className={cn(
           "absolute inset-y-0 left-0 w-0.5 sm:w-1",
+          showBulkCheckbox ? "left-12 sm:left-12" : "left-0",
           scheduleConflict ? "bg-amber-500/70 dark:bg-amber-400/60" : "bg-primary/25"
         )}
         aria-hidden
       />
-      <div className="px-2.5 py-2 pl-3 sm:px-3 sm:py-2.5 sm:pl-3.5">
+
+      <div className="relative px-2.5 py-2.5 pl-3 sm:px-3 sm:py-3 sm:pl-3.5">
         <div
           role="button"
           tabIndex={0}
@@ -82,64 +118,68 @@ export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConfl
             }
           }}
         >
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="flex min-w-0 flex-wrap items-center gap-1 text-xs font-semibold leading-tight text-foreground sm:gap-1.5 sm:text-sm sm:leading-snug">
-              <span className="wrap-break-word">
-                {brandmaster.name} {brandmaster.surname}
-              </span>
-              <ArrowRightIcon className="size-3 shrink-0 text-muted-foreground sm:size-3.5" aria-hidden />
-              <span className="truncate font-medium text-muted-foreground">{action.shop.name}</span>
-            </p>
-          </div>
-          <Badge
-            variant={pres.badgeVariant}
-            className="shrink-0 px-2 py-px text-[10px] leading-tight sm:px-2.5 sm:py-0.5 sm:text-xs"
-          >
-            {pres.labelPl}
-          </Badge>
-        </div>
-
-        <div className="mt-1 flex gap-1.5 text-[11px] leading-snug text-muted-foreground sm:mt-1.5 sm:text-xs">
-          <MapPinIcon className="mt-px size-3 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="min-w-0 text-foreground line-clamp-2">{action.shop.address || "-"}</span>
-        </div>
-
-        <div className="mt-1 flex items-start justify-between gap-2 sm:mt-1.5">
-          <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] tabular-nums text-muted-foreground sm:gap-x-2 sm:text-[11px] sm:text-xs">
-            <span className="inline-flex items-center gap-1 text-foreground">
-              <ClockIcon className="size-3 shrink-0 text-muted-foreground" aria-hidden />
-              {timeLabel}
-            </span>
-            <span className="text-muted-foreground/35 select-none" aria-hidden>
-              ·
-            </span>
-            <span className="inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-md border border-border/50 bg-muted/25 px-1.5 py-px sm:py-0.5">
-              <span className="inline-flex min-w-0 items-center gap-0.5">
-                <CalendarDaysIcon className="size-3 shrink-0" aria-hidden />
-                <span className="shrink-0 text-muted-foreground max-sm:hidden">Utworzono:</span>
-                <span className="shrink-0 text-muted-foreground sm:hidden" title="Utworzono">
-                  Utw.
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="flex min-w-0 flex-wrap items-center gap-1 text-xs font-semibold leading-tight text-foreground sm:gap-1.5 sm:text-sm sm:leading-snug">
+                <span className="wrap-break-word">
+                  {brandmaster.name} {brandmaster.surname}
                 </span>
-                <span className="min-w-0 truncate text-foreground/90">{formatPlDateTimeFromIso(action.createdAt)}</span>
+                <ArrowRightIcon className="size-3 shrink-0 text-muted-foreground sm:size-3.5" aria-hidden />
+                <span className="truncate font-medium text-muted-foreground">{action.shop.name}</span>
+              </p>
+            </div>
+            <Badge
+              variant={pres.badgeVariant}
+              className="shrink-0 px-2 py-px text-[10px] leading-tight sm:px-2.5 sm:py-0.5 sm:text-xs"
+            >
+              {pres.labelPl}
+            </Badge>
+          </div>
+
+          <div className="mt-1 flex gap-1.5 text-[11px] leading-snug text-muted-foreground sm:mt-1.5 sm:text-xs">
+            <MapPinIcon className="mt-px size-3 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="min-w-0 text-foreground line-clamp-2">{action.shop.address || "-"}</span>
+          </div>
+
+          <div className="mt-1 flex items-start justify-between gap-2 sm:mt-1.5">
+            <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] tabular-nums text-muted-foreground sm:gap-x-2 sm:text-[11px] sm:text-xs">
+              <span className="inline-flex items-center gap-1 text-foreground">
+                <ClockIcon className="size-3 shrink-0 text-muted-foreground" aria-hidden />
+                {timeLabel}
               </span>
               <span className="text-muted-foreground/35 select-none" aria-hidden>
                 ·
               </span>
-              <span className="inline-flex min-w-0 items-center gap-0.5">
-                <PenLineIcon className="size-3 shrink-0" aria-hidden />
-                <span className="shrink-0 text-muted-foreground max-sm:hidden">Edytowano:</span>
-                <span className="shrink-0 text-muted-foreground sm:hidden" title="Edytowano">
-                  Ed.
+              <span className="inline-flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-md border border-border/50 bg-muted/25 px-1.5 py-px sm:py-0.5">
+                <span className="inline-flex min-w-0 items-center gap-0.5">
+                  <CalendarDaysIcon className="size-3 shrink-0" aria-hidden />
+                  <span className="shrink-0 text-muted-foreground max-sm:hidden">Utworzono:</span>
+                  <span className="shrink-0 text-muted-foreground sm:hidden" title="Utworzono">
+                    Utw.
+                  </span>
+                  <span className="min-w-0 truncate text-foreground/90">
+                    {formatPlDateTimeFromIso(action.createdAt)}
+                  </span>
                 </span>
-                <span className="min-w-0 truncate text-foreground/90">{formatPlDateTimeFromIso(action.editedAt)}</span>
+                <span className="text-muted-foreground/35 select-none" aria-hidden>
+                  ·
+                </span>
+                <span className="inline-flex min-w-0 items-center gap-0.5">
+                  <PenLineIcon className="size-3 shrink-0" aria-hidden />
+                  <span className="shrink-0 text-muted-foreground max-sm:hidden">Edytowano:</span>
+                  <span className="shrink-0 text-muted-foreground sm:hidden" title="Edytowano">
+                    Ed.
+                  </span>
+                  <span className="min-w-0 truncate text-foreground/90">
+                    {formatPlDateTimeFromIso(action.editedAt)}
+                  </span>
+                </span>
               </span>
-            </span>
+            </div>
           </div>
         </div>
-        </div>
 
-        <div className="mt-1.5 flex justify-end sm:mt-2">
+        <div className="mt-2 flex justify-end">
           {isCancelRequested ? (
             <Button
               size="sm"
@@ -149,7 +189,7 @@ export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConfl
                 e.stopPropagation()
                 void handleRevoke()
               }}
-              className="h-7 shrink-0 px-2.5 text-xs sm:h-8 sm:px-3"
+              className="h-9 shrink-0 px-3 text-xs sm:h-8"
             >
               {isCancelling ? "Odwoływanie…" : "Odwolaj"}
             </Button>
@@ -161,7 +201,7 @@ export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConfl
                 e.stopPropagation()
                 setApproveOpen(true)
               }}
-              className="h-7 shrink-0 px-2.5 text-xs sm:h-8 sm:px-3"
+              className="h-9 shrink-0 px-3 text-xs sm:h-8"
             >
               Approve
             </Button>
@@ -176,12 +216,7 @@ export function SupervisorActionCard({ row, onApproved, onPatched, scheduleConfl
         onAccepted={onApproved}
       />
 
-      <SupervisorEditSheet
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        row={row}
-        onPatched={onPatched}
-      />
+      <SupervisorEditSheet open={editOpen} onOpenChange={setEditOpen} row={row} onPatched={onPatched} />
     </article>
   )
 }

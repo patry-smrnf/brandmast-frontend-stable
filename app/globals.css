@@ -202,3 +202,73 @@
   background: transparent !important;
   border: none !important;
 }
+
+/* Supervisor bulk approve — lightweight GPU-friendly motion */
+@keyframes sv-enter-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-8px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sv-enter-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sv-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sv-content-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@utility animate-sv-enter-left {
+  animation: sv-enter-left 0.22s ease-out both;
+}
+
+@utility animate-sv-enter-up {
+  animation: sv-enter-up 0.24s ease-out both;
+}
+
+@utility animate-sv-fade-in {
+  animation: sv-fade-in 0.2s ease-out both;
+}
+
+@utility animate-sv-content-in {
+  animation: sv-content-in 0.24s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sv-enter-left,
+  .animate-sv-enter-up,
+  .animate-sv-fade-in,
+  .animate-sv-content-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
