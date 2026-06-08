@@ -216,8 +216,8 @@ export default function SupervisorExcelPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+              <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="excel-start">Od dnia</Label>
                   <Input
                     id="excel-start"
@@ -226,10 +226,10 @@ export default function SupervisorExcelPage() {
                     max={endDate || undefined}
                     disabled={busy}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="tabular-nums"
+                    className="min-w-0 tabular-nums"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label htmlFor="excel-end">Do dnia</Label>
                   <Input
                     id="excel-end"
@@ -238,7 +238,7 @@ export default function SupervisorExcelPage() {
                     min={startDate || undefined}
                     disabled={busy}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="tabular-nums"
+                    className="min-w-0 tabular-nums"
                   />
                 </div>
               </div>

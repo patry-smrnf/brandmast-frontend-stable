@@ -149,14 +149,14 @@ export default function SupervisorCasPanelPage() {
         <Separator className="my-6" />
 
         <section className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:max-w-md">
-            <div className="flex flex-col gap-1.5">
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:max-w-md">
+            <div className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor="cas-day" className="text-xs text-muted-foreground">
                 Dzień
               </Label>
-              <div className="relative">
+              <div className="relative min-w-0">
                 <CalendarDaysIcon
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                  className="pointer-events-none absolute top-1/2 left-3 hidden size-4 -translate-y-1/2 text-muted-foreground sm:block"
                   aria-hidden
                 />
                 <Input
@@ -164,7 +164,7 @@ export default function SupervisorCasPanelPage() {
                   type="date"
                   value={dateKey}
                   onChange={(e) => setDateKey(e.target.value)}
-                  className="pl-9 tabular-nums"
+                  className="min-w-0 pl-3 tabular-nums sm:pl-9"
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">{headerDate}</p>

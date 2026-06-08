@@ -9,6 +9,13 @@ export type SupervisorNowosc = {
 /** Hardkodowana lista nowości dla supervisora — edytuj tutaj kolejne wpisy. */
 export const SUPERVISOR_NOWOSCI: SupervisorNowosc[] = [
   {
+    id: "iphone-inputs-fixed",
+    addedAt: "2026-06-09",
+    title: "Naprawione inputy daty na iphoneach",
+    description:
+      "Rozjezdzajace sie na bok inputy z data na iphoneach naprawione, tak samo z przyblizeniami przy edytowaniu adresu akcji",
+  },
+  {
     id: "bulk-approve-actions",
     addedAt: "2026-06-09",
     title: "Masowe zatwierdzanie akcji",

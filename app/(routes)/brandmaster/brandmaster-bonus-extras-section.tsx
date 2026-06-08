@@ -101,7 +101,7 @@ function BonusExtraCard({
               value={draftTitle}
               onChange={(e) => onDraftChange("title", e.target.value)}
               placeholder="Np. premia specjalna"
-              className="h-9 text-sm"
+              className="h-9 text-base sm:text-sm"
               disabled={saving || deleting}
               autoComplete="off"
             />
@@ -117,7 +117,7 @@ function BonusExtraCard({
               value={draftAmount}
               onChange={(e) => onDraftChange("amount", e.target.value)}
               placeholder="0"
-              className="h-9 text-sm tabular-nums"
+              className="h-9 text-base tabular-nums sm:text-sm"
               disabled={saving || deleting}
               autoComplete="off"
             />
@@ -214,7 +214,7 @@ function BonusExtraCreateCard({
             value={draftTitle}
             onChange={(e) => onDraftChange("title", e.target.value)}
             placeholder="Np. premia specjalna"
-            className="h-9 text-sm"
+            className="h-9 text-base sm:text-sm"
             disabled={saving}
             autoComplete="off"
           />
@@ -230,7 +230,7 @@ function BonusExtraCreateCard({
             value={draftAmount}
             onChange={(e) => onDraftChange("amount", e.target.value)}
             placeholder="0"
-            className="h-9 text-sm tabular-nums"
+            className="h-9 text-base tabular-nums sm:text-sm"
             disabled={saving}
             autoComplete="off"
           />

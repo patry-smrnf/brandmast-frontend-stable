@@ -288,7 +288,7 @@ export default function SupervisorPage() {
             </div>
           </div>
 
-          <div className="flex w-full shrink-0 flex-col gap-1.5 sm:w-auto sm:min-w-[12rem]">
+          <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:min-w-[12rem]">
             <Label htmlFor="sv-day" className="text-xs text-muted-foreground">
               Dzień
             </Label>
@@ -297,7 +297,7 @@ export default function SupervisorPage() {
               type="date"
               value={selectedDateKey}
               onChange={(e) => setSelectedDateKey(e.target.value)}
-              className="tabular-nums sm:min-w-[11.5rem]"
+              className="min-w-0 tabular-nums sm:min-w-[11.5rem]"
             />
           </div>
         </header>
