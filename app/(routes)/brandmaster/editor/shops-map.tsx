@@ -52,22 +52,52 @@ function fitMapView(
     return
   }
 
-  const points: L.LatLngTuple[] = markers.map((x) => [x.lat, x.lng])
   if (userLocation) {
-    points.push([userLocation.lat, userLocation.lng])
+    map.setView([userLocation.lat, userLocation.lng], USER_LOCATION_ZOOM, { animate: false })
+    return
   }
 
-  if (points.length === 1) {
-    const zoom = userLocation && markers.length === 0 ? USER_LOCATION_ZOOM : 13
-    map.setView(points[0], zoom, { animate: false })
-  } else if (points.length > 1) {
-    const bounds = L.latLngBounds(points)
+  if (markers.length === 1) {
+    map.setView([markers[0].lat, markers[0].lng], 13, { animate: false })
+  } else if (markers.length > 1) {
+    const bounds = L.latLngBounds(markers.map((x) => [x.lat, x.lng] as L.LatLngTuple))
     map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14, animate: false })
-  } else if (userLocation) {
-    map.setView([userLocation.lat, userLocation.lng], USER_LOCATION_ZOOM, { animate: false })
   } else {
     map.setView(DEFAULT_VIEW, DEFAULT_ZOOM, { animate: false })
   }
+}
+
+function initialMapView(userLocation: UserGeolocation | null | undefined): {
+  center: L.LatLngTuple
+  zoom: number
+} {
+  if (userLocation) {
+    return { center: [userLocation.lat, userLocation.lng], zoom: USER_LOCATION_ZOOM }
+  }
+  return { center: DEFAULT_VIEW, zoom: DEFAULT_ZOOM }
+}
+
+function isMapUsable(map: L.Map | null | undefined): map is L.Map {
+  if (!map) return false
+  const container = map.getContainer()
+  return Boolean(container && container.isConnected)
+}
+
+function safeInvalidateSize(map: L.Map | null | undefined) {
+  if (!isMapUsable(map)) return
+  try {
+    map.invalidateSize({ animate: false })
+  } catch {
+    // Map already torn down (e.g. canvas context gone).
+  }
+}
+
+function runWhenMapReady(map: L.Map, fn: () => void) {
+  if (!isMapUsable(map)) return
+  map.whenReady(() => {
+    if (!isMapUsable(map)) return
+    fn()
+  })
 }
 
 export type EditorShopMapMarker = {
@@ -98,6 +128,7 @@ export function EditorShopsMap({
   const mapRef = React.useRef<L.Map | null>(null)
   const layerRef = React.useRef<L.LayerGroup | null>(null)
   const userLayerRef = React.useRef<L.LayerGroup | null>(null)
+  const mapAliveRef = React.useRef(false)
   const onSelectRef = React.useRef(onMarkerSelect)
   onSelectRef.current = onMarkerSelect
 
@@ -105,10 +136,13 @@ export function EditorShopsMap({
     const el = containerRef.current
     if (!el) return
 
+    mapAliveRef.current = true
+
+    const { center, zoom } = initialMapView(userLocation)
+
     const map = L.map(el, {
       zoomControl: true,
-      preferCanvas: true,
-    }).setView(DEFAULT_VIEW, DEFAULT_ZOOM)
+    }).setView(center, zoom)
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -122,12 +156,18 @@ export function EditorShopsMap({
     userLayerRef.current = userGroup
 
     const fixSize = () => {
-      map.invalidateSize()
+      safeInvalidateSize(map)
     }
     window.addEventListener("resize", fixSize)
 
+    runWhenMapReady(map, () => {
+      requestAnimationFrame(() => safeInvalidateSize(map))
+    })
+
     return () => {
+      mapAliveRef.current = false
       window.removeEventListener("resize", fixSize)
+      map.stop()
       map.remove()
       mapRef.current = null
       layerRef.current = null
@@ -138,11 +178,15 @@ export function EditorShopsMap({
   React.useEffect(() => {
     const map = mapRef.current
     const userLayer = userLayerRef.current
-    if (!map || !userLayer) return
+    if (!isMapUsable(map) || !userLayer) return
 
-    userLayer.clearLayers()
+    runWhenMapReady(map, () => {
+      if (!mapAliveRef.current || !isMapUsable(map) || !userLayerRef.current) return
 
-    if (userLocation) {
+      userLayerRef.current.clearLayers()
+
+      if (!userLocation) return
+
       const userMarker = L.marker([userLocation.lat, userLocation.lng], {
         icon: userLocationIcon(),
         zIndexOffset: 1_000,
@@ -153,7 +197,7 @@ export function EditorShopsMap({
         direction: "top",
         opacity: 0.95,
       })
-      userMarker.addTo(userLayer)
+      userMarker.addTo(userLayerRef.current)
 
       if (
         userLocation.accuracy != null &&
@@ -168,41 +212,53 @@ export function EditorShopsMap({
           fillOpacity: 0.12,
           weight: 1,
           interactive: false,
-        }).addTo(userLayer)
+        }).addTo(userLayerRef.current)
       }
-    }
+    })
   }, [userLocation])
 
   React.useEffect(() => {
     const map = mapRef.current
     const layer = layerRef.current
-    if (!map || !layer) return
+    if (!isMapUsable(map) || !layer) return
 
-    layer.clearLayers()
+    runWhenMapReady(map, () => {
+      if (!mapAliveRef.current || !isMapUsable(map) || !layerRef.current) return
 
-    for (const m of markers) {
-      const selected = selectedShopId !== null && m.id === selectedShopId
-      const marker = L.marker([m.lat, m.lng], {
-        icon: markerIcon(selected),
-        riseOnHover: true,
-      })
-      marker.bindTooltip(m.label, { sticky: true, direction: "top", opacity: 0.95 })
-      marker.on("click", () => {
-        onSelectRef.current(m.id)
-      })
-      marker.addTo(layer)
-    }
+      layerRef.current.clearLayers()
 
-    fitMapView(map, markers, selectedShopId, userLocation)
+      for (const m of markers) {
+        const selected = selectedShopId !== null && m.id === selectedShopId
+        const marker = L.marker([m.lat, m.lng], {
+          icon: markerIcon(selected),
+          riseOnHover: true,
+        })
+        marker.bindTooltip(m.label, { sticky: true, direction: "top", opacity: 0.95 })
+        marker.on("click", () => {
+          onSelectRef.current(m.id)
+        })
+        marker.addTo(layerRef.current)
+      }
 
-    queueMicrotask(() => map.invalidateSize())
+      fitMapView(map, markers, selectedShopId, userLocation)
+      requestAnimationFrame(() => safeInvalidateSize(map))
+    })
   }, [markers, selectedShopId, userLocation])
 
   React.useEffect(() => {
     const map = mapRef.current
-    if (!map) return
-    const t = window.setTimeout(() => map.invalidateSize(), 50)
-    return () => window.clearTimeout(t)
+    if (!isMapUsable(map)) return
+
+    let alive = true
+    const t = window.setTimeout(() => {
+      if (!alive || !mapAliveRef.current) return
+      safeInvalidateSize(mapRef.current)
+    }, 50)
+
+    return () => {
+      alive = false
+      window.clearTimeout(t)
+    }
   }, [isLoading, markers.length])
 
   return (

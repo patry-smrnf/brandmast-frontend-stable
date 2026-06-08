@@ -10,18 +10,12 @@ export type UserGeolocation = {
   accuracy?: number
 }
 
-export type UserGeolocationStatus =
-  | "idle"
-  | "pending"
-  | "granted"
-  | "denied"
-  | "unavailable"
-  | "error"
+export type EditorMapGeolocationPhase = "prompt" | "locating" | "ready"
 
 const GEO_OPTIONS: PositionOptions = {
-  enableHighAccuracy: false,
-  timeout: 15_000,
-  maximumAge: 60_000,
+  enableHighAccuracy: true,
+  timeout: 20_000,
+  maximumAge: 0,
 }
 
 function isValidCoordinates(lat: number, lng: number): boolean {
@@ -47,19 +41,7 @@ function parsePosition(position: GeolocationPosition): UserGeolocation | null {
   return parsed
 }
 
-function mapGeolocationError(error: GeolocationPositionError): UserGeolocationStatus {
-  switch (error.code) {
-    case error.PERMISSION_DENIED:
-      return "denied"
-    case error.POSITION_UNAVAILABLE:
-    case error.TIMEOUT:
-      return "unavailable"
-    default:
-      return "error"
-  }
-}
-
-function canUseGeolocation(): boolean {
+export function canUseGeolocation(): boolean {
   if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
     return false
   }
@@ -69,47 +51,54 @@ function canUseGeolocation(): boolean {
   return true
 }
 
-export function useUserGeolocation() {
+function requestCurrentPosition(): Promise<UserGeolocation | null> {
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve(parsePosition(position)),
+      () => resolve(null),
+      GEO_OPTIONS
+    )
+  })
+}
+
+/**
+ * Editor map flow: show prompt first, load map only after the user decides.
+ * Location is requested on explicit button click (required for iOS Safari).
+ */
+export function useEditorMapGeolocation() {
   const isClient = useIsClient()
+  const [phase, setPhase] = React.useState<EditorMapGeolocationPhase>(() => {
+    if (typeof window === "undefined") return "prompt"
+    if (!canUseGeolocation()) return "ready"
+    return "prompt"
+  })
   const [location, setLocation] = React.useState<UserGeolocation | null>(null)
-  const [status, setStatus] = React.useState<UserGeolocationStatus>("idle")
-  const requestedRef = React.useRef(false)
 
-  React.useEffect(() => {
-    if (!isClient || requestedRef.current) return
+  const geolocationSupported = isClient && canUseGeolocation()
 
+  const requestLocation = React.useCallback(() => {
     if (!canUseGeolocation()) {
-      setStatus("unavailable")
+      setPhase("ready")
       return
     }
 
-    requestedRef.current = true
-    setStatus("pending")
+    setPhase("locating")
 
-    let cancelled = false
+    void requestCurrentPosition().then((parsed) => {
+      if (parsed) setLocation(parsed)
+      setPhase("ready")
+    })
+  }, [])
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        if (cancelled) return
-        const parsed = parsePosition(position)
-        if (parsed) {
-          setLocation(parsed)
-          setStatus("granted")
-        } else {
-          setStatus("error")
-        }
-      },
-      (error) => {
-        if (cancelled) return
-        setStatus(mapGeolocationError(error))
-      },
-      GEO_OPTIONS
-    )
+  const skipLocation = React.useCallback(() => {
+    setPhase("ready")
+  }, [])
 
-    return () => {
-      cancelled = true
-    }
-  }, [isClient])
-
-  return { location, status }
+  return {
+    phase,
+    location,
+    geolocationSupported,
+    requestLocation,
+    skipLocation,
+  }
 }
