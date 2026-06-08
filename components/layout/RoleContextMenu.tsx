@@ -14,6 +14,7 @@ import {
   DockIcon,
   FileSpreadsheetIcon,
   PlusIcon,
+  SparklesIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -109,6 +110,12 @@ export function RoleContextMenu() {
             icon: <DockIcon className="size-4" />,
           },
           {
+            key: "bm-nowosci",
+            label: "Nowości",
+            href: "/brandmaster/nowosci",
+            icon: <SparklesIcon className="size-4" />,
+          },
+          {
             key: "bm-settings",
             label: "Ustawienia",
             href: "/brandmaster/settings",
@@ -179,6 +186,12 @@ export function RoleContextMenu() {
             label: "Eksport Excel",
             href: "/supervisor/excel",
             icon: <FileSpreadsheetIcon className="size-4" />,
+          },
+          {
+            key: "sv-nowosci",
+            label: "Nowości",
+            href: "/supervisor/nowosci",
+            icon: <SparklesIcon className="size-4" />,
           },
           {
             key: "sv-settings",
