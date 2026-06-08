@@ -39,10 +39,16 @@ function EditorMapPlaceholder({ message }: { message: string }) {
 
 function EditorMapLocationPrompt({
   geolocationSupported,
+  isLocating,
+  locationFailed,
+  showSafariHint,
   onRequestLocation,
   onSkip,
 }: {
   geolocationSupported: boolean
+  isLocating: boolean
+  locationFailed: boolean
+  showSafariHint: boolean
   onRequestLocation: () => void
   onSkip: () => void
 }) {
@@ -58,22 +64,41 @@ function EditorMapLocationPrompt({
       <div className="max-w-sm space-y-1.5">
         <p className="text-sm font-medium text-foreground">Udostępnij lokalizację</p>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          {geolocationSupported
-            ? "Mapa może pokazać Twoją okolicę i ułatwić wybór najbliższego sklepu. Lokalizacja nie jest wysyłana na serwer."
-            : "Twoja przeglądarka lub połączenie nie obsługuje lokalizacji — mapa załaduje się bez tej funkcji."}
+          {isLocating
+            ? "Potwierdź dostęp w oknie systemowym. Nie zamykaj tej strony."
+            : geolocationSupported
+              ? "Mapa może pokazać Twoją okolicę i ułatwić wybór najbliższego sklepu. Lokalizacja nie jest wysyłana na serwer."
+              : "Twoja przeglądarka lub połączenie nie obsługuje lokalizacji — mapa załaduje się bez tej funkcji."}
         </p>
+        {locationFailed ? (
+          <p className="text-xs leading-relaxed text-amber-700 dark:text-amber-400">
+            {showSafariHint
+              ? "Nie udało się pobrać lokalizacji. W Safari: „aA” → Ustawienia witryny → Lokalizacja → Zezwól, potem spróbuj ponownie lub wybierz Pomiń."
+              : "Nie udało się pobrać lokalizacji. Sprawdź uprawnienia przeglądarki lub wybierz Pomiń."}
+          </p>
+        ) : null}
       </div>
       <div className="flex w-full max-w-xs flex-col gap-2 sm:flex-row sm:justify-center">
         {geolocationSupported ? (
-          <Button type="button" className="w-full sm:w-auto" onClick={onRequestLocation}>
-            <MapPinIcon className="size-4" aria-hidden />
-            Udostępnij lokalizację
+          <Button
+            type="button"
+            className="w-full sm:w-auto"
+            disabled={isLocating}
+            onClick={onRequestLocation}
+          >
+            {isLocating ? (
+              <Loader2Icon className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <MapPinIcon className="size-4" aria-hidden />
+            )}
+            {isLocating ? "Ustalanie lokalizacji…" : locationFailed ? "Spróbuj ponownie" : "Udostępnij lokalizację"}
           </Button>
         ) : null}
         <Button
           type="button"
           variant={geolocationSupported ? "outline" : "default"}
           className="w-full sm:w-auto"
+          disabled={isLocating}
           onClick={onSkip}
         >
           {geolocationSupported ? "Pomiń" : "Pokaż mapę"}
@@ -107,8 +132,16 @@ export function EditorStep2MapSection({
   selectedShop,
   onMarkerSelect,
 }: EditorStep2MapSectionProps) {
-  const { phase, location: userLocation, geolocationSupported, requestLocation, skipLocation } =
-    useEditorMapGeolocation()
+  const {
+    phase,
+    location: userLocation,
+    isLocating,
+    locationFailed,
+    geolocationSupported,
+    showSafariHint,
+    requestLocation,
+    skipLocation,
+  } = useEditorMapGeolocation()
   const [eventFilterId, setEventFilterId] = React.useState<number | null>(null)
 
   const eventOptions = React.useMemo(() => buildShopEventFilterOptions(shops), [shops])
@@ -192,12 +225,13 @@ export function EditorStep2MapSection({
       {phase === "prompt" ? (
         <EditorMapLocationPrompt
           geolocationSupported={geolocationSupported}
+          isLocating={isLocating}
+          locationFailed={locationFailed}
+          showSafariHint={showSafariHint}
           onRequestLocation={requestLocation}
           onSkip={skipLocation}
         />
       ) : null}
-
-      {phase === "locating" ? <EditorMapPlaceholder message="Ustalanie lokalizacji…" /> : null}
 
       {mapReady ? (
         <EditorShopsMap
