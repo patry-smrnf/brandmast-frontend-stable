@@ -148,7 +148,7 @@ export default function SupervisorExcelPage() {
 
   return (
     <main className="flex flex-1 flex-col bg-background pb-24">
-      <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-5">
+      <div className="mx-auto w-full min-w-0 max-w-3xl overflow-x-clip px-4 py-6 sm:px-5">
         <header className="space-y-1">
           <p className="text-xs text-muted-foreground">Panel Supervisora</p>
           <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
@@ -215,31 +215,35 @@ export default function SupervisorExcelPage() {
                 Raport akcji w wybranym przedziale dat
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="min-w-0 space-y-4">
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0 space-y-2">
                   <Label htmlFor="excel-start">Od dnia</Label>
-                  <Input
-                    id="excel-start"
-                    type="date"
-                    value={startDate}
-                    max={endDate || undefined}
-                    disabled={busy}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="min-w-0 tabular-nums"
-                  />
+                  <div className="w-full min-w-0 max-w-full overflow-hidden">
+                    <Input
+                      id="excel-start"
+                      type="date"
+                      value={startDate}
+                      max={endDate || undefined}
+                      disabled={busy}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full max-w-full min-w-0 tabular-nums"
+                    />
+                  </div>
                 </div>
                 <div className="min-w-0 space-y-2">
                   <Label htmlFor="excel-end">Do dnia</Label>
-                  <Input
-                    id="excel-end"
-                    type="date"
-                    value={endDate}
-                    min={startDate || undefined}
-                    disabled={busy}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="min-w-0 tabular-nums"
-                  />
+                  <div className="w-full min-w-0 max-w-full overflow-hidden">
+                    <Input
+                      id="excel-end"
+                      type="date"
+                      value={endDate}
+                      min={startDate || undefined}
+                      disabled={busy}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full max-w-full min-w-0 tabular-nums"
+                    />
+                  </div>
                 </div>
               </div>
 

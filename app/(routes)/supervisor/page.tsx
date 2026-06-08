@@ -235,8 +235,8 @@ export default function SupervisorPage() {
         bulkApproveEnabled && "max-sm:pb-44"
       )}
     >
-      <div className="mx-auto w-full max-w-5xl px-4 py-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mx-auto w-full min-w-0 max-w-5xl overflow-x-clip px-4 py-6">
+        <header className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
@@ -288,17 +288,19 @@ export default function SupervisorPage() {
             </div>
           </div>
 
-          <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:min-w-[12rem]">
+          <div className="flex w-full min-w-0 max-w-full flex-col gap-1.5 sm:w-auto sm:max-w-none sm:min-w-[12rem]">
             <Label htmlFor="sv-day" className="text-xs text-muted-foreground">
               Dzień
             </Label>
-            <Input
-              id="sv-day"
-              type="date"
-              value={selectedDateKey}
-              onChange={(e) => setSelectedDateKey(e.target.value)}
-              className="min-w-0 tabular-nums sm:min-w-[11.5rem]"
-            />
+            <div className="w-full min-w-0 max-w-full overflow-hidden">
+              <Input
+                id="sv-day"
+                type="date"
+                value={selectedDateKey}
+                onChange={(e) => setSelectedDateKey(e.target.value)}
+                className="w-full max-w-full min-w-0 tabular-nums sm:min-w-[11.5rem]"
+              />
+            </div>
           </div>
         </header>
 
