@@ -325,7 +325,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
                 <div className="relative">
                   <Input
                     id="sv-edit-shop-query"
-                    className="h-9 text-sm"
+                    className="h-9 text-base sm:text-sm"
                     placeholder={shopsLoading ? "Ładowanie…" : "Szukaj…"}
                     value={shopQuery}
                     disabled={isSubmitting}
@@ -457,7 +457,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
                         autoComplete="off"
                         spellCheck={false}
                         placeholder="8 lub 8:30"
-                        className="h-9 pl-9 text-sm"
+                        className="h-9 pl-9 text-base sm:text-sm"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
                       />
@@ -481,7 +481,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
                         autoComplete="off"
                         spellCheck={false}
                         placeholder="18 lub 18:45"
-                        className="h-9 pl-9 text-sm"
+                        className="h-9 pl-9 text-base sm:text-sm"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
                       />

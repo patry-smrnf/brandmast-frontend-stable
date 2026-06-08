@@ -73,7 +73,7 @@ export function SupervisorActionCard({
   return (
     <article
       className={cn(
-        "relative isolate rounded-xl border bg-card shadow-sm transition-[border-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
+        "relative isolate overflow-hidden rounded-xl border bg-card shadow-sm transition-[border-color,box-shadow] duration-200 ease-out motion-reduce:transition-none",
         showBulkCheckbox && "pl-12",
         showBulkCheckbox && bulkSelected && "border-primary/30 shadow-[0_0_0_1px] shadow-primary/15",
         scheduleConflict
