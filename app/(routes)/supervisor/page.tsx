@@ -288,19 +288,17 @@ export default function SupervisorPage() {
             </div>
           </div>
 
-          <div className="flex w-full min-w-0 max-w-full flex-col gap-1.5 sm:w-auto sm:max-w-none sm:min-w-[12rem]">
+          <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:min-w-[12rem]">
             <Label htmlFor="sv-day" className="text-xs text-muted-foreground">
               Dzień
             </Label>
-            <div className="w-full min-w-0 max-w-full overflow-hidden">
-              <Input
-                id="sv-day"
-                type="date"
-                value={selectedDateKey}
-                onChange={(e) => setSelectedDateKey(e.target.value)}
-                className="w-full max-w-full min-w-0 tabular-nums sm:min-w-[11.5rem]"
-              />
-            </div>
+            <Input
+              id="sv-day"
+              type="date"
+              value={selectedDateKey}
+              onChange={(e) => setSelectedDateKey(e.target.value)}
+              className="tabular-nums"
+            />
           </div>
         </header>
 

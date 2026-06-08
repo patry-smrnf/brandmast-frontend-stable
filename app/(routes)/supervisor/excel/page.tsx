@@ -219,31 +219,27 @@ export default function SupervisorExcelPage() {
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="min-w-0 space-y-2">
                   <Label htmlFor="excel-start">Od dnia</Label>
-                  <div className="w-full min-w-0 max-w-full overflow-hidden">
-                    <Input
-                      id="excel-start"
-                      type="date"
-                      value={startDate}
-                      max={endDate || undefined}
-                      disabled={busy}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full max-w-full min-w-0 tabular-nums"
-                    />
-                  </div>
+                  <Input
+                    id="excel-start"
+                    type="date"
+                    value={startDate}
+                    max={endDate || undefined}
+                    disabled={busy}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="tabular-nums"
+                  />
                 </div>
                 <div className="min-w-0 space-y-2">
                   <Label htmlFor="excel-end">Do dnia</Label>
-                  <div className="w-full min-w-0 max-w-full overflow-hidden">
-                    <Input
-                      id="excel-end"
-                      type="date"
-                      value={endDate}
-                      min={startDate || undefined}
-                      disabled={busy}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full max-w-full min-w-0 tabular-nums"
-                    />
-                  </div>
+                  <Input
+                    id="excel-end"
+                    type="date"
+                    value={endDate}
+                    min={startDate || undefined}
+                    disabled={busy}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="tabular-nums"
+                  />
                 </div>
               </div>
 

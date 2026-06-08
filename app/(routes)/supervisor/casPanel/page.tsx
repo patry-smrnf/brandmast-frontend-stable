@@ -154,7 +154,7 @@ export default function SupervisorCasPanelPage() {
               <Label htmlFor="cas-day" className="text-xs text-muted-foreground">
                 Dzień
               </Label>
-              <div className="relative w-full min-w-0 max-w-full overflow-hidden">
+              <div className="relative min-w-0">
                 <CalendarDaysIcon
                   className="pointer-events-none absolute top-1/2 left-3 hidden size-4 -translate-y-1/2 text-muted-foreground sm:block"
                   aria-hidden
@@ -164,7 +164,7 @@ export default function SupervisorCasPanelPage() {
                   type="date"
                   value={dateKey}
                   onChange={(e) => setDateKey(e.target.value)}
-                  className="w-full max-w-full min-w-0 pl-3 tabular-nums sm:pl-9"
+                  className="pl-3 tabular-nums sm:pl-9"
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">{headerDate}</p>
