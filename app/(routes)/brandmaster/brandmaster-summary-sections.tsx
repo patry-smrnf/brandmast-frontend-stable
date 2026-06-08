@@ -26,6 +26,8 @@ import {
   type RegularBonusBreakdown,
 } from "./brandmaster-bonus-utils"
 import { formatHoursPl, formatMoneyPl } from "./cas-action-utils"
+import { BonusExtrasSection } from "./brandmaster-bonus-extras-section"
+import { useBrandmasterBonusExtras } from "./use-brandmaster-bonus-extras"
 import type { SampleStatsGloCounts } from "@/lib/api"
 
 const CURRENT_MONTH_GLO_METRICS = [
@@ -259,7 +261,9 @@ export function PayoutCard({
   expanded: boolean
   onToggle: () => void
 }) {
-  const bonusTotal = bonusBreakdown?.totalBonus ?? 0
+  const bonusExtras = useBrandmasterBonusExtras()
+  const qualitativeBonus = bonusBreakdown?.qualitative.total ?? 0
+  const displayedPayout = basePayout + qualitativeBonus + bonusExtras.extrasTotal
 
   return (
     <Card className="overflow-hidden shadow-sm">
@@ -291,7 +295,7 @@ export function PayoutCard({
         </CardHeader>
         <CardContent className="px-3.5 pb-3 pt-0 sm:px-4">
           <p className="text-2xl font-semibold tabular-nums leading-none sm:text-3xl">
-            {formatMoneyPl(basePayout + (bonusBreakdown?.qualitative.total ?? 0) )}
+            {formatMoneyPl(displayedPayout)}
           </p>
           <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
             <span>
@@ -299,7 +303,12 @@ export function PayoutCard({
             </span>
             {bonusBreakdown ? (
               <span className="font-medium text-foreground/90">
-                Bonus: {formatMoneyPl(bonusBreakdown.qualitative.total)}
+                Bonus: {formatMoneyPl(qualitativeBonus)}
+              </span>
+            ) : null}
+            {!bonusExtras.loading && bonusExtras.extrasTotal !== 0 ? (
+              <span className="font-medium text-foreground/90">
+                Dodatki: {formatMoneyPl(bonusExtras.extrasTotal)}
               </span>
             ) : null}
           </p>
@@ -326,6 +335,8 @@ export function PayoutCard({
               oraz ident ostatniej akcji).
             </p>
           )}
+
+          <BonusExtrasSection extras={bonusExtras} />
         </CardContent>
       ) : (
         <CardContent className="border-t border-border/80 px-3.5 pb-3 pt-0 sm:px-4">

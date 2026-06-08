@@ -605,3 +605,28 @@ export interface ApiResponseOneTwoOneAplikacjaZgloszenieCreated {
   violations?: Violation[];
 }
 
+/** POST /api/bonus/bm/create, POST /api/bonus/bm/update, POST /api/bonus/bm/delete */
+export interface BonusRequest {
+  idBonus?: number; // int64
+  title: string;
+  amount: number;
+}
+
+/** GET /api/bonus/bm/fetch - element listy */
+export interface BonusResponse {
+  idBonus?: number; // int64
+  title?: string;
+  amount?: number;
+  createdAt?: string; // date-time
+}
+
+/** GET /api/bonus/bm/fetch */
+export interface ApiResponseListBonusResponse {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: BonusResponse[];
+  violations?: Violation[];
+}
+

@@ -17,9 +17,11 @@ import type {
   ApiResponseListOneTwoOneRivoVirto,
   ApiResponseListOneTwoOneSampling,
   ApiResponseListOneTwoOneTeam,
+  ApiResponseListBonusResponse,
   ApiResponseOneTwoOneAplikacjaZgloszenieCreated,
   ApiResponseOneTwoOneSamplingCreated,
   ApiResponseLoginResponse,
+  BonusRequest,
   ApiResponseObject,
   ApiResponseSettingResponse,
   ActionRequest,
@@ -195,6 +197,38 @@ export class BrandmastApi {
    */
   async updateConfig(body: ConfigUpdateRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseObject>("/api/config/update", body, options);
+    return res.data;
+  }
+
+  /**
+   * GET /api/bonus/bm/fetch
+   */
+  async fetchBonus(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListBonusResponse>("/api/bonus/bm/fetch", options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/bonus/bm/create
+   */
+  async createBonus(body: BonusRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/bonus/bm/create", body, options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/bonus/bm/update
+   */
+  async updateBonus(body: BonusRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/bonus/bm/update", body, options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/bonus/bm/delete
+   */
+  async deleteBonus(body: BonusRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseObject>("/api/bonus/bm/delete", body, options);
     return res.data;
   }
 
