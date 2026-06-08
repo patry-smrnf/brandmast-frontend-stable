@@ -43,6 +43,7 @@ function getActionSampleMetrics(stats: SampleStatsFieldCounts) {
   return [
     { label: "Hilo", value: stats.glo.hilo },
     { label: "Hilo+", value: stats.glo.hiloPlus },
+    { label: "Hyper Pro", value: stats.glo.hyperPro },
     { label: "Velo", value: stats.veloNet },
   ] as const
 }
@@ -58,7 +59,7 @@ function getActionRowKey(item: ActionWithRoundedTime): string {
 function ActionSampleStatsSkeleton() {
   return (
     <div className="flex h-7 animate-pulse overflow-hidden rounded-md border border-border/50 bg-muted/40">
-      {Array.from({ length: 3 }).map((_, i) => (
+      {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
           className={cn("min-w-0 flex-1 bg-muted/70", i > 0 && "border-l border-border/40")}
@@ -477,7 +478,7 @@ export default function BrandmasterPage() {
                 <CardContent className="px-3.5 pb-3 pt-0 sm:px-4">
                   <p className="text-xs text-muted-foreground">
                     Kliknij, aby zobaczyć listę akcji. Wybierz akcję, aby zobaczyć wyniki Hilo,
-                    Hilo+ i Velo.
+                    Hilo+, Hyper Pro i Velo.
                   </p>
                 </CardContent>
               )}

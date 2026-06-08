@@ -25,6 +25,7 @@ export type QualitativeBonusBreakdown = {
   tierLabel: string
   hiloRate: number
   hiloPlusRate: number
+  hyperProRate: number
   veloRatePerUnit: number
   items: BonusLineItem[]
   total: number
@@ -162,6 +163,7 @@ export function computeQualitativeBonus(
   const { hiloRate, hiloPlusRate, tierLabel } = getQualitativeRates(
     efficiency.gloEfficiency,
   )
+  const hyperProRate = 40
   const veloRatePerUnit = 4
   const items: BonusLineItem[] = []
 
@@ -170,6 +172,9 @@ export function computeQualitativeBonus(
   }
   if (input.glo.hiloPlus > 0) {
     items.push(lineItem("Hilo+", input.glo.hiloPlus, hiloPlusRate))
+  }
+  if (input.glo.hyperPro > 0) {
+    items.push(lineItem("Hyper Pro", input.glo.hyperPro, hyperProRate))
   }
   if (efficiency.veloCount > 0) {
     items.push(lineItem("Velo", efficiency.veloCount, veloRatePerUnit))
@@ -180,6 +185,7 @@ export function computeQualitativeBonus(
     tierLabel,
     hiloRate,
     hiloPlusRate,
+    hyperProRate,
     veloRatePerUnit,
     items,
     total,
