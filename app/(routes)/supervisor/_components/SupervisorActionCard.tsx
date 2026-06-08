@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { formatPlDateTimeFromIso, formatTime, parseIso } from "@/lib/dates/date-utils"
 import { getActionStatusPresentation } from "@/lib/action-status"
 import type { SvActionLocalPatch, SvActionRow } from "../use-sv-actions"
+import { EXCLUDED_BULK_APPROVE_EVENT_ID } from "../supervisor-constants"
 import { SupervisorApproveSheet } from "./SupervisorApproveSheet"
 import { SupervisorEditSheet } from "./SupervisorEditSheet"
 
@@ -47,6 +48,9 @@ export function SupervisorActionCard({
   const canApprove = pres.supervisorCanApprove
   const isCancelRequested = action.status === "CANCEL_REQUESTED"
   const showBulkCheckbox = bulkSelectMode === true
+  const isBulkApproveExcluded = action.event.idEvent === EXCLUDED_BULK_APPROVE_EVENT_ID
+  const showApproveButton = !isBulkApproveExcluded && !isCancelRequested
+  const showRevokeButton = isCancelRequested
 
   async function handleRevoke() {
     setIsCancelling(true)
@@ -179,34 +183,36 @@ export function SupervisorActionCard({
           </div>
         </div>
 
-        <div className="mt-2 flex justify-end">
-          {isCancelRequested ? (
-            <Button
-              size="sm"
-              variant="destructive"
-              disabled={!canApprove || isCancelling}
-              onClick={(e) => {
-                e.stopPropagation()
-                void handleRevoke()
-              }}
-              className="h-9 shrink-0 px-3 text-xs sm:h-8"
-            >
-              {isCancelling ? "Odwoływanie…" : "Odwolaj"}
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              disabled={!canApprove}
-              onClick={(e) => {
-                e.stopPropagation()
-                setApproveOpen(true)
-              }}
-              className="h-9 shrink-0 px-3 text-xs sm:h-8"
-            >
-              Approve
-            </Button>
-          )}
-        </div>
+        {(showApproveButton || showRevokeButton) && (
+          <div className="mt-2 flex justify-end">
+            {showRevokeButton ? (
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={!canApprove || isCancelling}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void handleRevoke()
+                }}
+                className="h-9 shrink-0 px-3 text-xs sm:h-8"
+              >
+                {isCancelling ? "Odwoływanie…" : "Odwolaj"}
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                disabled={!canApprove}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setApproveOpen(true)
+                }}
+                className="h-9 shrink-0 px-3 text-xs sm:h-8"
+              >
+                Approve
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <SupervisorApproveSheet
