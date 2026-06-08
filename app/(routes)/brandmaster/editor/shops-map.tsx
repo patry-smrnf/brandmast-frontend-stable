@@ -4,11 +4,13 @@ import * as React from "react"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
+import type { UserGeolocation } from "@/lib/hooks/use-user-geolocation"
 import { cn } from "@/lib/utils"
 
 /** Poland-ish default when there are no markers */
 const DEFAULT_VIEW: L.LatLngTuple = [52.1, 19.3]
 const DEFAULT_ZOOM = 6
+const USER_LOCATION_ZOOM = 14
 
 function markerIcon(selected: boolean) {
   const fill = selected ? "#2563eb" : "#64748b"
@@ -18,6 +20,54 @@ function markerIcon(selected: boolean) {
     iconSize: [22, 22],
     iconAnchor: [11, 11],
   })
+}
+
+function userLocationIcon() {
+  return L.divIcon({
+    className: "bm-leaflet-user-marker",
+    html: `<span style="position:relative;display:block;width:18px;height:18px" aria-hidden="true">
+      <span style="position:absolute;inset:-6px;border-radius:9999px;background:rgba(37,99,235,.25)"></span>
+      <span style="position:absolute;inset:0;border-radius:9999px;background:#2563eb;border:2px solid #fff;box-shadow:0 1px 4px rgba(15,23,42,.35)"></span>
+    </span>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+  })
+}
+
+function fitMapView(
+  map: L.Map,
+  markers: EditorShopMapMarker[],
+  selectedShopId: number | null,
+  userLocation: UserGeolocation | null | undefined
+) {
+  const selectedOnMap =
+    selectedShopId !== null ? markers.find((x) => x.id === selectedShopId) : undefined
+
+  if (selectedOnMap) {
+    const targetZoom = Math.min(16, Math.max(map.getZoom(), 14))
+    map.flyTo([selectedOnMap.lat, selectedOnMap.lng], targetZoom, {
+      duration: 0.45,
+      easeLinearity: 0.22,
+    })
+    return
+  }
+
+  const points: L.LatLngTuple[] = markers.map((x) => [x.lat, x.lng])
+  if (userLocation) {
+    points.push([userLocation.lat, userLocation.lng])
+  }
+
+  if (points.length === 1) {
+    const zoom = userLocation && markers.length === 0 ? USER_LOCATION_ZOOM : 13
+    map.setView(points[0], zoom, { animate: false })
+  } else if (points.length > 1) {
+    const bounds = L.latLngBounds(points)
+    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14, animate: false })
+  } else if (userLocation) {
+    map.setView([userLocation.lat, userLocation.lng], USER_LOCATION_ZOOM, { animate: false })
+  } else {
+    map.setView(DEFAULT_VIEW, DEFAULT_ZOOM, { animate: false })
+  }
 }
 
 export type EditorShopMapMarker = {
@@ -31,6 +81,7 @@ export type EditorShopsMapProps = {
   markers: EditorShopMapMarker[]
   selectedShopId: number | null
   onMarkerSelect: (id: number) => void
+  userLocation?: UserGeolocation | null
   isLoading?: boolean
   className?: string
 }
@@ -39,12 +90,14 @@ export function EditorShopsMap({
   markers,
   selectedShopId,
   onMarkerSelect,
+  userLocation,
   isLoading,
   className,
 }: EditorShopsMapProps) {
   const containerRef = React.useRef<HTMLDivElement | null>(null)
   const mapRef = React.useRef<L.Map | null>(null)
   const layerRef = React.useRef<L.LayerGroup | null>(null)
+  const userLayerRef = React.useRef<L.LayerGroup | null>(null)
   const onSelectRef = React.useRef(onMarkerSelect)
   onSelectRef.current = onMarkerSelect
 
@@ -63,8 +116,10 @@ export function EditorShopsMap({
     }).addTo(map)
 
     const group = L.layerGroup().addTo(map)
+    const userGroup = L.layerGroup().addTo(map)
     mapRef.current = map
     layerRef.current = group
+    userLayerRef.current = userGroup
 
     const fixSize = () => {
       map.invalidateSize()
@@ -76,8 +131,47 @@ export function EditorShopsMap({
       map.remove()
       mapRef.current = null
       layerRef.current = null
+      userLayerRef.current = null
     }
   }, [])
+
+  React.useEffect(() => {
+    const map = mapRef.current
+    const userLayer = userLayerRef.current
+    if (!map || !userLayer) return
+
+    userLayer.clearLayers()
+
+    if (userLocation) {
+      const userMarker = L.marker([userLocation.lat, userLocation.lng], {
+        icon: userLocationIcon(),
+        zIndexOffset: 1_000,
+        interactive: false,
+      })
+      userMarker.bindTooltip("Twoja lokalizacja", {
+        sticky: true,
+        direction: "top",
+        opacity: 0.95,
+      })
+      userMarker.addTo(userLayer)
+
+      if (
+        userLocation.accuracy != null &&
+        Number.isFinite(userLocation.accuracy) &&
+        userLocation.accuracy > 0 &&
+        userLocation.accuracy <= 5_000
+      ) {
+        L.circle([userLocation.lat, userLocation.lng], {
+          radius: userLocation.accuracy,
+          color: "#2563eb",
+          fillColor: "#2563eb",
+          fillOpacity: 0.12,
+          weight: 1,
+          interactive: false,
+        }).addTo(userLayer)
+      }
+    }
+  }, [userLocation])
 
   React.useEffect(() => {
     const map = mapRef.current
@@ -99,26 +193,10 @@ export function EditorShopsMap({
       marker.addTo(layer)
     }
 
-    const selectedOnMap =
-      selectedShopId !== null ? markers.find((x) => x.id === selectedShopId) : undefined
-
-    if (selectedOnMap) {
-      const targetZoom = Math.min(16, Math.max(map.getZoom(), 14))
-      map.flyTo([selectedOnMap.lat, selectedOnMap.lng], targetZoom, {
-        duration: 0.45,
-        easeLinearity: 0.22,
-      })
-    } else if (markers.length === 1) {
-      map.setView([markers[0].lat, markers[0].lng], 13, { animate: false })
-    } else if (markers.length > 1) {
-      const bounds = L.latLngBounds(markers.map((x) => [x.lat, x.lng] as L.LatLngTuple))
-      map.fitBounds(bounds, { padding: [28, 28], maxZoom: 14, animate: false })
-    } else {
-      map.setView(DEFAULT_VIEW, DEFAULT_ZOOM, { animate: false })
-    }
+    fitMapView(map, markers, selectedShopId, userLocation)
 
     queueMicrotask(() => map.invalidateSize())
-  }, [markers, selectedShopId])
+  }, [markers, selectedShopId, userLocation])
 
   React.useEffect(() => {
     const map = mapRef.current

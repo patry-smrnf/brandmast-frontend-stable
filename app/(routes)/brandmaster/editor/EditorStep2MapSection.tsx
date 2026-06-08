@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label"
 import type { ShopResponse } from "@/lib/api/generated/types"
 import { cn } from "@/lib/utils"
 
+import { useUserGeolocation } from "@/lib/hooks/use-user-geolocation"
+
 import {
   buildShopEventFilterOptions,
   buildShopMapMarkersAndStats,
@@ -50,6 +52,7 @@ export function EditorStep2MapSection({
   selectedShop,
   onMarkerSelect,
 }: EditorStep2MapSectionProps) {
+  const { location: userLocation } = useUserGeolocation()
   const [eventFilterId, setEventFilterId] = React.useState<number | null>(null)
 
   const eventOptions = React.useMemo(() => buildShopEventFilterOptions(shops), [shops])
@@ -133,6 +136,7 @@ export function EditorStep2MapSection({
         markers={filteredMapBundle.markers}
         selectedShopId={selectedShop?.id ?? null}
         onMarkerSelect={onMarkerSelect}
+        userLocation={userLocation}
         isLoading={shopsLoading}
       />
     </div>
