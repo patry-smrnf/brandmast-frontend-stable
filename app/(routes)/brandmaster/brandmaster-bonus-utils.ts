@@ -85,8 +85,8 @@ function getRegularGloRatePerDevice(
   veloEfficiency: number,
   gloEfficiency: number,
 ): { rate: number; tierLabel: string } {
-  if (veloEfficiency < 5.0) {
-    return { rate: 0, tierLabel: "Velo < 5,0 czyli brak bonusu Glo" }
+  if (veloEfficiency < 4.0) {
+    return { rate: 0, tierLabel: "Velo < 4,0 czyli brak bonusu Glo" }
   }
   if (veloEfficiency < 6.0) {
     const rate =
