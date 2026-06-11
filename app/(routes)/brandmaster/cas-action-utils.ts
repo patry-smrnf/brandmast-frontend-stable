@@ -34,6 +34,14 @@ export function getMonthDateRange(reference: Date) {
   return { since, until }
 }
 
+export function getPreviousMonthDateRange(reference: Date) {
+  const y = reference.getFullYear()
+  const m = reference.getMonth()
+  const since = toDateKey(new Date(y, m - 1, 1))
+  const until = toDateKey(new Date(y, m, 0))
+  return { since, until }
+}
+
 const HAS_OFFSET_RE = /([Zz]|[+-]\d{2}(?::?\d{2})?)$/
 
 export function parseCasDatetime(block?: CasDatetimeBlock): Date | null {

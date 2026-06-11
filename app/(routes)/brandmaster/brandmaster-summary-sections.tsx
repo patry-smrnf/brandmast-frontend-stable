@@ -249,6 +249,7 @@ export function PayoutCard({
   hourlyRate,
   totalRoundedHours,
   monthLabel,
+  includeExtras = true,
   expanded,
   onToggle,
 }: {
@@ -258,12 +259,14 @@ export function PayoutCard({
   hourlyRate: number
   totalRoundedHours: number
   monthLabel: string
+  includeExtras?: boolean
   expanded: boolean
   onToggle: () => void
 }) {
-  const bonusExtras = useBrandmasterBonusExtras()
+  const bonusExtras = useBrandmasterBonusExtras(includeExtras)
   const qualitativeBonus = bonusBreakdown?.qualitative.total ?? 0
-  const displayedPayout = basePayout + qualitativeBonus + bonusExtras.extrasTotal
+  const extrasAmount = includeExtras ? bonusExtras.extrasTotal : 0
+  const displayedPayout = basePayout + qualitativeBonus + extrasAmount
 
   return (
     <Card className="overflow-hidden shadow-sm">
@@ -306,9 +309,9 @@ export function PayoutCard({
                 Bonus: {formatMoneyPl(qualitativeBonus)}
               </span>
             ) : null}
-            {!bonusExtras.loading && bonusExtras.extrasTotal !== 0 ? (
+            {includeExtras && !bonusExtras.loading && extrasAmount !== 0 ? (
               <span className="font-medium text-foreground/90">
-                Dodatki: {formatMoneyPl(bonusExtras.extrasTotal)}
+                Dodatki: {formatMoneyPl(extrasAmount)}
               </span>
             ) : null}
           </p>
@@ -336,7 +339,7 @@ export function PayoutCard({
             </p>
           )}
 
-          <BonusExtrasSection extras={bonusExtras} />
+          {includeExtras ? <BonusExtrasSection extras={bonusExtras} /> : null}
         </CardContent>
       ) : (
         <CardContent className="border-t border-border/80 px-3.5 pb-3 pt-0 sm:px-4">

@@ -11,12 +11,14 @@ import {
   computeBrandmasterBonus,
   type BrandmasterBonusBreakdown,
 } from "./brandmaster-bonus-utils"
+import { computeBrandmasterPreviousMonthBonus } from "./brandmaster-previous-month-bonus-utils"
 import {
   type ActionWithRoundedTime,
   formatCasAddress,
   formatHoursPl,
   getCasActionTitle,
   getMonthDateRange,
+  getPreviousMonthDateRange,
   mapFinishedActionsWithRoundedTime,
   parseActionFallbackStart,
   resolveLastActionIdent,
@@ -25,7 +27,9 @@ import {
 
 const HOURLY_RATE = 45
 
-export function useBrandmasterDashboard() {
+export type BrandmasterMonthPeriod = "current" | "previous"
+
+export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "current") {
   const [startedActions, setStartedActions] = React.useState<TourPlannerActionListItem[]>([])
   const [monthActions, setMonthActions] = React.useState<ActionWithRoundedTime[]>([])
   const [hasFetched, setHasFetched] = React.useState(false)
@@ -49,7 +53,10 @@ export function useBrandmasterDashboard() {
       try {
         const fetchNow = nowInPoland()
         const today = toDateKeyInPoland(fetchNow)
-        const { since: monthSince, until: monthUntil } = getMonthDateRange(fetchNow)
+        const { since: monthSince, until: monthUntil } =
+          monthPeriod === "previous"
+            ? getPreviousMonthDateRange(fetchNow)
+            : getMonthDateRange(fetchNow)
 
         const [startedActionResponse, monthActionsResponse, configResponse] =
           await Promise.all([
@@ -141,7 +148,7 @@ export function useBrandmasterDashboard() {
     return () => {
       cancelled = true
     }
-  }, [tick])
+  }, [tick, monthPeriod])
 
   const totalRoundedHours = React.useMemo(
     () => monthActions.reduce((sum, a) => sum + a.roundedHours, 0),
@@ -152,13 +159,26 @@ export function useBrandmasterDashboard() {
 
   const bonusBreakdown = React.useMemo((): BrandmasterBonusBreakdown | null => {
     if (!sampleStatsCounts || totalRoundedHours <= 0) return null
-    const month = sampleStatsCounts.currentMonth
-    return computeBrandmasterBonus({
-      glo: month.glo,
-      veloNet: month.veloNet,
+    const monthStats =
+      monthPeriod === "previous"
+        ? sampleStatsCounts.lastMonth
+        : sampleStatsCounts.currentMonth
+    const input = {
+      glo: monthStats.glo,
+      veloNet: monthStats.veloNet,
       roundedHours: totalRoundedHours,
-    })
-  }, [sampleStatsCounts, totalRoundedHours])
+    }
+    return monthPeriod === "previous"
+      ? computeBrandmasterPreviousMonthBonus(input)
+      : computeBrandmasterBonus(input)
+  }, [sampleStatsCounts, totalRoundedHours, monthPeriod])
+
+  const monthSalesStats = React.useMemo(() => {
+    if (!sampleStatsCounts) return null
+    return monthPeriod === "previous"
+      ? sampleStatsCounts.lastMonth
+      : sampleStatsCounts.currentMonth
+  }, [sampleStatsCounts, monthPeriod])
 
   const predictedPayout = basePayout + (bonusBreakdown?.totalBonus ?? 0)
 
@@ -215,6 +235,8 @@ export function useBrandmasterDashboard() {
     bonusBreakdown,
     hourlyRate: HOURLY_RATE,
     sampleStatsCounts,
+    monthSalesStats,
     hostessCode,
+    monthPeriod,
   }
 }

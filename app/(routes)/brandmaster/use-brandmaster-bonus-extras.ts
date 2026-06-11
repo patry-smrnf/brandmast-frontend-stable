@@ -60,7 +60,12 @@ export function useBrandmasterBonusExtras(enabled = true) {
   }, [])
 
   React.useEffect(() => {
-    if (!enabled) return
+    if (!enabled) {
+      setItems([])
+      setLoadError(null)
+      setLoading(false)
+      return
+    }
     void loadExtras()
   }, [enabled, loadExtras])
 

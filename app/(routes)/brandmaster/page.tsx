@@ -37,7 +37,55 @@ import {
   PayoutCard,
 } from "./brandmaster-summary-sections"
 import { formatHoursPl, type ActionWithRoundedTime } from "./cas-action-utils"
-import { useBrandmasterDashboard } from "./use-brandmaster-dashboard"
+import {
+  type BrandmasterMonthPeriod,
+  useBrandmasterDashboard,
+} from "./use-brandmaster-dashboard"
+
+function BrandmasterMonthSwitcher({
+  period,
+  onChange,
+}: {
+  period: BrandmasterMonthPeriod
+  onChange: (period: BrandmasterMonthPeriod) => void
+}) {
+  return (
+    <div
+      className="grid grid-cols-2 gap-1 rounded-xl border border-border/80 bg-muted/40 p-1"
+      role="tablist"
+      aria-label="Okres rozliczeniowy"
+    >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={period === "current"}
+        className={cn(
+          "inline-flex min-h-9 items-center justify-center rounded-lg px-2 py-1.5 text-xs font-medium transition-colors sm:text-sm",
+          period === "current"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+        onClick={() => onChange("current")}
+      >
+        Aktualny
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={period === "previous"}
+        className={cn(
+          "inline-flex min-h-9 items-center justify-center rounded-lg px-2 py-1.5 text-xs font-medium transition-colors sm:text-sm",
+          period === "previous"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground",
+        )}
+        onClick={() => onChange("previous")}
+      >
+        Poprzedni
+      </button>
+    </div>
+  )
+}
 
 function getActionSampleMetrics(stats: SampleStatsFieldCounts) {
   return [
@@ -207,6 +255,7 @@ function WorkTimeActionRow({
 }
 
 export default function BrandmasterPage() {
+  const [monthPeriod, setMonthPeriod] = React.useState<BrandmasterMonthPeriod>("current")
   const [workTimeExpanded, setWorkTimeExpanded] = React.useState(false)
   const [payoutExpanded, setPayoutExpanded] = React.useState(false)
   const [selectedActionKey, setSelectedActionKey] = React.useState<string | null>(null)
@@ -215,6 +264,14 @@ export default function BrandmasterPage() {
   const [actionStatsError, setActionStatsError] = React.useState<string | null>(null)
   const actionStatsRequestRef = React.useRef(0)
   const headerDate = React.useMemo(() => formatHeaderDatePoland(nowInPoland()), [])
+
+  React.useEffect(() => {
+    actionStatsRequestRef.current += 1
+    setSelectedActionKey(null)
+    setActionStats(null)
+    setActionStatsError(null)
+    setActionStatsLoading(false)
+  }, [monthPeriod])
 
   const {
     isLoading,
@@ -232,9 +289,9 @@ export default function BrandmasterPage() {
     predictedPayout,
     bonusBreakdown,
     hourlyRate,
-    sampleStatsCounts,
+    monthSalesStats,
     hostessCode,
-  } = useBrandmasterDashboard()
+  } = useBrandmasterDashboard(monthPeriod)
 
   const handleActionToggle = React.useCallback(
     (item: ActionWithRoundedTime) => {
@@ -290,15 +347,18 @@ export default function BrandmasterPage() {
     [hostessCode, selectedActionKey],
   )
 
-  const currentMonth = sampleStatsCounts?.currentMonth
-
   const monthLabel = React.useMemo(() => {
+    const now = nowInPoland()
+    const labelDate =
+      monthPeriod === "previous"
+        ? new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        : now
     return new Intl.DateTimeFormat("pl-PL", {
       timeZone: POLAND_TIMEZONE,
       month: "long",
       year: "numeric",
-    }).format(nowInPoland())
-  }, [])
+    }).format(labelDate)
+  }, [monthPeriod])
 
   return (
     <main className="flex-1 bg-background">
@@ -330,6 +390,10 @@ export default function BrandmasterPage() {
         </header>
 
         <Separator className="my-4" />
+
+        <div className="mb-3">
+          <BrandmasterMonthSwitcher period={monthPeriod} onChange={setMonthPeriod} />
+        </div>
 
         <div className="mb-3 flex">
           <Button
@@ -394,6 +458,7 @@ export default function BrandmasterPage() {
               hourlyRate={hourlyRate}
               totalRoundedHours={totalRoundedHours}
               monthLabel={monthLabel}
+              includeExtras={monthPeriod === "current"}
               expanded={payoutExpanded}
               onToggle={() => setPayoutExpanded((v) => !v)}
             />
@@ -402,10 +467,10 @@ export default function BrandmasterPage() {
               <EfficiencyCard bonus={bonusBreakdown} monthLabel={monthLabel} />
             ) : null}
 
-            {currentMonth ? (
+            {monthSalesStats ? (
               <GloSamplesCard
-                glo={currentMonth.glo}
-                veloNet={currentMonth.veloNet}
+                glo={monthSalesStats.glo}
+                veloNet={monthSalesStats.veloNet}
                 monthLabel={monthLabel}
               />
             ) : null}
@@ -454,7 +519,9 @@ export default function BrandmasterPage() {
                 <CardContent className="space-y-2 border-t border-border/80 px-3.5 pb-3.5 pt-2 sm:px-4 sm:pb-4">
                   {monthActions.length === 0 ? (
                     <p className="py-2 text-center text-xs text-muted-foreground">
-                      Brak zakończonych akcji w tym miesiącu.
+                      {monthPeriod === "previous"
+                        ? "Brak zakończonych akcji w poprzednim miesiącu."
+                        : "Brak zakończonych akcji w tym miesiącu."}
                     </p>
                   ) : (
                     monthActions.map((item) => {
