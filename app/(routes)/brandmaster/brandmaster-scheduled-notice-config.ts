@@ -9,7 +9,7 @@ export const BRANDMASTER_SCHEDULED_NOTICE = {
     "UPDATE: w HOME dodano sekcje 'Poprzedni' z wyplata i wyliczeniami za poprzedni miesiac",
   windows: [
     {
-      start: "2026-65-10T00:00:00",
+      start: "2026-06-10T00:00:00",
       end: "2026-06-15T00:00:00",
     },
   ] satisfies readonly PolandScheduleWindow[],
