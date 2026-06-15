@@ -10,6 +10,7 @@ import {
   StoreIcon,
   UserIcon,
   UsersIcon,
+  CalendarRangeIcon,
   ClipboardListIcon,
   DockIcon,
   FileSpreadsheetIcon,
@@ -180,6 +181,12 @@ export function RoleContextMenu() {
             label: "Panel CAS",
             href: "/supervisor/casPanel",
             icon: <ClipboardListIcon className="size-4" />,
+          },
+          {
+            key: "sv-planner-akcji",
+            label: "Planner Akcji",
+            href: "/supervisor/planner-akcji",
+            icon: <CalendarRangeIcon className="size-4" />,
           },
           {
             key: "sv-excel",

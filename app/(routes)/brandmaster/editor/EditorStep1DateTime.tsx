@@ -74,7 +74,7 @@ export default function EditorStep1DateTime({
             </div>
             {startTime ? (
               <div className="text-xs text-muted-foreground">
-                {startNorm.ok ? `Zapiszę jako: ${startNorm.value}` : startNorm.reason}
+                {startNorm.ok ? `Zapisane jako: ${startNorm.value}` : startNorm.reason}
               </div>
             ) : null}
           </div>
@@ -96,7 +96,7 @@ export default function EditorStep1DateTime({
             </div>
             {endTime ? (
               <div className="text-xs text-muted-foreground">
-                {endNorm.ok ? `Zapiszę jako: ${endNorm.value}` : endNorm.reason}
+                {endNorm.ok ? `Zapisane jako: ${endNorm.value}` : endNorm.reason}
               </div>
             ) : null}
           </div>

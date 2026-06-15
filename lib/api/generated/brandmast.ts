@@ -13,6 +13,7 @@ import type {
   ApiResponseListShopResponse,
   ApiResponseListTourPlannerActionListItem,
   ApiResponseListTourPlannerPointListItem,
+  ApiResponseTourPlannerActionCreateResult,
   ApiResponseListOneTwoOneAplikacjaZgloszenie,
   ApiResponseListOneTwoOneRivoVirto,
   ApiResponseListOneTwoOneSampling,
@@ -28,6 +29,7 @@ import type {
   BrandmasterAddRequest,
   BrandmasterDeleteRequest,
   ConfigUpdateRequest,
+  CreateCasActionRequest,
   DeleteBmActionRequest,
   LoginRequest,
   PointCasRequest,
@@ -169,6 +171,20 @@ export class BrandmastApi {
   }
 
   /**
+   * GET /api/shop/fetch-top?eventId=...&limit=...
+   */
+  async fetchTopShops(
+    params: { eventId: number; limit: number },
+    options?: RequestOptions,
+  ) {
+    const res = await this.http.get<ApiResponseListShopResponse>("/api/shop/fetch-top", {
+      ...options,
+      params,
+    });
+    return res.data;
+  }
+
+  /**
    * POST /api/shop/sv/add
    */
   async addShop(body: ShopAddRequest, options?: RequestOptions) {
@@ -272,6 +288,18 @@ export class BrandmastApi {
   async fetchSVCasActions(body: ActionCasRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
       "/api/cas/action/sv/fetch",
+      body,
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/cas/action/create-blank
+   */
+  async createBlankAction(body: CreateCasActionRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseTourPlannerActionCreateResult>(
+      "/api/cas/action/create-blank",
       body,
       options,
     );

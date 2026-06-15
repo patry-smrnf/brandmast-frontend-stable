@@ -436,6 +436,31 @@ export interface ApiResponseListTourPlannerActionListItem {
   violations?: Violation[];
 }
 
+/** POST /api/cas/action/create-blank */
+export interface CreateCasActionRequest {
+  idShop: number; // int64
+  name: string; // minLength: 1
+  since: string; // date-time
+  until: string; // date-time
+}
+
+export interface TourPlannerActionCreateResult {
+  uuid?: string;
+  ident?: string;
+  name?: string;
+  excerpt?: string;
+  description?: string;
+}
+
+export interface ApiResponseTourPlannerActionCreateResult {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: TourPlannerActionCreateResult;
+  violations?: Violation[];
+}
+
 /** GET /api/cas/brandmaster/sv/fetch */
 export interface TourPlannerBrandmasterListCreated {
   date?: string;
