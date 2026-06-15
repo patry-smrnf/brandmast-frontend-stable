@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { CalendarDaysIcon, TimerIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -27,8 +28,32 @@ export type EditorStep1DateTimeProps = {
   isMultiDatesEffective: boolean
   selectedDates: Date[]
   setSelectedDates: (v: Date[]) => void
+  calendarMonth: Date
+  onCalendarMonthChange: (month: Date) => void
+  monthActionsLoading: boolean
+  plannedActionDates: Date[]
+  editingActionDate: Date | null
   nextDisabledStep1: boolean
   onNext: () => void
+}
+
+const CALENDAR_ACTION_MODIFIERS_CLASS_NAMES = {
+  hasAction:
+    "[&_button]:after:absolute [&_button]:after:bottom-1 [&_button]:after:left-1/2 [&_button]:after:-translate-x-1/2 [&_button]:after:size-1 [&_button]:after:rounded-full [&_button]:after:bg-violet-500",
+  editingAction:
+    "[&_button]:bg-amber-500/15 [&_button]:ring-2 [&_button]:ring-inset [&_button]:ring-amber-500/55",
+} as const
+
+function CalendarLoadingSkeleton() {
+  return (
+    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/85 p-3 backdrop-blur-[1px]">
+      <div className="grid w-full max-w-[280px] grid-cols-7 gap-1.5">
+        {Array.from({ length: 35 }).map((_, i) => (
+          <div key={i} className="aspect-square animate-pulse rounded-md bg-muted" />
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function EditorStep1DateTime({
@@ -44,9 +69,32 @@ export default function EditorStep1DateTime({
   isMultiDatesEffective,
   selectedDates,
   setSelectedDates,
+  calendarMonth,
+  onCalendarMonthChange,
+  monthActionsLoading,
+  plannedActionDates,
+  editingActionDate,
   nextDisabledStep1,
   onNext,
 }: EditorStep1DateTimeProps) {
+  const actionModifiers = React.useMemo(() => {
+    const modifiers: Record<string, Date[]> = {
+      hasAction: plannedActionDates,
+    }
+    if (editingActionDate) {
+      modifiers.editingAction = [editingActionDate]
+    }
+    return modifiers
+  }, [plannedActionDates, editingActionDate])
+
+  const sharedCalendarProps = {
+    locale: pl,
+    weekStartsOn: 1 as const,
+    month: calendarMonth,
+    onMonthChange: onCalendarMonthChange,
+    modifiers: actionModifiers,
+    modifiersClassNames: CALENDAR_ACTION_MODIFIERS_CLASS_NAMES,
+  }
   return (
     <Card className="overflow-hidden">
       <CardHeader className="space-y-1">
@@ -128,27 +176,36 @@ export default function EditorStep1DateTime({
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="rounded-xl border border-border bg-card p-2 shadow-sm">
+          <div className="relative rounded-xl border border-border bg-card p-2 shadow-sm">
+            {monthActionsLoading ? <CalendarLoadingSkeleton /> : null}
             <div className="flex justify-center">
               {isMultiDatesEffective ? (
                 <Calendar
                   mode="multiple"
-                  locale={pl}
-                  weekStartsOn={1}
-                  defaultMonth={selectedDates[0] ?? new Date()}
+                  {...sharedCalendarProps}
                   selected={selectedDates}
                   onSelect={(val) => setSelectedDates(val ?? [])}
                 />
               ) : (
                 <Calendar
                   mode="single"
-                  locale={pl}
-                  weekStartsOn={1}
-                  defaultMonth={selectedDates[0] ?? new Date()}
+                  {...sharedCalendarProps}
                   selected={selectedDates[0]}
                   onSelect={(val) => setSelectedDates(val ? [val] : [])}
                 />
               )}
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-1.5 rounded-full bg-violet-500" />
+                Zaplanowana akcja
+              </span>
+              {isEditMode ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-3 rounded-sm bg-amber-500/15 ring-2 ring-inset ring-amber-500/55" />
+                  Edytowana akcja
+                </span>
+              ) : null}
             </div>
           </div>
 

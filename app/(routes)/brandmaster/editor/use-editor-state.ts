@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { brandmastApi } from "@/lib/api"
 import type { ShopResponse } from "@/lib/api/generated/types"
 
-import { parseIso, toDateKey } from "@/lib/dates/date-utils"
+import { parseIso, startOfDay, toDateKey, toMonthKey } from "@/lib/dates/date-utils"
 import type { BrandmasterAction } from "../actions/types"
 
 import {
@@ -19,7 +19,7 @@ import {
   fetchActionsForEditor,
   normalizeTime,
   parseActionId,
-  parseEditorMonthToBackendMonth,
+  resolveInitialCalendarMonth,
   shopMatchesQuery,
   type EditorStep,
 } from "./editor-utils"
@@ -28,10 +28,6 @@ export function useEditorState() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const idAction = React.useMemo(() => parseActionId(searchParams.get("idAction")), [searchParams])
-  const backendMonth = React.useMemo(
-    () => parseEditorMonthToBackendMonth(searchParams.get("month")),
-    [searchParams]
-  )
   const isEditMode = idAction !== null
 
   const [isMounted, setIsMounted] = React.useState(false)
@@ -55,8 +51,21 @@ export function useEditorState() {
   const [showShopSuggestions, setShowShopSuggestions] = React.useState(false)
   const hideShopSuggestionsTimeoutRef = React.useRef<number | null>(null)
 
+  const [calendarMonth, setCalendarMonth] = React.useState<Date>(() =>
+    resolveInitialCalendarMonth(searchParams)
+  )
+  const [monthActions, setMonthActions] = React.useState<BrandmasterAction[]>([])
+  const [monthActionsLoading, setMonthActionsLoading] = React.useState(true)
+  const loadedMonthKeyRef = React.useRef<string | null>(null)
+
   const [editingAction, setEditingAction] = React.useState<BrandmasterAction | null>(null)
-  const [loadingEditData, setLoadingEditData] = React.useState(false)
+  const editInitializedRef = React.useRef(false)
+  const loadingEditData = isEditMode && !editInitializedRef.current && monthActionsLoading
+
+  React.useEffect(() => {
+    editInitializedRef.current = false
+    setEditingAction(null)
+  }, [idAction])
 
   const startNorm = React.useMemo(() => normalizeTime(startTime), [startTime])
   const endNorm = React.useMemo(() => normalizeTime(endTime), [endTime])
@@ -77,57 +86,29 @@ export function useEditorState() {
   const nextDisabledStep2 = !isMounted ? false : !canGoNextStep2
 
   React.useEffect(() => {
-    if (!isEditMode) return
-    if (!idAction) return
+    if (step !== 1) return
 
     let cancelled = false
+    const monthKey = toMonthKey(calendarMonth)
     async function run() {
-      setLoadingEditData(true)
+      setMonthActionsLoading(true)
       try {
-        const actions = await fetchActionsForEditor(backendMonth)
+        const actions = await fetchActionsForEditor(monthKey)
         if (cancelled) return
 
-        const found = actions.find((a) => (a.idAction ?? 0) === idAction)
-        const coerced = coerceAction(found)
-        if (!coerced) {
-          toast.error("Nie znaleziono akcji do edycji.")
-          return
-        }
-
-        setEditingAction(coerced)
-        setAllowMultiDates(false)
-
-        const since = parseIso(coerced.since)
-        const until = parseIso(coerced.until)
-        if (since) {
-          setSelectedDates([since])
-          const hh = String(since.getHours()).padStart(2, "0")
-          const mm = String(since.getMinutes()).padStart(2, "0")
-          const ss = String(since.getSeconds()).padStart(2, "0")
-          setStartTime(`${hh}:${mm}:${ss}`)
-        }
-        if (until) {
-          const hh = String(until.getHours()).padStart(2, "0")
-          const mm = String(until.getMinutes()).padStart(2, "0")
-          const ss = String(until.getSeconds()).padStart(2, "0")
-          setEndTime(`${hh}:${mm}:${ss}`)
-        }
-
-        if (coerced.shop.idShop) {
-          const prefilledShop: ShopResponse = {
-            id: coerced.shop.idShop,
-            name: coerced.shop.name,
-            location: { address: coerced.shop.address },
-            event: { name: coerced.event.name },
-          }
-          setSelectedShop(prefilledShop)
-          setShopQuery(buildShopLabel(prefilledShop))
-        }
+        setMonthActions(
+          actions
+            .map((a) => coerceAction(a))
+            .filter((a): a is BrandmasterAction => a != null)
+        )
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Nie udało się pobrać akcji.")
+        if (cancelled) return
+        setMonthActions([])
+        toast.error(e instanceof Error ? e.message : "Nie udało się pobrać akcji miesiąca.")
       } finally {
         if (cancelled) return
-        setLoadingEditData(false)
+        loadedMonthKeyRef.current = monthKey
+        setMonthActionsLoading(false)
       }
     }
 
@@ -135,7 +116,80 @@ export function useEditorState() {
     return () => {
       cancelled = true
     }
-  }, [idAction, isEditMode, backendMonth])
+  }, [step, calendarMonth])
+
+  React.useEffect(() => {
+    if (!isEditMode) return
+    if (!idAction) return
+    if (editInitializedRef.current) return
+    if (monthActionsLoading) return
+    if (loadedMonthKeyRef.current !== toMonthKey(calendarMonth)) return
+
+    const found = monthActions.find((a) => a.idAction === idAction)
+    if (!found) {
+      toast.error("Nie znaleziono akcji do edycji.")
+      return
+    }
+
+    editInitializedRef.current = true
+    setEditingAction(found)
+    setAllowMultiDates(false)
+
+    const since = parseIso(found.since)
+    const until = parseIso(found.until)
+    if (since) {
+      setSelectedDates([since])
+      const nextMonth = new Date(since.getFullYear(), since.getMonth(), 1)
+      if (toMonthKey(nextMonth) !== toMonthKey(calendarMonth)) {
+        setCalendarMonth(nextMonth)
+      }
+      const hh = String(since.getHours()).padStart(2, "0")
+      const mm = String(since.getMinutes()).padStart(2, "0")
+      const ss = String(since.getSeconds()).padStart(2, "0")
+      setStartTime(`${hh}:${mm}:${ss}`)
+    }
+    if (until) {
+      const hh = String(until.getHours()).padStart(2, "0")
+      const mm = String(until.getMinutes()).padStart(2, "0")
+      const ss = String(until.getSeconds()).padStart(2, "0")
+      setEndTime(`${hh}:${mm}:${ss}`)
+    }
+
+    if (found.shop.idShop) {
+      const prefilledShop: ShopResponse = {
+        id: found.shop.idShop,
+        name: found.shop.name,
+        location: { address: found.shop.address },
+        event: { name: found.event.name },
+      }
+      setSelectedShop(prefilledShop)
+      setShopQuery(buildShopLabel(prefilledShop))
+    }
+  }, [idAction, isEditMode, calendarMonth, monthActions, monthActionsLoading])
+
+  const { plannedActionDates, editingActionDate } = React.useMemo(() => {
+    const seen = new Set<string>()
+    const planned: Date[] = []
+    let editing: Date | null = null
+
+    if (isEditMode && editingAction?.since) {
+      const d = parseIso(editingAction.since)
+      if (d) editing = startOfDay(d)
+    }
+    const editingKey = editing ? toDateKey(editing) : null
+
+    for (const action of monthActions) {
+      const d = parseIso(action.since)
+      if (!d) continue
+      const key = toDateKey(d)
+      if (key === editingKey) continue
+      if (seen.has(key)) continue
+      seen.add(key)
+      planned.push(startOfDay(d))
+    }
+
+    return { plannedActionDates: planned, editingActionDate: editing }
+  }, [monthActions, isEditMode, editingAction?.since])
 
   React.useEffect(() => {
     if (step !== 2) return
@@ -302,6 +356,11 @@ export function useEditorState() {
     nextDisabledStep1,
     nextDisabledStep2,
     isMultiDatesEffective,
+    calendarMonth,
+    setCalendarMonth,
+    monthActionsLoading,
+    plannedActionDates,
+    editingActionDate,
     filteredShops,
     shopMapBundle,
     onShopMapMarkerSelect,

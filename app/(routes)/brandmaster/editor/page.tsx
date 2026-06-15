@@ -83,6 +83,11 @@ function BrandmasterEditorInner() {
             isMultiDatesEffective={s.isMultiDatesEffective}
             selectedDates={s.selectedDates}
             setSelectedDates={s.setSelectedDates}
+            calendarMonth={s.calendarMonth}
+            onCalendarMonthChange={s.setCalendarMonth}
+            monthActionsLoading={s.monthActionsLoading}
+            plannedActionDates={s.plannedActionDates}
+            editingActionDate={s.editingActionDate}
             nextDisabledStep1={s.nextDisabledStep1}
             onNext={() => s.setStep(2)}
           />

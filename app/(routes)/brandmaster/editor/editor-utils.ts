@@ -62,6 +62,17 @@ export function createInitialSelectedDates(searchParams: { get: (k: string) => s
   return fromDay ? [startOfDay(fromDay)] : [new Date()]
 }
 
+export function resolveInitialCalendarMonth(searchParams: { get: (k: string) => string | null }) {
+  const monthFromUrl = parseEditorMonthToBackendMonth(searchParams.get("month"))
+  if (monthFromUrl) {
+    const [y, m] = monthFromUrl.split("-").map(Number)
+    return new Date(y, m - 1, 1)
+  }
+  const initial = createInitialSelectedDates(searchParams)
+  const d = initial[0] ?? new Date()
+  return new Date(d.getFullYear(), d.getMonth(), 1)
+}
+
 export function normalizeTime(raw: string): { ok: true; value: string } | { ok: false; reason: string } {
   const t = raw.trim()
   if (!t) return { ok: false, reason: "Godzina jest wymagana." }
