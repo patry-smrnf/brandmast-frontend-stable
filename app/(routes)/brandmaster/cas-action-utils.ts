@@ -9,6 +9,7 @@ import {
 import type {
   CasAddressCreate,
   CasDatetimeBlock,
+  SampleStatsFieldCounts,
   TourPlannerActionListItem,
 } from "@/lib/api"
 
@@ -83,6 +84,13 @@ const PARTIAL_HOUR_HALF_EXTRA_MAX_MINUTES = 44
  * Godziny rozliczeniowe: pełne godziny + niepełna końcówka w krokach co 15 min (0 / 30 / 60 min).
  * Np. 1 h 46 min → 2 h, 2 h 14 min → 2 h, 2 h 28 min → 2,5 h, 2 h 59 min lub 3 h → 3 h.
  */
+/** Rzeczywisty czas trwania akcji w godzinach (bez zaokrąglenia rozliczeniowego). */
+export function getActionDurationHours(start: Date, stop: Date): number {
+  const ms = stop.getTime() - start.getTime()
+  if (ms <= 0) return 0
+  return ms / 3_600_000
+}
+
 export function roundActionDurationHours(start: Date, stop: Date): number {
   const ms = stop.getTime() - start.getTime()
   if (ms <= 0) return 0
@@ -113,6 +121,19 @@ export function formatHoursPl(hours: number): string {
 export function formatMoneyPl(amount: number): string {
   if (!Number.isFinite(amount) || amount <= 0) return "0 zł"
   return `${Math.round(amount).toLocaleString("pl-PL")} zł`
+}
+
+export function getActionRowKey(item: ActionWithRoundedTime): string {
+  return (
+    item.actionIdent ??
+    item.action.uuid ??
+    `${item.startLabel}-${item.stopLabel}-${item.shopName}`
+  )
+}
+
+/** Akcja bez wyników Hilo, Hilo+ i Hyper Pro. */
+export function isEmptyActionSampleStats(stats: SampleStatsFieldCounts): boolean {
+  return stats.glo.hilo === 0 && stats.glo.hiloPlus === 0 && stats.glo.hyperPro === 0
 }
 
 export function mapFinishedActionsWithRoundedTime(
@@ -158,7 +179,7 @@ export function getCasActionTitle(item: TourPlannerActionListItem): string {
   return item.name?.trim() || item.event?.name?.trim() || item.ident?.trim() || "Akcja rozpoczeta"
 }
 
-/** Ident najnowszej akcji (started lub finished) po dacie startu. */
+/** Ident najnowszej akcji po dacie startu w podanej liście. */
 export function resolveLastActionIdent(
   started: TourPlannerActionListItem[],
   finished: TourPlannerActionListItem[],
@@ -179,4 +200,15 @@ export function resolveLastActionIdent(
   }
 
   return bestIdent
+}
+
+/** Ident akcji do POST /sample/stats — aktywna (started) albo ostatnia zakończona. */
+export function resolveSampleStatsActionIdent(
+  started: TourPlannerActionListItem[],
+  finished: TourPlannerActionListItem[],
+): string {
+  if (started.length > 0) {
+    return resolveLastActionIdent(started, [])
+  }
+  return resolveLastActionIdent([], finished)
 }

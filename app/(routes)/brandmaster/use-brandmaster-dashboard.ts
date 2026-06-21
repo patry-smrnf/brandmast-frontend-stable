@@ -21,7 +21,7 @@ import {
   getPreviousMonthDateRange,
   mapFinishedActionsWithRoundedTime,
   parseActionFallbackStart,
-  resolveLastActionIdent,
+  resolveSampleStatsActionIdent,
   roundActionDurationHours,
 } from "./cas-action-utils"
 
@@ -58,20 +58,20 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
             ? getPreviousMonthDateRange(fetchNow)
             : getMonthDateRange(fetchNow)
 
-        const [startedActionResponse, monthActionsResponse, configResponse] =
-          await Promise.all([
-            brandmastApi.fetchBMActions({
-              since: today,
-              until: today,
-              status: "started",
-            }),
-            brandmastApi.fetchBMActions({
-              since: monthSince,
-              until: monthUntil,
-              status: "finished",
-            }),
-            brandmastApi.fetchConfig(),
-          ])
+        const configPromise = brandmastApi.fetchConfig()
+
+        const [startedActionResponse, monthActionsResponse] = await Promise.all([
+          brandmastApi.fetchBMActions({
+            since: today,
+            until: today,
+            status: "started",
+          }),
+          brandmastApi.fetchBMActions({
+            since: monthSince,
+            until: monthUntil,
+            status: "finished",
+          }),
+        ])
 
         if (cancelled) return
 
@@ -97,6 +97,10 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
 
         const startedItems = startedActionResponse.data ?? []
         const finishedItems = monthActionsResponse.data ?? []
+        const statsActionIdent = resolveSampleStatsActionIdent(startedItems, finishedItems)
+
+        const configResponse = await configPromise
+        if (cancelled) return
 
         if (configResponse.success && configResponse.data) {
           setConfig(configResponse.data)
@@ -106,14 +110,13 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
           configResponse.data?.brandmasterData?.login?.trim() ??
           getConfigState().config?.brandmasterData?.login?.trim() ??
           ""
-        const currentActionIdent = resolveLastActionIdent(startedItems, finishedItems)
 
         let nextSampleStats: SampleStatsCountsByField | null = null
-        if (resolvedHostessCode && currentActionIdent) {
+        if (resolvedHostessCode && statsActionIdent) {
           try {
             const sampleStats = await fetchSampleStats({
               hostessCode: resolvedHostessCode,
-              currentAction: currentActionIdent,
+              currentAction: statsActionIdent,
             })
             nextSampleStats = sampleStats.counts
           } catch {
@@ -215,6 +218,11 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     return name || address
   }, [currentAction])
 
+  const currentActionStats = React.useMemo(() => {
+    if (!currentAction || !sampleStatsCounts) return null
+    return sampleStatsCounts.currentAction
+  }, [currentAction, sampleStatsCounts])
+
   const isPageLoading = !hasFetched || isLoading
   const isRefreshing = hasFetched && isLoading
 
@@ -228,6 +236,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     currentActionStartLabel,
     currentActionRoundedHoursLabel,
     currentActionPointLabel,
+    currentActionStats,
     monthActions,
     totalRoundedHours,
     basePayout,

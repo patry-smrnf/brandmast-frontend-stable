@@ -36,11 +36,12 @@ import {
   GloSamplesCard,
   PayoutCard,
 } from "./brandmaster-summary-sections"
-import { formatHoursPl, type ActionWithRoundedTime } from "./cas-action-utils"
+import { formatHoursPl, getActionRowKey, type ActionWithRoundedTime } from "./cas-action-utils"
 import {
   type BrandmasterMonthPeriod,
   useBrandmasterDashboard,
 } from "./use-brandmaster-dashboard"
+import { useEmptyWorkHours } from "./use-empty-work-hours"
 
 function BrandmasterMonthSwitcher({
   period,
@@ -96,14 +97,6 @@ function getActionSampleMetrics(stats: SampleStatsFieldCounts) {
   ] as const
 }
 
-function getActionRowKey(item: ActionWithRoundedTime): string {
-  return (
-    item.actionIdent ??
-    item.action.uuid ??
-    `${item.startLabel}-${item.stopLabel}-${item.shopName}`
-  )
-}
-
 function ActionSampleStatsSkeleton() {
   return (
     <div className="flex h-7 animate-pulse overflow-hidden rounded-md border border-border/50 bg-muted/40">
@@ -142,6 +135,7 @@ function ActionSampleStatsPanel({ stats }: { stats: SampleStatsFieldCounts }) {
 function WorkTimeActionRow({
   item,
   expanded,
+  isEmpty,
   statsLoading,
   stats,
   statsError,
@@ -149,6 +143,7 @@ function WorkTimeActionRow({
 }: {
   item: ActionWithRoundedTime
   expanded: boolean
+  isEmpty: boolean
   statsLoading: boolean
   stats: SampleStatsFieldCounts | null
   statsError: string | null
@@ -160,7 +155,11 @@ function WorkTimeActionRow({
     <div
       className={cn(
         "overflow-hidden rounded-lg border bg-muted/30 transition-colors",
-        expanded ? "border-primary/40 ring-1 ring-primary/15" : "border-border/80",
+        isEmpty
+          ? "border-destructive/50 bg-destructive/8 ring-1 ring-destructive/20"
+          : expanded
+            ? "border-primary/40 ring-1 ring-primary/15"
+            : "border-border/80",
       )}
     >
       <button
@@ -265,14 +264,6 @@ export default function BrandmasterPage() {
   const actionStatsRequestRef = React.useRef(0)
   const headerDate = React.useMemo(() => formatHeaderDatePoland(nowInPoland()), [])
 
-  React.useEffect(() => {
-    actionStatsRequestRef.current += 1
-    setSelectedActionKey(null)
-    setActionStats(null)
-    setActionStatsError(null)
-    setActionStatsLoading(false)
-  }, [monthPeriod])
-
   const {
     isLoading,
     isRefreshing,
@@ -283,6 +274,7 @@ export default function BrandmasterPage() {
     currentActionStartLabel,
     currentActionRoundedHoursLabel,
     currentActionPointLabel,
+    currentActionStats,
     monthActions,
     totalRoundedHours,
     basePayout,
@@ -292,6 +284,27 @@ export default function BrandmasterPage() {
     monthSalesStats,
     hostessCode,
   } = useBrandmasterDashboard(monthPeriod)
+
+  const {
+    calculated: emptyHoursCalculated,
+    loading: emptyHoursLoading,
+    error: emptyHoursError,
+    emptyActionKeys,
+    statsByActionKey,
+    rawHours: emptyRawHours,
+    roundedHours: emptyRoundedHours,
+    calculate: calculateEmptyHours,
+    reset: resetEmptyWorkHours,
+  } = useEmptyWorkHours(monthActions, hostessCode)
+
+  React.useEffect(() => {
+    actionStatsRequestRef.current += 1
+    setSelectedActionKey(null)
+    setActionStats(null)
+    setActionStatsError(null)
+    setActionStatsLoading(false)
+    resetEmptyWorkHours()
+  }, [monthPeriod, resetEmptyWorkHours])
 
   const handleActionToggle = React.useCallback(
     (item: ActionWithRoundedTime) => {
@@ -307,8 +320,17 @@ export default function BrandmasterPage() {
       }
 
       setSelectedActionKey(key)
-      setActionStats(null)
       setActionStatsError(null)
+
+      const cachedStats = statsByActionKey.get(key)
+      if (cachedStats) {
+        actionStatsRequestRef.current += 1
+        setActionStats(cachedStats)
+        setActionStatsLoading(false)
+        return
+      }
+
+      setActionStats(null)
 
       const ident = item.actionIdent?.trim()
       if (!ident) {
@@ -344,7 +366,7 @@ export default function BrandmasterPage() {
         }
       })()
     },
-    [hostessCode, selectedActionKey],
+    [hostessCode, selectedActionKey, statsByActionKey],
   )
 
   const monthLabel = React.useMemo(() => {
@@ -425,7 +447,7 @@ export default function BrandmasterPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 px-3.5 pb-3.5 sm:px-4 sm:pb-4">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <p className="flex min-w-0 items-center gap-2 text-sm">
                       <ClockIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                       <span className="tabular-nums">
@@ -435,11 +457,18 @@ export default function BrandmasterPage() {
                         </span>
                       </span>
                     </p>
-                    {currentActionRoundedHoursLabel ? (
-                      <p className="shrink-0 text-sm font-semibold tabular-nums">
-                        {currentActionRoundedHoursLabel}
-                      </p>
-                    ) : null}
+                    <div className="flex min-w-0 items-stretch gap-2 sm:max-w-[min(100%,20rem)] sm:shrink-0">
+                      {currentActionStats ? (
+                        <div className="min-w-0 flex-1">
+                          <ActionSampleStatsPanel stats={currentActionStats} />
+                        </div>
+                      ) : null}
+                      {currentActionRoundedHoursLabel ? (
+                        <p className="flex shrink-0 items-center self-center text-sm font-semibold tabular-nums">
+                          {currentActionRoundedHoursLabel}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                   {currentActionPointLabel ? (
                     <p className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -476,13 +505,13 @@ export default function BrandmasterPage() {
             ) : null}
 
             <Card className="overflow-hidden shadow-sm">
-              <button
-                type="button"
-                className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                onClick={() => setWorkTimeExpanded((v) => !v)}
-                aria-expanded={workTimeExpanded}
-              >
-                <CardHeader className="space-y-0.5 px-3.5 py-3 pb-2 sm:px-4">
+              <CardHeader className="space-y-2 px-3.5 py-3 pb-2 sm:px-4">
+                <button
+                  type="button"
+                  className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onClick={() => setWorkTimeExpanded((v) => !v)}
+                  aria-expanded={workTimeExpanded}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <CardTitle className="flex items-center gap-2 text-sm font-semibold">
@@ -493,11 +522,35 @@ export default function BrandmasterPage() {
                         {totalRoundedHours / 4}{" "}
                         {totalRoundedHours / 4 === 1
                           ? "akcja"
-                          : totalRoundedHours / 4 > 1 && totalRoundedHours / 4< 5
+                          : totalRoundedHours / 4 > 1 && totalRoundedHours / 4 < 5
                             ? "akcje"
                             : "akcji"}{" "}
                         · {monthLabel}
                       </CardDescription>
+                      {emptyHoursCalculated ? (
+                        <p className="mt-1.5 text-xs text-destructive">
+                          Puste godziny:{" "}
+                          <span className="font-semibold tabular-nums">
+                            {formatHoursPl(emptyRawHours)}
+                          </span>
+                          {" · "}
+                          zaokraglone:{" "}
+                          <span className="font-semibold tabular-nums">
+                            {formatHoursPl(emptyRoundedHours)}
+                          </span>
+                          {emptyActionKeys.size > 0 ? (
+                            <span className="text-destructive/80">
+                              {" "}
+                              · {emptyActionKeys.size}{" "}
+                              {emptyActionKeys.size === 1
+                                ? "akcja pusta"
+                                : emptyActionKeys.size > 1 && emptyActionKeys.size < 5
+                                  ? "akcje puste"
+                                  : "akcji pustych"}
+                            </span>
+                          ) : null}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-2 pt-0.5">
                       <span className="text-lg font-semibold tabular-nums leading-none">
@@ -512,8 +565,36 @@ export default function BrandmasterPage() {
                       />
                     </div>
                   </div>
-                </CardHeader>
-              </button>
+                </button>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2.5 text-xs"
+                    onClick={() => calculateEmptyHours()}
+                    disabled={
+                      emptyHoursCalculated ||
+                      emptyHoursLoading ||
+                      monthActions.length === 0 ||
+                      !hostessCode
+                    }
+                  >
+                    {emptyHoursLoading ? (
+                      <>
+                        <RefreshCwIcon className="mr-1.5 size-3 animate-spin" aria-hidden />
+                        Liczenie…
+                      </>
+                    ) : (
+                      "Policz puste godziny"
+                    )}
+                  </Button>
+                  {emptyHoursError ? (
+                    <p className="text-[11px] leading-snug text-destructive">{emptyHoursError}</p>
+                  ) : null}
+                </div>
+              </CardHeader>
 
               {workTimeExpanded ? (
                 <CardContent className="space-y-2 border-t border-border/80 px-3.5 pb-3.5 pt-2 sm:px-4 sm:pb-4">
@@ -527,11 +608,14 @@ export default function BrandmasterPage() {
                     monthActions.map((item) => {
                       const rowKey = getActionRowKey(item)
                       const isSelected = selectedActionKey === rowKey
+                      const isEmpty =
+                        emptyHoursCalculated && emptyActionKeys.has(rowKey)
                       return (
                         <WorkTimeActionRow
                           key={rowKey}
                           item={item}
                           expanded={isSelected}
+                          isEmpty={isEmpty}
                           statsLoading={isSelected && actionStatsLoading}
                           stats={isSelected ? actionStats : null}
                           statsError={isSelected ? actionStatsError : null}
@@ -546,6 +630,9 @@ export default function BrandmasterPage() {
                   <p className="text-xs text-muted-foreground">
                     Kliknij, aby zobaczyć listę akcji. Wybierz akcję, aby zobaczyć wyniki Hilo,
                     Hilo+, Hyper Pro i Velo.
+                    {emptyHoursCalculated && emptyActionKeys.size > 0
+                      ? " Puste akcje są podświetlone na czerwono."
+                      : null}
                   </p>
                 </CardContent>
               )}

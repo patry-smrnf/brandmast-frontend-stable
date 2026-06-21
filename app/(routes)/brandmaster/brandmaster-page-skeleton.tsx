@@ -35,9 +35,22 @@ export function BrandmasterPageSkeleton() {
             <SkeletonBar className="h-4 w-4/5 max-w-[240px]" />
           </CardHeader>
           <CardContent className="space-y-2 px-3.5 pb-3.5 sm:px-4 sm:pb-4">
-            <div className="flex justify-between gap-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <SkeletonBar className="h-4 w-36" />
-              <SkeletonBar className="h-4 w-10" />
+              <div className="flex min-w-0 items-stretch gap-2 sm:max-w-[min(100%,20rem)] sm:shrink-0">
+                <div className="flex h-7 min-w-0 flex-1 animate-pulse overflow-hidden rounded-md border border-border/50 bg-muted/40">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "min-w-0 flex-1 bg-muted/70",
+                        i > 0 && "border-l border-border/40",
+                      )}
+                    />
+                  ))}
+                </div>
+                <SkeletonBar className="h-4 w-10 shrink-0 self-center" />
+              </div>
             </div>
             <SkeletonBar className="h-4 w-full max-w-[280px]" />
           </CardContent>
