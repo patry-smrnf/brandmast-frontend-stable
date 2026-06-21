@@ -5,6 +5,7 @@ import type {
   ActionCasRequest,
   ActionIdRequest,
   CasActionChangeStatusRequest,
+  ApiResponseActionConflictResponse,
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
   ApiResponseListBrandmastersResponse,
@@ -109,6 +110,18 @@ export class BrandmastApi {
    */
   async cancelBMAction(body: ActionIdRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseObject>("/api/action/bm/cancel", body, options);
+    return res.data;
+  }
+
+  /**
+   * POST /api/action/bm/isConflict
+   */
+  async isBMActionConflict(body: ActionRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseActionConflictResponse>(
+      "/api/action/bm/isConflict",
+      body,
+      options,
+    );
     return res.data;
   }
 

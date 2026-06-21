@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { brandmastApi } from "@/lib/api"
 import type { ShopResponse } from "@/lib/api/generated/types"
+import { useConfigState } from "@/lib/config/configStore"
 
 import { parseIso, startOfDay, toDateKey, toMonthKey } from "@/lib/dates/date-utils"
 import type { BrandmasterAction } from "../actions/types"
@@ -17,16 +18,23 @@ import {
   combineDateTimeToIso,
   createInitialSelectedDates,
   fetchActionsForEditor,
+  formatShopConflictToastMessage,
   normalizeTime,
   parseActionId,
   resolveInitialCalendarMonth,
   shopMatchesQuery,
+  shouldCheckShopConflict,
   type EditorStep,
 } from "./editor-utils"
+
+const SHOP_CONFLICT_TOAST_ID = "bm-shop-conflict"
+const SHOP_CONFLICT_DEBOUNCE_MS = 350
 
 export function useEditorState() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { config } = useConfigState()
+  const canSeeConflictActions = config?.actionsConfig?.canSeeConflictActions === true
   const idAction = React.useMemo(() => parseActionId(searchParams.get("idAction")), [searchParams])
   const isEditMode = idAction !== null
 
@@ -60,6 +68,7 @@ export function useEditorState() {
 
   const [editingAction, setEditingAction] = React.useState<BrandmasterAction | null>(null)
   const editInitializedRef = React.useRef(false)
+  const shopConflictCheckSeqRef = React.useRef(0)
   const loadingEditData = isEditMode && !editInitializedRef.current && monthActionsLoading
 
   React.useEffect(() => {
@@ -220,6 +229,71 @@ export function useEditorState() {
       cancelled = true
     }
   }, [step, shops.length, selectedShop?.id])
+
+  React.useEffect(() => {
+    if (step !== 2) {
+      toast.dismiss(SHOP_CONFLICT_TOAST_ID)
+      return
+    }
+    if (!canSeeConflictActions) return
+
+    const shopId = selectedShop?.id
+    if (!shopId || !selectedShop || !shouldCheckShopConflict(selectedShop)) {
+      toast.dismiss(SHOP_CONFLICT_TOAST_ID)
+      return
+    }
+    if (!startNorm.ok || !endNorm.ok || !selectedDates.length) return
+
+    const startValue = startNorm.value
+    const endValue = endNorm.value
+    const firstDate = selectedDates[0]
+    const since = combineDateTimeToIso(firstDate, startValue)
+    const until = combineDateTimeToIso(firstDate, endValue)
+    const editingId = isEditMode ? editingAction?.idAction : undefined
+
+    const timeoutId = window.setTimeout(() => {
+      const seq = ++shopConflictCheckSeqRef.current
+
+      void (async () => {
+        try {
+          const res = await brandmastApi.isBMActionConflict({
+            idShop: Number(shopId),
+            since,
+            until,
+            ...(editingId ? { idAction: editingId } : {}),
+          })
+          if (seq !== shopConflictCheckSeqRef.current) return
+
+          if (res.success && res.data?.isConflicted) {
+            toast.warning(
+              formatShopConflictToastMessage(res.data.since, res.data.until),
+              { id: SHOP_CONFLICT_TOAST_ID },
+            )
+            return
+          }
+
+          toast.dismiss(SHOP_CONFLICT_TOAST_ID)
+        } catch {
+          if (seq !== shopConflictCheckSeqRef.current) return
+        }
+      })()
+    }, SHOP_CONFLICT_DEBOUNCE_MS)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      shopConflictCheckSeqRef.current += 1
+    }
+  }, [
+    step,
+    canSeeConflictActions,
+    selectedShop,
+    selectedShop?.id,
+    startNorm.ok,
+    endNorm.ok,
+    selectedDates,
+    isEditMode,
+    editingAction?.idAction,
+  ])
 
   const filteredShops = React.useMemo(() => {
     const list = shops.filter((s) => shopMatchesQuery(s, shopQuery))

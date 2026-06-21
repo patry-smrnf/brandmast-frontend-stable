@@ -406,7 +406,7 @@ export default function BrandmasterSettingsPage() {
             <CardHeader className="space-y-1">
               <CardTitle className="text-lg">Konfiguracja teamu</CardTitle>
               <CardDescription>
-                Ustawienia teamu, czyli konfiguracja akcji ( dodawanie, usuwanie, edycja ) oraz czy SV/TL podlaczyl apke pod CAS
+                Ustawienia teamu: widoczność konfliktów, akcje (dodawanie, usuwanie, edycja) oraz połączenie z CAS
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -414,7 +414,11 @@ export default function BrandmasterSettingsPage() {
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Akcje (actionsConfig)
                 </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <InfoRow
+                    label="Akcje w konflikcie"
+                    value={<BoolBadge value={actions?.canSeeConflictActions} />}
+                  />
                   <InfoRow
                     label="Edycja"
                     value={<BoolBadge value={actions?.isEditingAllowed} />}

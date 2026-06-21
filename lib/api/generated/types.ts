@@ -66,6 +66,22 @@ export interface ActionRequest {
   status?: string;
 }
 
+/** POST /api/action/bm/isConflict */
+export interface ActionConflictResponse {
+  isConflicted?: boolean;
+  since?: string; // date-time
+  until?: string; // date-time
+}
+
+export interface ApiResponseActionConflictResponse {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: ActionConflictResponse;
+  violations?: Violation[];
+}
+
 /** POST /api/action/sv/cancel, POST /api/action/bm/cancel */
 export interface ActionIdRequest {
   idAction?: number; // int64
@@ -149,6 +165,7 @@ export interface ActionsConfig {
   isDeteletingAllowed?: boolean;
   /** Poprawna nazwa pola - część backendów zwraca zamiast `isDeteletingAllowed`. */
   isDeletingAllowed?: boolean;
+  canSeeConflictActions?: boolean;
 }
 
 /** POST /api/action/bm/delete - ten sam kształt co `ActionIdRequest` */
@@ -249,6 +266,7 @@ export interface ConfigUpdateRequest {
   isDeletingAllowed?: boolean;
   /** Matches typo in ActionsConfig / some backends. */
   isDeteletingAllowed?: boolean;
+  canSeeConflictActions?: boolean;
   casLogin?: string | null;
   casPassword?: string | null;
   requirePassword?: boolean;

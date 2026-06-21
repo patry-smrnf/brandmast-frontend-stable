@@ -53,7 +53,11 @@ function readApiError(err: unknown): string {
   return "Nieznany błąd."
 }
 
-type ActionFlagKey = "isEditingAllowed" | "isAddingAllowed" | "isDeteletingAllowed"
+type ActionFlagKey =
+  | "canSeeConflictActions"
+  | "isEditingAllowed"
+  | "isAddingAllowed"
+  | "isDeteletingAllowed"
 
 export default function SupervisorSettingsPage() {
   const { status, config, errorMessage } = useConfigState()
@@ -188,11 +192,13 @@ export default function SupervisorSettingsPage() {
     setActionSavingKey(key)
     try {
       const body =
-        key === "isEditingAllowed"
-          ? { isEditingAllowed: next }
-          : key === "isAddingAllowed"
-            ? { isAddingAllowed: next }
-            : { isDeteletingAllowed: next, isDeletingAllowed: next }
+        key === "canSeeConflictActions"
+          ? { canSeeConflictActions: next }
+          : key === "isEditingAllowed"
+            ? { isEditingAllowed: next }
+            : key === "isAddingAllowed"
+              ? { isAddingAllowed: next }
+              : { isDeteletingAllowed: next, isDeletingAllowed: next }
       const res = await brandmastApi.updateConfig(body)
       if (!res.success) {
         toast.error(res.message ?? "Nie udało się zapisać uprawnień akcji.")
@@ -407,11 +413,30 @@ export default function SupervisorSettingsPage() {
             <CardHeader className="space-y-1">
               <CardTitle className="text-lg">Konfiguracja teamu</CardTitle>
               <CardDescription>
-                Uprawnienia do akcji w aplikacji (edycja, dodawanie, usuwanie)
+                Uprawnienia do akcji w aplikacji (widoczność konfliktów, edycja, dodawanie, usuwanie)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
+                <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 space-y-1">
+                    <div className="text-sm font-medium">Konflikty akcji BM</div>
+                    <p className="text-xs text-muted-foreground">
+                      Czy brandmasterzy moga widziec ze punkt jest zajety w konkretnych godzinach
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    {actionSavingKey === "canSeeConflictActions" ? (
+                      <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                    ) : null}
+                    <Switch
+                      checked={!!actions?.canSeeConflictActions}
+                      disabled={isClient && (busy || anyActionSaving)}
+                      onCheckedChange={(v) => void onActionToggle("canSeeConflictActions", v === true)}
+                      aria-label="Pokaż akcje w konflikcie"
+                    />
+                  </div>
+                </div>
                 <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 space-y-1">
                     <div className="text-sm font-medium">Edycja akcji</div>

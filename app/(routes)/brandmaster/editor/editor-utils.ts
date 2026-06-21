@@ -2,7 +2,7 @@ import { brandmastApi } from "@/lib/api"
 import type { ActionDetails, ShopResponse } from "@/lib/api/generated/types"
 import { normalizeActionStatus } from "@/lib/action-status"
 
-import { startOfDay, toMonthKey } from "@/lib/dates/date-utils"
+import { startOfDay, toMonthKey, parseIso, formatTimePoland } from "@/lib/dates/date-utils"
 import type { BrandmasterAction } from "../actions/types"
 
 import type { EditorShopMapMarker } from "./shops-map"
@@ -127,6 +127,31 @@ export function getShopEventName(s: ShopResponse) {
 
 export function getShopEventId(s: ShopResponse) {
   return s.event?.id ?? 0
+}
+
+/** Event IDs excluded from conflict checks (POST /api/action/bm/isConflict). */
+const CONFLICT_CHECK_EXCLUDED_EVENT_IDS = new Set([6, 29])
+
+export function shouldCheckShopConflict(s: ShopResponse): boolean {
+  const eventId = getShopEventId(s)
+  if (!eventId) return false
+  return !CONFLICT_CHECK_EXCLUDED_EVENT_IDS.has(eventId)
+}
+
+export function formatShopConflictToastMessage(conflictSince?: string, conflictUntil?: string): string {
+  const sinceDate = conflictSince ? parseIso(conflictSince) : null
+  const untilDate = conflictUntil ? parseIso(conflictUntil) : null
+
+  if (sinceDate && untilDate) {
+    return `Wybrany sklep jest zajęty w godzinach ${formatTimePoland(sinceDate)}–${formatTimePoland(untilDate)}.`
+  }
+  if (sinceDate) {
+    return `Wybrany sklep jest zajęty od ${formatTimePoland(sinceDate)}.`
+  }
+  if (untilDate) {
+    return `Wybrany sklep jest zajęty do ${formatTimePoland(untilDate)}.`
+  }
+  return "Wybrany sklep jest zajęty w tym terminie."
 }
 
 export type ShopEventFilterOption = {
