@@ -29,6 +29,20 @@ export const SUPERVISOR_NOWOSCI: SupervisorNowosc[] = [
     description:
       "Akcje 'niewiem'nie mają już przycisku APPROVE. Możesz je edytować",
   },
+  {
+    id: "horeca-event-collision",
+    addedAt: "2026-06-22",
+    title: "Konflikty akcji Horeca",
+    description:
+      "Konflikty akcji Horeca nie są teraz widoczne na dashboardzie supervisora. Można je masowo akceptowac",
+  },
+  {
+    id: "conflict-actions-visibility",
+    addedAt: "2026-06-22",
+    title: "Widoczność konfliktów akcji BM",
+    description:
+      "W sekcji Ustawienia mozna ustawic czy BM moga widziec konflikt akcji ktora obecnie wstawiaja, czyli czy sklep i godziny sie pokrywaja z kims innym",
+  },
 ]
 
 export function getSupervisorNowosciSorted(): SupervisorNowosc[] {

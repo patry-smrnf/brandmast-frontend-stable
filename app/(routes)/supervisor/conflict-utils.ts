@@ -1,5 +1,11 @@
 import { parseIso } from "@/lib/dates/date-utils"
+import { EXCLUDED_COLLISION_EVENT_IDS } from "./supervisor-constants"
 import type { SvActionRow } from "./use-sv-actions"
+
+function isCollisionEligible(row: SvActionRow): boolean {
+  const eventId = row.action.event.idEvent
+  return eventId > 0 && !EXCLUDED_COLLISION_EVENT_IDS.has(eventId)
+}
 
 function intervalMs(row: SvActionRow): { start: number; end: number } {
   const start = parseIso(row.action.since)?.getTime() ?? 0
@@ -35,6 +41,7 @@ function clusterHasEditable(group: SvActionRow[]): boolean {
 /**
  * Groups rows that belong to the same shop and have pairwise overlapping [since, until].
  * Overlaps where **every** action is ACCEPTED are ignored (no cluster, cards stay in singles).
+ * Actions whose event is in {@link EXCLUDED_COLLISION_EVENT_IDS} are ignored for collision detection.
  * If at least one action is EDITABLE, the overlap is shown as a cluster like before.
  * Returns clusters of size ≥2 plus remaining rows as singles.
  */
@@ -51,7 +58,13 @@ export function getScheduleConflictLayout(rows: SvActionRow[]): {
   const parent = Array.from({ length: n }, (_, i) => i)
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
-      if (intervalsOverlap(rows[i], rows[j])) union(parent, i, j)
+      if (
+        isCollisionEligible(rows[i]) &&
+        isCollisionEligible(rows[j]) &&
+        intervalsOverlap(rows[i], rows[j])
+      ) {
+        union(parent, i, j)
+      }
     }
   }
 
