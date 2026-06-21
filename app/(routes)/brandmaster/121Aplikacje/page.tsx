@@ -19,7 +19,6 @@ import { CompactGroupedList } from "@/components/data-display/CompactGroupedList
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -41,9 +40,11 @@ import { formatPlDatePoland, nowInPoland, parseIso } from "@/lib/dates/date-util
 import { getRegionLabel } from "../121Sampling/121-sampling-utils"
 import { use121ResolvedTeam } from "../121Sampling/use-121-resolved-team"
 import {
-  buildZgloszeniaAplikacjeAddRequest,
+  buildZgloszeniaAplikacjeAddRequests,
   formatAplikacjaDateTime,
   getProductName,
+  isValidConsumerEmail,
+  parseConsumerEmails,
   type AplikacjeView,
 } from "./121-aplikacje-utils"
 import { use121AplikacjeList } from "./use-121-aplikacje-list"
@@ -447,18 +448,23 @@ export default function OneTwoOneAplikacjePage() {
     [],
   )
 
+  const parsedEmails = React.useMemo(
+    () => parseConsumerEmails(consumerEmail),
+    [consumerEmail],
+  )
+
   const submitValidation = React.useMemo(() => {
     if (!selectedAction || selectedProductId == null) {
-      return { canSubmit: false, error: null as string | null }
+      return { canSubmit: false, error: null as string | null, emailCount: 0 }
     }
-    const result = buildZgloszeniaAplikacjeAddRequest(
+    const result = buildZgloszeniaAplikacjeAddRequests(
       selectedAction,
       selectedProductId,
       consumerEmail,
     )
-    if (!result.ok) return { canSubmit: false, error: result.message }
-    return { canSubmit: true, error: null }
-  }, [selectedAction, selectedProductId, consumerEmail])
+    if (!result.ok) return { canSubmit: false, error: result.message, emailCount: parsedEmails.length }
+    return { canSubmit: true, error: null, emailCount: result.emails.length }
+  }, [selectedAction, selectedProductId, consumerEmail, parsedEmails.length])
 
   const canSubmit =
     submitValidation.canSubmit &&
@@ -472,7 +478,7 @@ export default function OneTwoOneAplikacjePage() {
       return
     }
 
-    const result = buildZgloszeniaAplikacjeAddRequest(
+    const result = buildZgloszeniaAplikacjeAddRequests(
       selectedAction,
       selectedProductId,
       consumerEmail,
@@ -482,22 +488,51 @@ export default function OneTwoOneAplikacjePage() {
       return
     }
 
+    const total = result.bodies.length
     setIsSubmitting(true)
-    const toastId = toast.loading("Wysyłanie zgłoszenia…")
+    const toastId = toast.loading(
+      total === 1 ? "Wysyłanie zgłoszenia…" : `Wysyłanie zgłoszeń (0/${total})…`,
+    )
     try {
-      const res = await brandmastApi.addZgloszeniaAplikacje(result.body)
-      if (res.success === false) {
-        toast.error(res.message ?? "Nie udało się zgłosić aplikacji.", { id: toastId })
-        return
+      let successCount = 0
+      let lastError: string | null = null
+
+      for (let i = 0; i < result.bodies.length; i++) {
+        if (total > 1) {
+          toast.loading(`Wysyłanie zgłoszeń (${i + 1}/${total})…`, { id: toastId })
+        }
+        try {
+          const res = await brandmastApi.addZgloszeniaAplikacje(result.bodies[i])
+          if (res.success === false) {
+            lastError = res.message ?? "Nie udało się zgłosić aplikacji."
+          } else {
+            successCount++
+          }
+        } catch (e) {
+          lastError = readApiError(e)
+        }
       }
 
-      toast.success(res.message ?? "Zgłoszenie aplikacji zapisane.", { id: toastId })
-      setSelectedActionKey(null)
-      setSelectedProductId(null)
-      setConsumerEmail("")
-      list.refetch()
-    } catch (e) {
-      toast.error(readApiError(e), { id: toastId })
+      if (successCount === total) {
+        toast.success(
+          total === 1
+            ? "Zgłoszenie aplikacji zapisane."
+            : `Zapisano ${successCount} zgłoszeń aplikacji.`,
+          { id: toastId },
+        )
+        setSelectedActionKey(null)
+        setSelectedProductId(null)
+        setConsumerEmail("")
+        list.refetch()
+      } else if (successCount > 0) {
+        toast.warning(
+          `Zapisano ${successCount} z ${total} zgłoszeń.${lastError ? ` Ostatni błąd: ${lastError}` : ""}`,
+          { id: toastId },
+        )
+        list.refetch()
+      } else {
+        toast.error(lastError ?? "Nie udało się zgłosić aplikacji.", { id: toastId })
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -676,23 +711,55 @@ export default function OneTwoOneAplikacjePage() {
             <Card className="border-border/80 shadow-sm">
               <CardHeader className="space-y-0.5 px-3.5 py-3 sm:px-4">
                 <CardTitle className="text-sm font-semibold">E-mail konsumenta</CardTitle>
+                <CardDescription className="text-xs">
+                  Możesz podać wiele adresów — oddziel je przecinkiem, spacją lub nową linią.
+                </CardDescription>
               </CardHeader>
               <CardContent className="border-t border-border/80 px-3.5 pb-3.5 pt-2 sm:px-4 sm:pb-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="consumer-email" className="text-xs">
                     E-mail
                   </Label>
-                  <Input
+                  <textarea
                     id="consumer-email"
-                    type="email"
                     inputMode="email"
                     autoComplete="email"
-                    placeholder="konsument@example.com"
+                    placeholder={"konsument@example.com\ninny@example.com"}
                     value={consumerEmail}
                     onChange={(e) => setConsumerEmail(e.target.value)}
-                    className="h-10"
+                    rows={3}
+                    className={cn(
+                      "w-full max-w-full min-w-0 resize-y rounded-lg border border-input bg-background px-3 py-2 text-base shadow-xs transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
                   />
                 </div>
+                {parsedEmails.length > 0 ? (
+                  <div className="mt-3 space-y-1.5 rounded-lg border border-border/80 bg-muted/25 px-3 py-2.5">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Wykryte adresy ({parsedEmails.length})
+                    </p>
+                    <ul className="space-y-1">
+                      {parsedEmails.map((email) => {
+                        const valid = isValidConsumerEmail(email)
+                        return (
+                          <li key={email} className="flex min-w-0 items-start gap-1.5 text-xs">
+                            {valid ? (
+                              <CheckIcon className="mt-0.5 size-3 shrink-0 text-primary" aria-hidden />
+                            ) : (
+                              <AlertTriangleIcon
+                                className="mt-0.5 size-3 shrink-0 text-destructive"
+                                aria-hidden
+                              />
+                            )}
+                            <span className={cn("min-w-0 break-all", !valid && "text-destructive")}>
+                              {email}
+                            </span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                ) : null}
               </CardContent>
             </Card>
 
@@ -705,7 +772,11 @@ export default function OneTwoOneAplikacjePage() {
               disabled={!canSubmit}
               onClick={() => void handleSubmit()}
             >
-              {isSubmitting ? "Wysyłanie…" : "Zatwierdź zgłoszenie"}
+              {isSubmitting
+                ? "Wysyłanie…"
+                : submitValidation.emailCount > 1
+                  ? `Zatwierdź zgłoszenia (${submitValidation.emailCount})`
+                  : "Zatwierdź zgłoszenie"}
             </Button>
             {selectedProductId != null || savedTeamId != null ? (
               <p className="text-center text-[11px] text-muted-foreground">

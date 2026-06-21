@@ -98,19 +98,54 @@ export function isValidConsumerEmail(email: string): boolean {
   return EMAIL_RE.test(email)
 }
 
+/** Rozdziela wiele adresów oddzielonych przecinkiem, spacją lub nową linią. */
+export function parseConsumerEmails(raw: string): string[] {
+  const seen = new Set<string>()
+  const result: string[] = []
+
+  for (const part of raw.split(/[\s,]+/)) {
+    const email = normalizeConsumerEmail(part)
+    if (!email) continue
+    const key = email.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(email)
+  }
+
+  return result
+}
+
 export type BuildAplikacjeAddResult =
   | { ok: true; body: ZgloszeniaAplikacjeAddRequest }
   | { ok: false; message: string }
+
+export type BuildAplikacjeAddManyResult =
+  | { ok: true; bodies: ZgloszeniaAplikacjeAddRequest[]; emails: string[] }
+  | { ok: false; message: string }
+
+function resolveActionIdent(action: TourPlannerActionListItem):
+  | { ok: true; nr_akcji: string; nr_akcji_koncowka: string }
+  | { ok: false; message: string } {
+  const ident = action.ident?.trim()
+  if (!ident) {
+    return { ok: false, message: "Wybrana akcja nie ma numeru (ident)." }
+  }
+
+  const { nr_akcji, nr_akcji_koncowka } = splitActionIdent(ident)
+  if (!nr_akcji) {
+    return { ok: false, message: "Numer akcji przed „/” jest pusty." }
+  }
+
+  return { ok: true, nr_akcji, nr_akcji_koncowka }
+}
 
 export function buildZgloszeniaAplikacjeAddRequest(
   action: TourPlannerActionListItem,
   productId: number,
   mailKonsumenta: string,
 ): BuildAplikacjeAddResult {
-  const ident = action.ident?.trim()
-  if (!ident) {
-    return { ok: false, message: "Wybrana akcja nie ma numeru (ident)." }
-  }
+  const actionIdent = resolveActionIdent(action)
+  if (!actionIdent.ok) return actionIdent
 
   const mail_konsumenta = normalizeConsumerEmail(mailKonsumenta)
   if (!mail_konsumenta) {
@@ -120,10 +155,7 @@ export function buildZgloszeniaAplikacjeAddRequest(
     return { ok: false, message: "Podaj poprawny adres e-mail." }
   }
 
-  const { nr_akcji, nr_akcji_koncowka } = splitActionIdent(ident)
-  if (!nr_akcji) {
-    return { ok: false, message: "Numer akcji przed „/” jest pusty." }
-  }
+  const { nr_akcji, nr_akcji_koncowka } = actionIdent
 
   return {
     ok: true,
@@ -133,5 +165,38 @@ export function buildZgloszeniaAplikacjeAddRequest(
       mail_konsumenta,
       oferta_rivo_virto_prod_1: productId,
     },
+  }
+}
+
+export function buildZgloszeniaAplikacjeAddRequests(
+  action: TourPlannerActionListItem,
+  productId: number,
+  mailKonsumentaRaw: string,
+): BuildAplikacjeAddManyResult {
+  const actionIdent = resolveActionIdent(action)
+  if (!actionIdent.ok) return actionIdent
+
+  const emails = parseConsumerEmails(mailKonsumentaRaw)
+  if (emails.length === 0) {
+    return { ok: false, message: "Podaj e-mail konsumenta." }
+  }
+
+  const invalid = emails.filter((email) => !isValidConsumerEmail(email))
+  if (invalid.length > 0) {
+    const label = invalid.length === 1 ? "Niepoprawny adres e-mail" : "Niepoprawne adresy e-mail"
+    return { ok: false, message: `${label}: ${invalid.join(", ")}` }
+  }
+
+  const { nr_akcji, nr_akcji_koncowka } = actionIdent
+
+  return {
+    ok: true,
+    emails,
+    bodies: emails.map((mail_konsumenta) => ({
+      nr_akcji,
+      nr_akcji_koncowka,
+      mail_konsumenta,
+      oferta_rivo_virto_prod_1: productId,
+    })),
   }
 }
