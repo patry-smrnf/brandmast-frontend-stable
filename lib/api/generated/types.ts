@@ -300,6 +300,13 @@ export interface EventDetails {
   tpEventId?: string;
 }
 
+export interface CasDetails {
+  ident?: string;
+  name?: string;
+  status?: string;
+  externalUuid?: string;
+}
+
 export interface ActionDetails {
   idAction?: number; // int64
   status?: string;
@@ -309,6 +316,7 @@ export interface ActionDetails {
   updatedAt?: string; // date-time
   shop?: ShopDetails;
   event?: EventDetails;
+  cas?: CasDetails[];
 }
 
 export interface BrandmasterDetails {

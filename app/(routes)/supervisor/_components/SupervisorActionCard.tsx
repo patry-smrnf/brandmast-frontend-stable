@@ -10,15 +10,17 @@ import { cn } from "@/lib/utils"
 
 import { formatPlDateTimeFromIso, formatTime, parseIso } from "@/lib/dates/date-utils"
 import { getActionStatusPresentation } from "@/lib/action-status"
-import type { SvActionLocalPatch, SvActionRow } from "../use-sv-actions"
+import type { SvActionLocalPatch, SvActionRow, SvCasStatusPatch } from "../use-sv-actions"
 import { EXCLUDED_BULK_APPROVE_EVENT_ID } from "../supervisor-constants"
 import { SupervisorApproveSheet } from "./SupervisorApproveSheet"
+import { SupervisorActionCasDetails } from "./SupervisorActionCasDetails"
 import { SupervisorEditSheet } from "./SupervisorEditSheet"
 
 export type SupervisorActionCardProps = {
   row: SvActionRow
   onApproved: () => void
   onPatched: (patch: SvActionLocalPatch) => void
+  onCasStatusPatched: (patch: SvCasStatusPatch) => void
   /** Nakładająca się z inną akcją w tym samym sklepie (ten sam dzień). */
   scheduleConflict?: boolean
   bulkSelectMode?: boolean
@@ -30,6 +32,7 @@ export function SupervisorActionCard({
   row,
   onApproved,
   onPatched,
+  onCasStatusPatched,
   scheduleConflict,
   bulkSelectMode,
   bulkSelected,
@@ -51,6 +54,7 @@ export function SupervisorActionCard({
   const isBulkApproveExcluded = action.event.idEvent === EXCLUDED_BULK_APPROVE_EVENT_ID
   const showApproveButton = !isBulkApproveExcluded && !isCancelRequested
   const showRevokeButton = isCancelRequested
+  const showCasDetails = action.status === "ACCEPTED" && action.cas.length > 0
 
   async function handleRevoke() {
     setIsCancelling(true)
@@ -213,6 +217,14 @@ export function SupervisorActionCard({
             )}
           </div>
         )}
+
+        {showCasDetails ? (
+          <SupervisorActionCasDetails
+            idAction={action.idAction}
+            items={action.cas}
+            onCasStatusPatched={onCasStatusPatched}
+          />
+        ) : null}
       </div>
 
       <SupervisorApproveSheet

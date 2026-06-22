@@ -3,7 +3,7 @@
 import * as React from "react"
 
 import { brandmastApi } from "@/lib/api"
-import type { ActionsResponse } from "@/lib/api"
+import type { ActionsResponse, CasDetails } from "@/lib/api"
 import { normalizeActionStatus, type NormalizedActionStatus } from "@/lib/action-status"
 
 export type SvActionRow = {
@@ -23,7 +23,17 @@ export type SvActionRow = {
     editedAt: string
     shop: { name: string; address: string }
     event: { idEvent: number; name: string }
+    cas: CasDetails[]
   }
+}
+
+function mapCasDetails(items: CasDetails[] | undefined): CasDetails[] {
+  return (items ?? []).map((item) => ({
+    ident: item.ident?.trim() || undefined,
+    name: item.name?.trim() || undefined,
+    status: item.status?.trim() || undefined,
+    externalUuid: item.externalUuid?.trim() || undefined,
+  }))
 }
 
 /** Lokalna aktualizacja po `updateSvAction` bez ponownego fetcha. */
@@ -34,6 +44,13 @@ export type SvActionLocalPatch = {
   until: string
   shop: { name: string; address: string }
   editedAt: string
+}
+
+/** Lokalna aktualizacja statusu wpisu CAS po `updateStatus`. */
+export type SvCasStatusPatch = {
+  idAction: number
+  externalUuid: string
+  status: string
 }
 
 function flattenResponse(blocks: ActionsResponse[] | undefined): SvActionRow[] {
@@ -65,6 +82,7 @@ function flattenResponse(blocks: ActionsResponse[] | undefined): SvActionRow[] {
             idEvent: a.event?.idEvent ?? 0,
             name: a.event?.name ?? "",
           },
+          cas: mapCasDetails(a.cas),
         },
       })
     }
@@ -95,6 +113,27 @@ export function useSvActions(monthKey: string, options?: { enabled?: boolean }) 
                 until: patch.until,
                 editedAt: patch.editedAt,
                 shop: { ...r.action.shop, ...patch.shop },
+              },
+            }
+      )
+    )
+  }, [])
+
+  const patchSvActionCasStatus = React.useCallback((patch: SvCasStatusPatch) => {
+    const uuid = patch.externalUuid.trim()
+    if (!uuid) return
+
+    setRows((prev) =>
+      prev.map((r) =>
+        r.action.idAction !== patch.idAction
+          ? r
+          : {
+              ...r,
+              action: {
+                ...r.action,
+                cas: r.action.cas.map((item) =>
+                  item.externalUuid === uuid ? { ...item, status: patch.status } : item
+                ),
               },
             }
       )
@@ -133,5 +172,5 @@ export function useSvActions(monthKey: string, options?: { enabled?: boolean }) 
     }
   }, [monthKey, tick, enabled])
 
-  return { rows, isLoading, error, refetch, patchSvActionRow }
+  return { rows, isLoading, error, refetch, patchSvActionRow, patchSvActionCasStatus }
 }

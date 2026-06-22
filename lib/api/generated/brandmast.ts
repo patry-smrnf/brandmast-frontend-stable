@@ -263,6 +263,7 @@ export class BrandmastApi {
 
   /**
    * GET /api/action/sv/fetch?month=...
+   * Każda akcja w `data[].actions[]` może zawierać tablicę `cas` (CasDetails).
    */
   async fetchSvActions(params?: { month?: string }, options?: RequestOptions) {
     const res = await this.http.get<ApiResponseListActionsResponse>("/api/action/sv/fetch", {

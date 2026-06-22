@@ -21,6 +21,7 @@ export function Checkbox({
   checked = false,
   disabled,
   onCheckedChange,
+  onClick,
   ...props
 }: CheckboxProps) {
   const isIndeterminate = checked === "indeterminate"
@@ -33,7 +34,7 @@ export function Checkbox({
       aria-checked={isIndeterminate ? "mixed" : isChecked}
       disabled={disabled}
       onClick={(e) => {
-        props.onClick?.(e)
+        onClick?.(e)
         if (e.defaultPrevented) return
         if (disabled) return
         onCheckedChange?.(nextChecked(checked))

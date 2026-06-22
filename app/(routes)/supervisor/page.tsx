@@ -95,7 +95,8 @@ export default function SupervisorPage() {
   const monthKey = React.useMemo(() => toMonthKey(selectedDate), [selectedDate])
   const headerDate = React.useMemo(() => formatHeaderDate(selectedDate), [selectedDate])
 
-  const { rows, isLoading, error, refetch, patchSvActionRow } = useSvActions(monthKey)
+  const { rows, isLoading, error, refetch, patchSvActionRow, patchSvActionCasStatus } =
+    useSvActions(monthKey)
 
   const filteredRows = React.useMemo(() => {
     let list = rows.filter((r) => {
@@ -448,6 +449,7 @@ export default function SupervisorPage() {
                           row={row}
                           onApproved={refetch}
                           onPatched={patchSvActionRow}
+                          onCasStatusPatched={patchSvActionCasStatus}
                           scheduleConflict
                         />
                       ))}
@@ -463,6 +465,7 @@ export default function SupervisorPage() {
                       row={row}
                       onApproved={refetch}
                       onPatched={patchSvActionRow}
+                      onCasStatusPatched={patchSvActionCasStatus}
                       bulkSelectMode={bulkApproveEnabled && isBulkApproveEligible(row)}
                       bulkSelected={bulkSelectedIds.has(row.action.idAction)}
                       onBulkSelectChange={(selected) => handleBulkCardSelect(row.action.idAction, selected)}
