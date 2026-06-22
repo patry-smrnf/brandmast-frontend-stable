@@ -138,7 +138,7 @@ export function RoleContextMenu() {
           },
           {
             key: "bm-121-aplikacje",
-            label: "121 Aplikacje",
+            label: "121 Paczka za apke",
             href: "/brandmaster/121Aplikacje",
             disabled: is121SamplingDisabled,
             icon: <ClipboardListIcon className="size-4" />,
