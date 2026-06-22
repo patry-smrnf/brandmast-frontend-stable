@@ -192,14 +192,14 @@ export default function SupervisorPage() {
     }
   }
 
-  function handleBulkCardSelect(idAction: number, selected: boolean) {
+  const handleBulkCardSelect = React.useCallback((idAction: number, selected: boolean) => {
     setBulkSelectedIds((prev) => {
       const next = new Set(prev)
       if (selected) next.add(idAction)
       else next.delete(idAction)
       return next
     })
-  }
+  }, [])
 
   function handleStartBulkApprove() {
     if (bulkSelectedRows.length === 0) return
@@ -468,7 +468,7 @@ export default function SupervisorPage() {
                       onCasStatusPatched={patchSvActionCasStatus}
                       bulkSelectMode={bulkApproveEnabled && isBulkApproveEligible(row)}
                       bulkSelected={bulkSelectedIds.has(row.action.idAction)}
-                      onBulkSelectChange={(selected) => handleBulkCardSelect(row.action.idAction, selected)}
+                      onBulkSelect={handleBulkCardSelect}
                     />
                   ))}
                 </div>

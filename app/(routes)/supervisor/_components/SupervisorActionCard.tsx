@@ -25,10 +25,10 @@ export type SupervisorActionCardProps = {
   scheduleConflict?: boolean
   bulkSelectMode?: boolean
   bulkSelected?: boolean
-  onBulkSelectChange?: (selected: boolean) => void
+  onBulkSelect?: (idAction: number, selected: boolean) => void
 }
 
-export function SupervisorActionCard({
+function SupervisorActionCardInner({
   row,
   onApproved,
   onPatched,
@@ -36,14 +36,16 @@ export function SupervisorActionCard({
   scheduleConflict,
   bulkSelectMode,
   bulkSelected,
-  onBulkSelectChange,
+  onBulkSelect,
 }: SupervisorActionCardProps) {
   const { brandmaster, action } = row
   const sinceDate = parseIso(action.since) ?? new Date()
   const untilDate = parseIso(action.until) ?? sinceDate
   const timeLabel = `${formatTime(sinceDate)} – ${formatTime(untilDate)}`
   const [approveOpen, setApproveOpen] = React.useState(false)
+  const [approveMounted, setApproveMounted] = React.useState(false)
   const [editOpen, setEditOpen] = React.useState(false)
+  const [editMounted, setEditMounted] = React.useState(false)
   const [isCancelling, setIsCancelling] = React.useState(false)
   const bulkCheckboxId = `sv-bulk-card-${action.idAction}`
 
@@ -56,7 +58,17 @@ export function SupervisorActionCard({
   const showRevokeButton = isCancelRequested
   const showCasDetails = action.status === "ACCEPTED" && action.cas.length > 0
 
-  async function handleRevoke() {
+  const openApprove = React.useCallback(() => {
+    setApproveMounted(true)
+    setApproveOpen(true)
+  }, [])
+
+  const openEdit = React.useCallback(() => {
+    setEditMounted(true)
+    setEditOpen(true)
+  }, [])
+
+  const handleRevoke = React.useCallback(async () => {
     setIsCancelling(true)
     const toastId = toast.loading("Odwoływanie…")
     try {
@@ -72,7 +84,7 @@ export function SupervisorActionCard({
     } finally {
       setIsCancelling(false)
     }
-  }
+  }, [action.idAction, onApproved])
 
   return (
     <article
@@ -98,7 +110,7 @@ export function SupervisorActionCard({
             aria-label={`Zaznacz akcję ${row.brandmaster.name} ${row.brandmaster.surname}`}
             onChange={(e) => {
               e.stopPropagation()
-              onBulkSelectChange?.(e.target.checked)
+              onBulkSelect?.(action.idAction, e.target.checked)
             }}
           />
         </label>
@@ -118,11 +130,11 @@ export function SupervisorActionCard({
           role="button"
           tabIndex={0}
           className="cursor-pointer rounded-md outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
-          onClick={() => setEditOpen(true)}
+          onClick={openEdit}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault()
-              setEditOpen(true)
+              openEdit()
             }
           }}
         >
@@ -208,7 +220,7 @@ export function SupervisorActionCard({
                 disabled={!canApprove}
                 onClick={(e) => {
                   e.stopPropagation()
-                  setApproveOpen(true)
+                  openApprove()
                 }}
                 className="h-9 shrink-0 px-3 text-xs sm:h-8"
               >
@@ -227,14 +239,20 @@ export function SupervisorActionCard({
         ) : null}
       </div>
 
-      <SupervisorApproveSheet
-        open={approveOpen}
-        onOpenChange={setApproveOpen}
-        row={row}
-        onAccepted={onApproved}
-      />
+      {approveMounted ? (
+        <SupervisorApproveSheet
+          open={approveOpen}
+          onOpenChange={setApproveOpen}
+          row={row}
+          onAccepted={onApproved}
+        />
+      ) : null}
 
-      <SupervisorEditSheet open={editOpen} onOpenChange={setEditOpen} row={row} onPatched={onPatched} />
+      {editMounted ? (
+        <SupervisorEditSheet open={editOpen} onOpenChange={setEditOpen} row={row} onPatched={onPatched} />
+      ) : null}
     </article>
   )
 }
+
+export const SupervisorActionCard = React.memo(SupervisorActionCardInner)

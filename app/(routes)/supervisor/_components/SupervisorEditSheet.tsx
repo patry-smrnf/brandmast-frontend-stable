@@ -25,7 +25,7 @@ import {
   normalizeTime,
   shopMatchesQuery,
 } from "@/app/(routes)/brandmaster/editor/editor-utils"
-import type { SvActionLocalPatch, SvActionRow } from "../use-sv-actions"
+import { buildSvActionLocalPatch, type SvActionLocalPatch, type SvActionRow } from "../use-sv-actions"
 
 function dateToLooseTimeInput(d: Date): string {
   const h = d.getHours()
@@ -161,14 +161,23 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
       return b > a
     })()
 
+  const shopQueryMatchesSelection =
+    selectedShop != null && buildShopLabel(selectedShop) === shopQuery.trim()
+
   const idShopSelected = selectedShop?.id ?? 0
   const canSubmit =
     isEditableStatus &&
     !isSubmitting &&
     idShopSelected > 0 &&
+    shopQueryMatchesSelection &&
     startNorm.ok &&
     endNorm.ok &&
     timesValid
+
+  const displayEventName =
+    isEditableStatus && selectedShop
+      ? getShopEventName(selectedShop).trim() || "-"
+      : action.event.name?.trim() || "-"
 
   async function handleSave() {
     if (!canSubmit || !startNorm.ok || !endNorm.ok) return
@@ -190,18 +199,14 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
         return
       }
       toast.success("Zapisano zmiany.", { id: toastId })
-      const editedAt = new Date().toISOString()
-      onPatched({
-        idAction: action.idAction,
-        idShop,
-        since: sinceIso,
-        until: untilIso,
-        shop: {
-          name: selectedShop!.name ?? "",
-          address: selectedShop!.location?.address ?? "",
-        },
-        editedAt,
-      })
+      onPatched(
+        buildSvActionLocalPatch({
+          idAction: action.idAction,
+          shop: selectedShop!,
+          since: sinceIso,
+          until: untilIso,
+        })
+      )
       onOpenChange(false)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Nie udało się zapisać zmian.", { id: toastId })
@@ -271,7 +276,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
                 <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
                   <span className="shrink-0 text-muted-foreground">Event</span>
                   <span className="min-w-0 font-medium text-foreground sm:text-end">
-                    {action.event.name?.trim() || "-"}
+                    {displayEventName}
                   </span>
                 </div>
                 {!isEditableStatus ? (
@@ -342,8 +347,13 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
                       }, 120)
                     }}
                     onChange={(e) => {
-                      setShopQuery(e.target.value)
+                      const next = e.target.value
+                      setShopQuery(next)
                       setShowShopSuggestions(true)
+                      setSelectedShop((prev) => {
+                        if (!prev) return null
+                        return buildShopLabel(prev) === next.trim() ? prev : null
+                      })
                     }}
                   />
 

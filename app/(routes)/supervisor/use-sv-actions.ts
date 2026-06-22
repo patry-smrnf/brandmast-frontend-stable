@@ -2,8 +2,13 @@
 
 import * as React from "react"
 
+import {
+  getShopEventId,
+  getShopEventName,
+} from "@/app/(routes)/brandmaster/editor/editor-utils"
 import { brandmastApi } from "@/lib/api"
 import type { ActionsResponse, CasDetails } from "@/lib/api"
+import type { ShopResponse } from "@/lib/api/generated/types"
 import { normalizeActionStatus, type NormalizedActionStatus } from "@/lib/action-status"
 
 export type SvActionRow = {
@@ -43,7 +48,34 @@ export type SvActionLocalPatch = {
   since: string
   until: string
   shop: { name: string; address: string }
+  event: { idEvent: number; name: string }
   editedAt: string
+}
+
+/** Pełny patch lokalny ze sklepu — obejmuje event powiązany ze sklepem. */
+export function buildSvActionLocalPatch(input: {
+  idAction: number
+  shop: ShopResponse
+  since: string
+  until: string
+  editedAt?: string
+}): SvActionLocalPatch {
+  const idShop = input.shop.id ?? 0
+  return {
+    idAction: input.idAction,
+    idShop,
+    since: input.since,
+    until: input.until,
+    editedAt: input.editedAt ?? new Date().toISOString(),
+    shop: {
+      name: input.shop.name ?? "",
+      address: input.shop.location?.address ?? "",
+    },
+    event: {
+      idEvent: getShopEventId(input.shop),
+      name: getShopEventName(input.shop),
+    },
+  }
 }
 
 /** Lokalna aktualizacja statusu wpisu CAS po `updateStatus`. */
@@ -100,6 +132,8 @@ export function useSvActions(monthKey: string, options?: { enabled?: boolean }) 
   const refetch = React.useCallback(() => setTick((t) => t + 1), [])
 
   const patchSvActionRow = React.useCallback((patch: SvActionLocalPatch) => {
+    if (!patch.idAction || !patch.idShop) return
+
     setRows((prev) =>
       prev.map((r) =>
         r.action.idAction !== patch.idAction
@@ -112,7 +146,8 @@ export function useSvActions(monthKey: string, options?: { enabled?: boolean }) 
                 since: patch.since,
                 until: patch.until,
                 editedAt: patch.editedAt,
-                shop: { ...r.action.shop, ...patch.shop },
+                shop: patch.shop,
+                event: patch.event,
               },
             }
       )
