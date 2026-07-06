@@ -144,8 +144,8 @@ function QualitativeVeloProgressHint({
   if (progress.reached) {
     return (
       <p className="text-[11px] leading-snug text-emerald-700 dark:text-emerald-400">
-        Efektywność Velo ≥ {formatEfficiencyPl(progress.target)} — kwalifikujesz się do stawek
-        jakościowych.
+        Efektywność Velo ≥ {formatEfficiencyPl(progress.target)}
+        jest do jakosciowy.
       </p>
     )
   }
