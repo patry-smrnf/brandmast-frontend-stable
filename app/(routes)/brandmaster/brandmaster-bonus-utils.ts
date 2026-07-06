@@ -1,9 +1,24 @@
 import type { SampleStatsGloCounts } from "@/lib/api"
 
+import {
+  buildQualitativeVeloProgress,
+  buildRegularTierProgress,
+  getQualitativeProductRates,
+  getRegularGloRatePerDevice,
+  getRegularVeloRatePerUnit,
+  QUALITATIVE_VELO_PER_UNIT,
+  type QualitativeVeloProgress,
+  type TierProgressHint,
+} from "./brandmaster-bonus-tiers"
+
 export type BrandmasterBonusInput = {
   glo: SampleStatsGloCounts
   veloNet: number
   roundedHours: number
+  /** Godziny do liczenia efektywności Glo (domyślnie roundedHours). */
+  gloEfficiencyHours?: number
+  /** Godziny do liczenia efektywności Velo (domyślnie roundedHours). */
+  veloEfficiencyHours?: number
 }
 
 export type BonusLineItem = {
@@ -19,6 +34,7 @@ export type RegularBonusBreakdown = {
   veloRatePerUnit: number
   items: BonusLineItem[]
   total: number
+  tierProgress: TierProgressHint
 }
 
 export type QualitativeBonusBreakdown = {
@@ -29,11 +45,15 @@ export type QualitativeBonusBreakdown = {
   veloRatePerUnit: number
   items: BonusLineItem[]
   total: number
+  veloProgress: QualitativeVeloProgress
 }
 
 export type BrandmasterEfficiency = {
   roundedHours: number
-  timeDivisor: number
+  gloEfficiencyHours: number
+  veloEfficiencyHours: number
+  gloTimeDivisor: number
+  veloTimeDivisor: number
   gloCount: number
   veloCount: number
   gloEfficiency: number
@@ -49,6 +69,11 @@ export type BrandmasterBonusBreakdown = {
 
 export function sumGloDeviceCount(glo: SampleStatsGloCounts): number {
   return glo.hilo + glo.hiloPlus + glo.hyperPro
+}
+
+/** Urządzenia Glo w bonusie zwykłym (Hilo + Hilo+). Hyper Pro trafia do bonusu jakościowego. */
+export function sumRegularGloDeviceCount(glo: SampleStatsGloCounts): number {
+  return glo.hilo + glo.hiloPlus
 }
 
 export function computeTimeDivisor(roundedHours: number): number {
@@ -75,61 +100,30 @@ function lineItem(
   }
 }
 
-function gloEfficiencyTierLabel(gloEfficiency: number): string {
-  if (gloEfficiency < 1.0) return "Glo < 1,0"
-  if (gloEfficiency < 1.6) return "Glo < 1,6"
-  return "Glo ≥ 1,6"
-}
-
-function getRegularGloRatePerDevice(
-  veloEfficiency: number,
-  gloEfficiency: number,
-): { rate: number; tierLabel: string } {
-  if (veloEfficiency < 4.0) {
-    return { rate: 0, tierLabel: "Velo < 4,0 czyli brak bonusu Glo" }
-  }
-  if (veloEfficiency < 6.0) {
-    const rate =
-      gloEfficiency < 1.0 ? 10 : gloEfficiency < 1.6 ? 20 : 30
-    return {
-      rate,
-      tierLabel: `Velo < 6,0 · ${gloEfficiencyTierLabel(gloEfficiency)}`,
-    }
-  }
-  const rate = gloEfficiency < 1.0 ? 15 : gloEfficiency < 1.6 ? 30 : 40
-  const veloBand =
-    veloEfficiency < 7.9 ? "Velo < 7,9" : "Velo ≥ 7,9"
-  return {
-    rate,
-    tierLabel: `${veloBand} · ${gloEfficiencyTierLabel(gloEfficiency)}`,
-  }
-}
-
-function getRegularVeloRatePerUnit(veloEfficiency: number): number {
-  if (veloEfficiency < 6.0) return 0
-  return 2
-}
-
 export function computeRegularBonus(
   input: BrandmasterBonusInput,
   efficiency: BrandmasterEfficiency,
 ): RegularBonusBreakdown {
-  const gloCount = efficiency.gloCount
+  const regularGloCount = sumRegularGloDeviceCount(input.glo)
   const veloCount = efficiency.veloCount
   const { rate: gloRatePerDevice, tierLabel } = getRegularGloRatePerDevice(
     efficiency.veloEfficiency,
     efficiency.gloEfficiency,
   )
   const veloRatePerUnit = getRegularVeloRatePerUnit(efficiency.veloEfficiency)
+  const tierProgress = buildRegularTierProgress(
+    efficiency.gloEfficiency,
+    efficiency.veloEfficiency,
+  )
 
   const items: BonusLineItem[] = []
-  if (gloCount > 0 && gloRatePerDevice > 0) {
-    items.push(lineItem("Urządzenia Glo (łącznie)", gloCount, gloRatePerDevice))
-  } else if (gloRatePerDevice === 0 && gloCount > 0) {
-    items.push(lineItem("Urządzenia Glo (łącznie)", gloCount, 0))
+  if (regularGloCount > 0 && gloRatePerDevice > 0) {
+    items.push(lineItem("Urządzenia Glo (Hilo, Hilo+)", regularGloCount, gloRatePerDevice))
+  } else if (gloRatePerDevice === 0 && regularGloCount > 0) {
+    items.push(lineItem("Urządzenia Glo (Hilo, Hilo+)", regularGloCount, 0))
   }
   if (veloCount > 0 && veloRatePerUnit > 0) {
-    items.push(lineItem("Velo ", veloCount, veloRatePerUnit))
+    items.push(lineItem("Velo", veloCount, veloRatePerUnit))
   }
 
   const total = items.reduce((sum, item) => sum + item.amount, 0)
@@ -139,32 +133,23 @@ export function computeRegularBonus(
     veloRatePerUnit,
     items,
     total,
+    tierProgress,
   }
-}
-
-function getQualitativeRates(gloEfficiency: number): {
-  hiloRate: number
-  hiloPlusRate: number
-  tierLabel: string
-} {
-  if (gloEfficiency < 1.0) {
-    return { hiloRate: 25, hiloPlusRate: 40, tierLabel: gloEfficiencyTierLabel(gloEfficiency) }
-  }
-  if (gloEfficiency < 1.6) {
-    return { hiloRate: 35, hiloPlusRate: 70, tierLabel: gloEfficiencyTierLabel(gloEfficiency) }
-  }
-  return { hiloRate: 45, hiloPlusRate: 70, tierLabel: gloEfficiencyTierLabel(gloEfficiency) }
 }
 
 export function computeQualitativeBonus(
   input: BrandmasterBonusInput,
   efficiency: BrandmasterEfficiency,
 ): QualitativeBonusBreakdown {
-  const { hiloRate, hiloPlusRate, tierLabel } = getQualitativeRates(
+  const { hiloRate, hiloPlusRate, tierLabel } = getQualitativeProductRates(
     efficiency.gloEfficiency,
   )
-  const hyperProRate = 40
-  const veloRatePerUnit = 4
+  const { rate: hyperProRate } = getRegularGloRatePerDevice(
+    efficiency.veloEfficiency,
+    efficiency.gloEfficiency,
+  )
+  const veloRatePerUnit = QUALITATIVE_VELO_PER_UNIT
+  const veloProgress = buildQualitativeVeloProgress(efficiency.veloEfficiency)
   const items: BonusLineItem[] = []
 
   if (input.glo.hilo > 0) {
@@ -189,6 +174,7 @@ export function computeQualitativeBonus(
     veloRatePerUnit,
     items,
     total,
+    veloProgress,
   }
 }
 
@@ -197,15 +183,21 @@ export function computeBrandmasterEfficiency(
 ): BrandmasterEfficiency {
   const gloCount = sumGloDeviceCount(input.glo)
   const veloCount = Math.max(0, input.veloNet)
-  const timeDivisor = computeTimeDivisor(input.roundedHours)
+  const gloEfficiencyHours = input.gloEfficiencyHours ?? input.roundedHours
+  const veloEfficiencyHours = input.veloEfficiencyHours ?? input.roundedHours
+  const gloTimeDivisor = computeTimeDivisor(gloEfficiencyHours)
+  const veloTimeDivisor = computeTimeDivisor(veloEfficiencyHours)
 
   return {
     roundedHours: input.roundedHours,
-    timeDivisor,
+    gloEfficiencyHours,
+    veloEfficiencyHours,
+    gloTimeDivisor,
+    veloTimeDivisor,
     gloCount,
     veloCount,
-    gloEfficiency: computeEfficiency(gloCount, input.roundedHours),
-    veloEfficiency: computeEfficiency(veloCount, input.roundedHours),
+    gloEfficiency: computeEfficiency(gloCount, gloEfficiencyHours),
+    veloEfficiency: computeEfficiency(veloCount, veloEfficiencyHours),
   }
 }
 
@@ -231,3 +223,5 @@ export function formatEfficiencyPl(value: number): string {
     maximumFractionDigits: 1,
   })
 }
+
+export type { QualitativeVeloProgress, TierProgressHint } from "./brandmaster-bonus-tiers"

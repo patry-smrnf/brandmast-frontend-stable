@@ -14,6 +14,7 @@ import {
 import { computeBrandmasterPreviousMonthBonus } from "./brandmaster-previous-month-bonus-utils"
 import {
   type ActionWithRoundedTime,
+  computeEfficiencyHoursFromActions,
   formatCasAddress,
   formatHoursPl,
   getCasActionTitle,
@@ -158,6 +159,11 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     [monthActions],
   )
 
+  const efficiencyHours = React.useMemo(
+    () => computeEfficiencyHoursFromActions(monthActions),
+    [monthActions],
+  )
+
   const basePayout = totalRoundedHours * HOURLY_RATE
 
   const bonusBreakdown = React.useMemo((): BrandmasterBonusBreakdown | null => {
@@ -170,11 +176,13 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
       glo: monthStats.glo,
       veloNet: monthStats.veloNet,
       roundedHours: totalRoundedHours,
+      gloEfficiencyHours: efficiencyHours.glo,
+      veloEfficiencyHours: efficiencyHours.velo,
     }
     return monthPeriod === "previous"
       ? computeBrandmasterPreviousMonthBonus(input)
       : computeBrandmasterBonus(input)
-  }, [sampleStatsCounts, totalRoundedHours, monthPeriod])
+  }, [sampleStatsCounts, totalRoundedHours, efficiencyHours, monthPeriod])
 
   const monthSalesStats = React.useMemo(() => {
     if (!sampleStatsCounts) return null

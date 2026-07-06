@@ -10,6 +10,7 @@ import {
   getActionDurationHours,
   getActionRowKey,
   isEmptyActionSampleStats,
+  isExcludedFromEmptyHoursCalculation,
 } from "./cas-action-utils"
 
 const STATS_FETCH_CONCURRENCY = 3
@@ -146,6 +147,7 @@ export function useEmptyWorkHours(
           statsByActionKey.set(row.rowKey, row.stats)
 
           if (!isEmptyActionSampleStats(row.stats)) continue
+          if (isExcludedFromEmptyHoursCalculation(row.item)) continue
 
           emptyActionKeys.add(row.rowKey)
           if (row.item.start && row.item.stop) {

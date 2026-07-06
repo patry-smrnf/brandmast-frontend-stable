@@ -123,6 +123,63 @@ export function formatMoneyPl(amount: number): string {
   return `${Math.round(amount).toLocaleString("pl-PL")} zł`
 }
 
+export const BRANDMASTER_EVENT_SZKOLENIE_UUID = "9b98715f-a000-11ee-aeba-065ed9e1cfca"
+export const BRANDMASTER_EVENT_SZKOLENIE_IDENT = "event-Szkolenie"
+export const BRANDMASTER_EVENT_VELO_UUID = "f69f2dfc-8855-11ed-bb12-065ed9e1cfca"
+export const BRANDMASTER_EVENT_VELO_IDENT = "event-Velo"
+
+function matchesBrandmasterEvent(
+  action: TourPlannerActionListItem,
+  uuid: string,
+  ident: string,
+): boolean {
+  const event = action.event
+  if (!event) return false
+  const eventUuid = event.uuid?.trim()
+  const eventIdent = event.ident?.trim()
+  return eventUuid === uuid || eventIdent === ident
+}
+
+export function isSzkolenieAction(action: TourPlannerActionListItem): boolean {
+  return matchesBrandmasterEvent(
+    action,
+    BRANDMASTER_EVENT_SZKOLENIE_UUID,
+    BRANDMASTER_EVENT_SZKOLENIE_IDENT,
+  )
+}
+
+export function isVeloEventAction(action: TourPlannerActionListItem): boolean {
+  return matchesBrandmasterEvent(
+    action,
+    BRANDMASTER_EVENT_VELO_UUID,
+    BRANDMASTER_EVENT_VELO_IDENT,
+  )
+}
+
+/** Akcje Szkolenie i Velo nie wchodzą w liczenie pustych godzin. */
+export function isExcludedFromEmptyHoursCalculation(item: ActionWithRoundedTime): boolean {
+  return isSzkolenieAction(item.action) || isVeloEventAction(item.action)
+}
+
+export function computeEfficiencyHoursFromActions(actions: ActionWithRoundedTime[]): {
+  glo: number
+  velo: number
+} {
+  let gloHours = 0
+  let veloHours = 0
+
+  for (const item of actions) {
+    const hours = item.roundedHours
+    if (isSzkolenieAction(item.action)) continue
+    veloHours += hours
+    if (!isVeloEventAction(item.action)) {
+      gloHours += hours
+    }
+  }
+
+  return { glo: gloHours, velo: veloHours }
+}
+
 export function getActionRowKey(item: ActionWithRoundedTime): string {
   return (
     item.actionIdent ??

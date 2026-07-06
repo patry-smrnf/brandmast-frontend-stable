@@ -23,7 +23,9 @@ import {
   type BonusLineItem,
   type BrandmasterBonusBreakdown,
   type QualitativeBonusBreakdown,
+  type QualitativeVeloProgress,
   type RegularBonusBreakdown,
+  type TierProgressHint,
 } from "./brandmaster-bonus-utils"
 import { formatHoursPl, formatMoneyPl } from "./cas-action-utils"
 import { BonusExtrasSection } from "./brandmaster-bonus-extras-section"
@@ -58,6 +60,105 @@ function BonusLineRows({ items }: { items: BonusLineItem[] }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+function TierProgressBar({
+  label,
+  currentValue,
+  progressPercent,
+  gapLabel,
+}: {
+  label: string
+  currentValue: string
+  progressPercent: number | null
+  gapLabel: string | null
+}) {
+  const percent = progressPercent ?? 0
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between gap-2 text-[11px]">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="shrink-0 font-medium tabular-nums text-foreground">{currentValue}</span>
+      </div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full bg-primary transition-all"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      {gapLabel ? (
+        <p className="text-[10px] leading-snug text-muted-foreground">{gapLabel}</p>
+      ) : null}
+    </div>
+  )
+}
+
+function RegularTierProgress({
+  progress,
+  gloEfficiency,
+  veloEfficiency,
+}: {
+  progress: TierProgressHint
+  gloEfficiency: number
+  veloEfficiency: number
+}) {
+  return (
+    <div className="space-y-2.5 rounded-md border border-border/70 bg-background/60 px-2.5 py-2">
+      <p className="text-[11px] font-medium text-foreground">
+        Lapiesz sie na: <span className="text-muted-foreground">{progress.currentLabel}</span>
+      </p>
+
+      {progress.nextGloThreshold != null && progress.gloEfficiencyGap != null ? (
+        <TierProgressBar
+          label="Efektywność Glo"
+          currentValue={formatEfficiencyPl(gloEfficiency)}
+          progressPercent={progress.gloProgressPercent}
+          gapLabel={`Brakuje ${formatEfficiencyPl(progress.gloEfficiencyGap)} do Glo ≥ ${formatEfficiencyPl(progress.nextGloThreshold)}`}
+        />
+      ) : (
+        <p className="text-[10px] text-muted-foreground">
+          Najwyższy stopień Glo w bieżącym paśmie Velo.
+        </p>
+      )}
+
+      {progress.nextVeloThreshold != null && progress.veloEfficiencyGap != null ? (
+        <TierProgressBar
+          label="Efektywność Velo"
+          currentValue={formatEfficiencyPl(veloEfficiency)}
+          progressPercent={progress.veloProgressPercent}
+          gapLabel={`Brakuje ${formatEfficiencyPl(progress.veloEfficiencyGap)} do ${progress.nextVeloBandLabel ?? `Velo ≥ ${formatEfficiencyPl(progress.nextVeloThreshold)}`}`}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+function QualitativeVeloProgressHint({
+  progress,
+  veloEfficiency,
+}: {
+  progress: QualitativeVeloProgress
+  veloEfficiency: number
+}) {
+  if (progress.reached) {
+    return (
+      <p className="text-[11px] leading-snug text-emerald-700 dark:text-emerald-400">
+        Efektywność Velo ≥ {formatEfficiencyPl(progress.target)} — kwalifikujesz się do stawek
+        jakościowych.
+      </p>
+    )
+  }
+
+  return (
+    <div className="space-y-1.5 rounded-md border border-border/70 bg-background/60 px-2.5 py-2">
+      <TierProgressBar
+        label="Efektywność Velo"
+        currentValue={formatEfficiencyPl(veloEfficiency)}
+        progressPercent={progress.progressPercent}
+        gapLabel={`Brakuje ${formatEfficiencyPl(progress.gap)} do Velo ≥ ${formatEfficiencyPl(progress.target)}`}
+      />
+    </div>
   )
 }
 
@@ -107,7 +208,15 @@ function BonusSectionHeader({
   )
 }
 
-function RegularBonusSection({ regular }: { regular: RegularBonusBreakdown }) {
+function RegularBonusSection({
+  regular,
+  gloEfficiency,
+  veloEfficiency,
+}: {
+  regular: RegularBonusBreakdown
+  gloEfficiency: number
+  veloEfficiency: number
+}) {
   return (
     <BonusSection
       title="Bonus zwykły"
@@ -115,6 +224,11 @@ function RegularBonusSection({ regular }: { regular: RegularBonusBreakdown }) {
       tierLabel={regular.tierLabel}
       total={regular.total}
     >
+      <RegularTierProgress
+        progress={regular.tierProgress}
+        gloEfficiency={gloEfficiency}
+        veloEfficiency={veloEfficiency}
+      />
       <BonusLineRows items={regular.items} />
       {regular.gloRatePerDevice === 0 && regular.veloRatePerUnit === 0 ? (
         <p className="text-[11px] leading-snug text-muted-foreground">
@@ -127,8 +241,10 @@ function RegularBonusSection({ regular }: { regular: RegularBonusBreakdown }) {
 
 function QualitativeBonusSection({
   qualitative,
+  veloEfficiency,
 }: {
   qualitative: QualitativeBonusBreakdown
+  veloEfficiency: number
 }) {
   return (
     <BonusSection
@@ -137,6 +253,10 @@ function QualitativeBonusSection({
       tierLabel={qualitative.tierLabel}
       total={qualitative.total}
     >
+      <QualitativeVeloProgressHint
+        progress={qualitative.veloProgress}
+        veloEfficiency={veloEfficiency}
+      />
       <BonusLineRows items={qualitative.items} />
     </BonusSection>
   )
@@ -197,10 +317,10 @@ export function EfficiencyCard({
   monthLabel: string
 }) {
   const { efficiency: e } = bonus
-  const timeDivisorLabel =
-    e.timeDivisor > 0
-      ? e.timeDivisor.toLocaleString("pl-PL", { maximumFractionDigits: 2 })
-      : "-"
+  const formatTimeDivisor = (value: number) =>
+    value > 0 ? value.toLocaleString("pl-PL", { maximumFractionDigits: 2 }) : "-"
+  const veloTimeDivisorLabel = formatTimeDivisor(e.veloTimeDivisor)
+  const gloTimeDivisorLabel = formatTimeDivisor(e.gloTimeDivisor)
 
   return (
     <Card className="shadow-sm">
@@ -221,7 +341,7 @@ export function EfficiencyCard({
               {formatEfficiencyPl(e.veloEfficiency)}
             </p>
             <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
-              {e.veloCount} ÷ {timeDivisorLabel}
+              {e.veloCount} ÷ {veloTimeDivisorLabel}
             </p>
           </div>
           <div className="rounded-lg border border-border/80 bg-muted/30 px-2.5 py-2.5">
@@ -230,7 +350,7 @@ export function EfficiencyCard({
               {formatEfficiencyPl(e.gloEfficiency)}
             </p>
             <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
-              {e.gloCount} ÷ {timeDivisorLabel}
+              {e.gloCount} ÷ {gloTimeDivisorLabel}
             </p>
           </div>
         </div>
@@ -329,8 +449,15 @@ export function PayoutCard({
 
           {bonusBreakdown ? (
             <>
-              <RegularBonusSection regular={bonusBreakdown.regular} />
-              <QualitativeBonusSection qualitative={bonusBreakdown.qualitative} />
+              <RegularBonusSection
+                regular={bonusBreakdown.regular}
+                gloEfficiency={bonusBreakdown.efficiency.gloEfficiency}
+                veloEfficiency={bonusBreakdown.efficiency.veloEfficiency}
+              />
+              <QualitativeBonusSection
+                qualitative={bonusBreakdown.qualitative}
+                veloEfficiency={bonusBreakdown.efficiency.veloEfficiency}
+              />
             </>
           ) : (
             <p className="text-xs text-muted-foreground">
