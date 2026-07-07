@@ -34,7 +34,15 @@ import {
 } from "@/app/(routes)/brandmaster/cas-action-utils"
 import { getBrandmasterDisplayName, getCasActionTimeLabel } from "../cas-panel-utils"
 import { MobileBottomSheet } from "./MobileBottomSheet"
-import { CasSampleStatsSkeleton, CasSampleStatsStrip } from "./CasSampleStatsStrip"
+import {
+  CasEfficiencyStrip,
+  CasSampleStatsSkeleton,
+  CasSampleStatsStrip,
+} from "./CasSampleStatsStrip"
+import {
+  computeSampleStatsEfficiency,
+  getCasActionDurationHours,
+} from "../cas-efficiency"
 
 export type CasActionDetailSheetProps = {
   open: boolean
@@ -54,6 +62,7 @@ export function CasActionDetailSheet({
   const [statsLoading, setStatsLoading] = React.useState(false)
   const [stats, setStats] = React.useState<SampleStatsFieldCounts | null>(null)
   const [statsError, setStatsError] = React.useState<string | null>(null)
+  const [nowTs, setNowTs] = React.useState<number>(() => Date.now())
   const statsRequestRef = React.useRef(0)
 
   const normalizedStatus = normalizeCasActionStatus(action?.status)
@@ -86,6 +95,7 @@ export function CasActionDetailSheet({
     setStatsLoading(true)
     setStatsError(null)
     setStats(null)
+    setNowTs(Date.now())
 
     void fetchSampleStats({ hostessCode, currentAction })
       .then((result) => {
@@ -100,6 +110,13 @@ export function CasActionDetailSheet({
         if (statsRequestRef.current === requestId) setStatsLoading(false)
       })
   }, [open, action, showStats])
+
+  const efficiency = React.useMemo(() => {
+    if (!action || !stats) return null
+    const durationHours = getCasActionDurationHours(action, new Date(nowTs))
+    if (durationHours === null) return null
+    return computeSampleStatsEfficiency(stats, durationHours)
+  }, [action, stats, nowTs])
 
   if (!action) return null
 
@@ -242,7 +259,10 @@ export function CasActionDetailSheet({
               {statsError}
             </p>
           ) : stats ? (
-            <CasSampleStatsStrip stats={stats} />
+            <div className="space-y-2">
+              <CasSampleStatsStrip stats={stats} />
+              {efficiency ? <CasEfficiencyStrip efficiency={efficiency} /> : null}
+            </div>
           ) : null}
         </div>
       ) : (

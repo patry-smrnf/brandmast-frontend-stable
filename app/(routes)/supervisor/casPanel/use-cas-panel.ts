@@ -7,13 +7,17 @@ import type { TourPlannerActionListItem } from "@/lib/api/generated/types"
 import type { CasActionStatus } from "@/lib/cas-status"
 export function useCasPanelActions(dateKey: string) {
   const [actions, setActions] = React.useState<TourPlannerActionListItem[]>([])
-  const [isLoading, setIsLoading] = React.useState(false)
+  // Start w stanie ładowania: pobranie zawsze rusza po zamontowaniu, a dzięki temu
+  // pierwszy render (SSR + hydracja) jest deterministyczny i identyczny.
+  const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [tick, setTick] = React.useState(0)
 
   const refetch = React.useCallback(() => setTick((t) => t + 1), [])
 
   React.useEffect(() => {
+    if (!dateKey) return
+
     let cancelled = false
 
     async function run() {

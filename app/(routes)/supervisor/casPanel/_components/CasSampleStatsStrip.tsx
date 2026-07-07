@@ -2,6 +2,7 @@
 
 import type { SampleStatsFieldCounts } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { formatEfficiency, type CasSampleStatsEfficiency } from "../cas-efficiency"
 
 const STRIP_CLASS =
   "flex items-stretch divide-x divide-primary/15 overflow-hidden rounded-md border border-primary/20 bg-primary/5"
@@ -40,6 +41,37 @@ export function CasSampleStatsStrip({ stats }: { stats: SampleStatsFieldCounts }
         >
           <span className="truncate text-[10px] font-medium text-muted-foreground">{label}</span>
           <span className="text-sm font-semibold tabular-nums leading-none">{value}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function CasEfficiencyStrip({
+  efficiency,
+}: {
+  efficiency: CasSampleStatsEfficiency
+}) {
+  const metrics = [
+    { label: "Efektywność GLO", value: efficiency.glo },
+    { label: "Efektywność VELO", value: efficiency.velo },
+  ] as const
+
+  return (
+    <div
+      className="flex items-stretch divide-x divide-emerald-500/15 overflow-hidden rounded-md border border-emerald-500/20 bg-emerald-500/5"
+      role="group"
+      aria-label="Efektywność"
+    >
+      {metrics.map(({ label, value }) => (
+        <div
+          key={label}
+          className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1.5 py-2 sm:px-2"
+        >
+          <span className="truncate text-[10px] font-medium text-muted-foreground">{label}</span>
+          <span className="text-sm font-semibold tabular-nums leading-none">
+            {formatEfficiency(value)}
+          </span>
         </div>
       ))}
     </div>

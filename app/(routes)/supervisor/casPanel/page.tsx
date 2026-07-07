@@ -42,8 +42,14 @@ function LoadingSkeleton() {
 }
 
 export default function SupervisorCasPanelPage() {
-  const [dateKey, setDateKey] = React.useState(() => toDateKeyInPoland())
+  // Pusty przy pierwszym renderze (SSR i hydracja) → deterministycznie, bez rozjazdu.
+  // Rzeczywistą „dzisiejszą” datę (zależną od czasu) ustawiamy dopiero po zamontowaniu.
+  const [dateKey, setDateKey] = React.useState("")
   const [search, setSearch] = React.useState("")
+
+  React.useEffect(() => {
+    setDateKey((prev) => prev || toDateKeyInPoland())
+  }, [])
   const [selectedAction, setSelectedAction] = React.useState<TourPlannerActionListItem | null>(
     null,
   )

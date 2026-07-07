@@ -95,6 +95,7 @@ export type CasDayStatsSummary = {
   actionCount: number
   startedPeopleCount: number
   totals: SampleStatsFieldCounts
+  totalHours: number
   loadedCount: number
   failedCount: number
 }
@@ -146,22 +147,30 @@ export function listCasActionsForDayStats(
     )
 }
 
-export function aggregateCasDayStats(
-  rows: Array<{
-    status: NormalizedCasActionStatus
-    hostessCode: string
-    stats: SampleStatsFieldCounts | null
-    failed: boolean
-  }>,
-): CasDayStatsSummary {
+/** Wiersz pojedynczej akcji (started/finished) z policzonym czasem i wynikami. */
+export type CasDayStatsRow = {
+  action: TourPlannerActionListItem
+  status: NormalizedCasActionStatus
+  hostessCode: string
+  /** Rzeczywisty czas trwania akcji w godzinach (0 gdy nie da się policzyć). */
+  durationHours: number
+  stats: SampleStatsFieldCounts | null
+  failed: boolean
+}
+
+export function aggregateCasDayStats(rows: CasDayStatsRow[]): CasDayStatsSummary {
   const startedHosts = new Set<string>()
   let totals = emptySampleStatsFieldCounts()
+  let totalHours = 0
   let loadedCount = 0
   let failedCount = 0
 
   for (const row of rows) {
     if (row.status === "started" && row.hostessCode) {
       startedHosts.add(row.hostessCode)
+    }
+    if (Number.isFinite(row.durationHours) && row.durationHours > 0) {
+      totalHours += row.durationHours
     }
     if (row.failed) {
       failedCount += 1
@@ -176,9 +185,69 @@ export function aggregateCasDayStats(
     actionCount: rows.length,
     startedPeopleCount: startedHosts.size,
     totals,
+    totalHours,
     loadedCount,
     failedCount,
   }
+}
+
+/** Zagregowane dane jednego brandmastera z danego dnia. */
+export type CasBrandmasterDayStats = {
+  hostessCode: string
+  name: string
+  /** Ma nadal aktywną (started) akcję — jest jeszcze na zmianie. */
+  hasStarted: boolean
+  actionCount: number
+  durationHours: number
+  totals: SampleStatsFieldCounts
+  loadedCount: number
+  failedCount: number
+}
+
+/**
+ * Grupuje akcje po brandmasterze (po kodzie hostessy) i sumuje czas oraz wyniki.
+ * Sortowanie: najpierw osoby wciąż „na zmianie” (started), potem wg czasu malejąco.
+ */
+export function buildCasBrandmasterDayStats(rows: CasDayStatsRow[]): CasBrandmasterDayStats[] {
+  const byHost = new Map<string, CasBrandmasterDayStats>()
+
+  for (const row of rows) {
+    const key = row.hostessCode
+    if (!key) continue
+
+    let entry = byHost.get(key)
+    if (!entry) {
+      entry = {
+        hostessCode: key,
+        name: getBrandmasterDisplayName(row.action),
+        hasStarted: false,
+        actionCount: 0,
+        durationHours: 0,
+        totals: emptySampleStatsFieldCounts(),
+        loadedCount: 0,
+        failedCount: 0,
+      }
+      byHost.set(key, entry)
+    }
+
+    entry.actionCount += 1
+    if (row.status === "started") entry.hasStarted = true
+    if (Number.isFinite(row.durationHours) && row.durationHours > 0) {
+      entry.durationHours += row.durationHours
+    }
+    if (row.failed) {
+      entry.failedCount += 1
+    } else if (row.stats) {
+      entry.loadedCount += 1
+      entry.totals = addSampleStatsFieldCounts(entry.totals, row.stats)
+    }
+  }
+
+  return [...byHost.values()].sort((a, b) => {
+    if (a.hasStarted !== b.hasStarted) return a.hasStarted ? -1 : 1
+    if (b.durationHours !== a.durationHours) return b.durationHours - a.durationHours
+    return a.name.localeCompare(b.name, "pl")
+  })
 }
 
 export function isCasActionStatus(value: string): value is CasActionStatus {
