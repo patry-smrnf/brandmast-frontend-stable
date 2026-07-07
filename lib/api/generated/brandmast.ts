@@ -16,6 +16,7 @@ import type {
   ApiResponseListTourPlannerPointListItem,
   ApiResponseTourPlannerActionCreateResult,
   ApiResponseListOneTwoOneAplikacjaZgloszenie,
+  ApiResponseListOneTwoOneAwaryjneZgloszenia,
   ApiResponseListOneTwoOneRivoVirto,
   ApiResponseListOneTwoOneSampling,
   ApiResponseListOneTwoOneTeam,
@@ -361,6 +362,17 @@ export class BrandmastApi {
   async fetchZgloszeniaAplikacje(options?: RequestOptions) {
     const res = await this.http.get<ApiResponseListOneTwoOneAplikacjaZgloszenie>(
       "/api/121/zgloszeniaAplikacje/fetch",
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * GET /api/121/zgloszeniaAwaryjne/fetch
+   */
+  async fetchZgloszeniaAwaryjne(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListOneTwoOneAwaryjneZgloszenia>(
+      "/api/121/zgloszeniaAwaryjne/fetch",
       options,
     );
     return res.data;

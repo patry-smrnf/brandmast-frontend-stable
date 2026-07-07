@@ -586,6 +586,22 @@ export interface ApiResponseListOneTwoOneRivoVirto {
   violations?: Violation[];
 }
 
+/** GET /api/121/zgloszeniaAwaryjne/fetch */
+export interface OneTwoOneAwaryjneZgloszenia {
+  numerAkcji?: string;
+  dataWpisu?: string;
+  oferta?: string;
+}
+
+export interface ApiResponseListOneTwoOneAwaryjneZgloszenia {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneAwaryjneZgloszenia[];
+  violations?: Violation[];
+}
+
 /** POST /api/121/zgloszeniaSampling/add */
 export interface ZgloszeniaSamplingAddRequest {
   data_paczki?: string;

@@ -282,6 +282,7 @@ export default function BrandmasterPage() {
     bonusBreakdown,
     hourlyRate,
     monthSalesStats,
+    awaryjneSummary,
     hostessCode,
   } = useBrandmasterDashboard(monthPeriod)
 
@@ -501,6 +502,7 @@ export default function BrandmasterPage() {
                 glo={monthSalesStats.glo}
                 veloNet={monthSalesStats.veloNet}
                 monthLabel={monthLabel}
+                awaryjne={awaryjneSummary}
               />
             ) : null}
 

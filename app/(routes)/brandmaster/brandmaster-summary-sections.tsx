@@ -266,10 +266,12 @@ export function GloSamplesCard({
   glo,
   monthLabel,
   veloNet,
+  awaryjne,
 }: {
   glo: SampleStatsGloCounts
   monthLabel: string
   veloNet?: number
+  awaryjne?: { glo: number; velo: number }
 }) {
   return (
     <Card className="shadow-sm">
@@ -303,6 +305,27 @@ export function GloSamplesCard({
             Velo:{" "}
             <span className="font-semibold tabular-nums text-foreground">{veloNet}</span>
           </p>
+        ) : null}
+        {awaryjne ? (
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/25 px-2.5 py-2">
+            <span className="text-[11px] font-medium text-muted-foreground">
+              Awaryjne/Tickety
+            </span>
+            <span className="flex items-center gap-3 text-xs">
+              <span className="text-muted-foreground">
+                GLO{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {awaryjne.glo}
+                </span>
+              </span>
+              <span className="text-muted-foreground">
+                VELO{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {awaryjne.velo}
+                </span>
+              </span>
+            </span>
+          </div>
         ) : null}
       </CardContent>
     </Card>

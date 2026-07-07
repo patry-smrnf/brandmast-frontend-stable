@@ -8,6 +8,13 @@ import { getConfigState, setConfig } from "@/lib/config/configStore"
 import { formatPlDateTimePoland, nowInPoland, toDateKeyInPoland } from "@/lib/dates/date-utils"
 
 import {
+  addAwaryjneToGlo,
+  computeAwaryjneCounts,
+  EMPTY_AWARYJNE_COUNTS,
+  sumAwaryjneGlo,
+  type AwaryjneCounts,
+} from "./brandmaster-awaryjne-utils"
+import {
   computeBrandmasterBonus,
   type BrandmasterBonusBreakdown,
 } from "./brandmaster-bonus-utils"
@@ -40,6 +47,8 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
   const [polandNow, setPolandNow] = React.useState<Date | null>(null)
   const [sampleStatsCounts, setSampleStatsCounts] =
     React.useState<SampleStatsCountsByField | null>(null)
+  const [awaryjneCounts, setAwaryjneCounts] =
+    React.useState<AwaryjneCounts>(EMPTY_AWARYJNE_COUNTS)
   const [hostessCode, setHostessCode] = React.useState("")
 
   const refetch = React.useCallback(() => setTick((t) => t + 1), [])
@@ -60,6 +69,15 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
             : getMonthDateRange(fetchNow)
 
         const configPromise = brandmastApi.fetchConfig()
+        const awaryjnePromise = configPromise
+          .then((cfg) => {
+            const hasOneTwoOne = cfg.data?.myData?.hasOneTwoOne === true
+            if (!hasOneTwoOne) return []
+            return brandmastApi
+              .fetchZgloszeniaAwaryjne()
+              .then((res) => (res.success === false ? [] : (res.data ?? [])))
+          })
+          .catch(() => [])
 
         const [startedActionResponse, monthActionsResponse] = await Promise.all([
           brandmastApi.fetchBMActions({
@@ -82,6 +100,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
           setStartedActions([])
           setMonthActions([])
           setSampleStatsCounts(null)
+          setAwaryjneCounts(EMPTY_AWARYJNE_COUNTS)
           setHostessCode("")
           return
         }
@@ -92,6 +111,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
           setStartedActions([])
           setMonthActions([])
           setSampleStatsCounts(null)
+          setAwaryjneCounts(EMPTY_AWARYJNE_COUNTS)
           setHostessCode("")
           return
         }
@@ -125,6 +145,8 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
           }
         }
 
+        const awaryjneItems = await awaryjnePromise
+
         if (cancelled) return
 
         setPolandNow(nowInPoland())
@@ -132,6 +154,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
         setMonthActions(mapFinishedActionsWithRoundedTime(finishedItems))
         setHostessCode(resolvedHostessCode)
         setSampleStatsCounts(nextSampleStats)
+        setAwaryjneCounts(computeAwaryjneCounts(awaryjneItems))
       } catch (e) {
         if (cancelled) return
         setError(e instanceof Error ? e.message : "Nie udało się pobrać danych.")
@@ -139,6 +162,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
         setStartedActions([])
         setMonthActions([])
         setSampleStatsCounts(null)
+        setAwaryjneCounts(EMPTY_AWARYJNE_COUNTS)
         setHostessCode("")
       } finally {
         if (!cancelled) {
@@ -173,8 +197,8 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
         ? sampleStatsCounts.lastMonth
         : sampleStatsCounts.currentMonth
     const input = {
-      glo: monthStats.glo,
-      veloNet: monthStats.veloNet,
+      glo: addAwaryjneToGlo(monthStats.glo, awaryjneCounts),
+      veloNet: monthStats.veloNet + awaryjneCounts.velo,
       roundedHours: totalRoundedHours,
       gloEfficiencyHours: efficiencyHours.glo,
       veloEfficiencyHours: efficiencyHours.velo,
@@ -182,7 +206,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     return monthPeriod === "previous"
       ? computeBrandmasterPreviousMonthBonus(input)
       : computeBrandmasterBonus(input)
-  }, [sampleStatsCounts, totalRoundedHours, efficiencyHours, monthPeriod])
+  }, [sampleStatsCounts, awaryjneCounts, totalRoundedHours, efficiencyHours, monthPeriod])
 
   const monthSalesStats = React.useMemo(() => {
     if (!sampleStatsCounts) return null
@@ -190,6 +214,14 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
       ? sampleStatsCounts.lastMonth
       : sampleStatsCounts.currentMonth
   }, [sampleStatsCounts, monthPeriod])
+
+  const awaryjneSummary = React.useMemo(
+    () => ({
+      glo: sumAwaryjneGlo(awaryjneCounts),
+      velo: awaryjneCounts.velo,
+    }),
+    [awaryjneCounts],
+  )
 
   const predictedPayout = basePayout + (bonusBreakdown?.totalBonus ?? 0)
 
@@ -253,6 +285,8 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     hourlyRate: HOURLY_RATE,
     sampleStatsCounts,
     monthSalesStats,
+    awaryjneCounts,
+    awaryjneSummary,
     hostessCode,
     monthPeriod,
   }
