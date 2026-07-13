@@ -14,10 +14,30 @@ function normalizeKey(value: string): string {
   return value.trim().toLowerCase();
 }
 
+function isTrackedModel(model: string): boolean {
+  const key = normalizeKey(model);
+  for (const tracked of Object.values(GLO_TRACKED_MODELS)) {
+    if (normalizeKey(tracked) === key) return true;
+  }
+  return false;
+}
+
 function sumBrandCounts(rows: SampleStatsRow[], brand: string): number {
   const target = normalizeKey(brand);
   return rows.reduce((sum, row) => {
     if (normalizeKey(row.brand) !== target) return sum;
+    const count = Number(row.count);
+    return sum + (Number.isFinite(count) ? count : 0);
+  }, 0);
+}
+
+function sumBrandCountsForTrackedModels(rows: SampleStatsRow[], brand: string): number {
+  const target = normalizeKey(brand);
+  return rows.reduce((sum, row) => {
+    if (normalizeKey(row.brand) !== target) return sum;
+    // Nowe API potrafi zwracać modele typu "[H] GLO + Paczki / POP".
+    // Liczymy wyłącznie znane modele: Hilo / Hilo+ / Hyper Pro.
+    if (!isTrackedModel(row.model)) return sum;
     const count = Number(row.count);
     return sum + (Number.isFinite(count) ? count : 0);
   }, 0);
@@ -46,9 +66,14 @@ export function getGloCounts(rows: SampleStatsRow[]): SampleStatsGloCounts {
   return out;
 }
 
-/** Velo „netto”: suma Velo − suma Glo (wszystkie modele w buckecie). */
+/**
+ * VELO: suma wszystkich wierszy z brandu "Velo".
+ *
+ * Uwaga: historycznie to pole było liczone jako "VELO netto" (Velo − Glo),
+ * ale w nowej regule biznesowej NIE odejmujemy już ilości brandu Glo.
+ */
 export function getVeloNetTotal(rows: SampleStatsRow[]): number {
-  return sumBrandCounts(rows, "Velo") - sumBrandCounts(rows, "Glo");
+  return sumBrandCounts(rows, "Velo");
 }
 
 export function computeSampleStatsFieldCounts(rows: SampleStatsRow[]): SampleStatsFieldCounts {

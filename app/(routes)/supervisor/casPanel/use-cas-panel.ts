@@ -7,9 +7,9 @@ import type { TourPlannerActionListItem } from "@/lib/api/generated/types"
 import type { CasActionStatus } from "@/lib/cas-status"
 export function useCasPanelActions(dateKey: string) {
   const [actions, setActions] = React.useState<TourPlannerActionListItem[]>([])
-  // Start w stanie ładowania: pobranie zawsze rusza po zamontowaniu, a dzięki temu
-  // pierwszy render (SSR + hydracja) jest deterministyczny i identyczny.
-  const [isLoading, setIsLoading] = React.useState(true)
+  // Ważne dla hydracji: pierwszy render (SSR + pierwszy render klienta) musi mieć
+  // identyczne atrybuty. Fetch rusza dopiero po useEffect, więc startujemy od false.
+  const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [tick, setTick] = React.useState(0)
 

@@ -62,7 +62,7 @@ export type SampleStatsGloCounts = Record<GloTrackedModelKey, number>;
 
 export type SampleStatsFieldCounts = {
   glo: SampleStatsGloCounts;
-  /** Suma count dla brandu Velo minus suma count dla brandu Glo. */
+  /** Suma count dla brandu Velo. (Nie odejmujemy już brandu Glo.) */
   veloNet: number;
 };
 
