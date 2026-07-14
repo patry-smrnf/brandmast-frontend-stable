@@ -22,7 +22,9 @@ import type {
   ApiResponseListOneTwoOneTeam,
   ApiResponseListBonusResponse,
   ApiResponseOneTwoOneAplikacjaZgloszenieCreated,
+  ApiResponseOneTwoOnePhotoUploaded,
   ApiResponseOneTwoOneSamplingCreated,
+  ApiResponseOneTwoOneZgloszenieKodMygloCreated,
   ApiResponseLoginResponse,
   BonusRequest,
   ApiResponseObject,
@@ -40,6 +42,7 @@ import type {
   UpdateActionRequest,
   ZgloszeniaAplikacjeAddRequest,
   ZgloszeniaSamplingAddRequest,
+  ZgloszenieKodMygloAddRequest,
 } from "./types";
 
 export class BrandmastApi {
@@ -418,6 +421,33 @@ export class BrandmastApi {
   async addZgloszeniaAplikacje(body: ZgloszeniaAplikacjeAddRequest, options?: RequestOptions) {
     const res = await this.http.post<ApiResponseOneTwoOneAplikacjaZgloszenieCreated>(
       "/api/121/zgloszeniaAplikacje/add",
+      body,
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/121/photo/add
+   * multipart/form-data — pole upload[]
+   */
+  async add121Photo(file: File | Blob, options?: RequestOptions) {
+    const formData = new FormData();
+    formData.append("upload[]", file);
+    const res = await this.http.post<ApiResponseOneTwoOnePhotoUploaded>(
+      "/api/121/photo/add",
+      formData,
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * POST /api/121/zgloszenieKodMyglo/add
+   */
+  async addZgloszenieKodMyglo(body: ZgloszenieKodMygloAddRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseOneTwoOneZgloszenieKodMygloCreated>(
+      "/api/121/zgloszenieKodMyglo/add",
       body,
       options,
     );

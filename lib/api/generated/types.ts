@@ -672,6 +672,40 @@ export interface ApiResponseOneTwoOneAplikacjaZgloszenieCreated {
   violations?: Violation[];
 }
 
+/** POST /api/121/photo/add */
+export interface OneTwoOnePhotoUploaded {
+  url?: string;
+}
+
+export interface ApiResponseOneTwoOnePhotoUploaded {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOnePhotoUploaded;
+  violations?: Violation[];
+}
+
+/** POST /api/121/zgloszenieKodMyglo/add */
+export interface ZgloszenieKodMygloAddRequest {
+  idRegion: number; // int64
+  blednyKod: string;
+  zdjecie: string;
+}
+
+export interface OneTwoOneZgloszenieKodMygloCreated {
+  kod_zapasowy?: string;
+}
+
+export interface ApiResponseOneTwoOneZgloszenieKodMygloCreated {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneZgloszenieKodMygloCreated;
+  violations?: Violation[];
+}
+
 /** POST /api/bonus/bm/create, POST /api/bonus/bm/update, POST /api/bonus/bm/delete */
 export interface BonusRequest {
   idBonus?: number; // int64
