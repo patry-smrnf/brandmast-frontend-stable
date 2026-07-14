@@ -143,6 +143,12 @@ export function RoleContextMenu() {
             disabled: is121SamplingDisabled,
             icon: <ClipboardListIcon className="size-4" />,
           },
+          {
+            key: "bm-121-myglo-kody",
+            label: "121 Myglo Kody",
+            href: "/brandmaster/121MygloKody",
+            icon: <ClipboardListIcon className="size-4" />,
+          },
           { key: "sep-1", label: "-" },
           {
             key: "logout",
