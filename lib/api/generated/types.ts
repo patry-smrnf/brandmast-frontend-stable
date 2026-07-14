@@ -602,6 +602,37 @@ export interface ApiResponseListOneTwoOneAwaryjneZgloszenia {
   violations?: Violation[];
 }
 
+/** GET /api/121/magazyn/fetch */
+export interface OneTwoOneMagazynItem {
+  idProduktu?: number; // int32
+  nazwa?: string;
+  ilosc?: number; // int32
+  active?: number; // int32
+}
+
+export interface ApiResponseListOneTwoOneMagazynItem {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneMagazynItem[];
+  violations?: Violation[];
+}
+
+/** GET /api/121/mojstan/fetch */
+export interface OneTwoOneMojstanItem {
+  title?: string;
+}
+
+export interface ApiResponseListOneTwoOneMojstanItem {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: OneTwoOneMojstanItem[];
+  violations?: Violation[];
+}
+
 /** POST /api/121/zgloszeniaSampling/add */
 export interface ZgloszeniaSamplingAddRequest {
   data_paczki?: string;

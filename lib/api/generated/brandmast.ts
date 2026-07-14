@@ -19,6 +19,8 @@ import type {
   ApiResponseListOneTwoOneAwaryjneZgloszenia,
   ApiResponseListOneTwoOneRivoVirto,
   ApiResponseListOneTwoOneSampling,
+  ApiResponseListOneTwoOneMagazynItem,
+  ApiResponseListOneTwoOneMojstanItem,
   ApiResponseListOneTwoOneTeam,
   ApiResponseListBonusResponse,
   ApiResponseOneTwoOneAplikacjaZgloszenieCreated,
@@ -398,6 +400,28 @@ export class BrandmastApi {
   async fetchProductsRivoVirto(options?: RequestOptions) {
     const res = await this.http.get<ApiResponseListOneTwoOneRivoVirto>(
       "/api/121/products/rivoVirto/fetch",
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * GET /api/121/magazyn/fetch
+   */
+  async fetchMagazyn(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListOneTwoOneMagazynItem>(
+      "/api/121/magazyn/fetch",
+      options,
+    );
+    return res.data;
+  }
+
+  /**
+   * GET /api/121/mojstan/fetch
+   */
+  async fetchMojstan(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListOneTwoOneMojstanItem>(
+      "/api/121/mojstan/fetch",
       options,
     );
     return res.data;

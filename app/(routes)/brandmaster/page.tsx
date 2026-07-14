@@ -35,6 +35,7 @@ import {
   EfficiencyCard,
   GloSamplesCard,
   PayoutCard,
+  StanyCard,
 } from "./brandmaster-summary-sections"
 import { formatHoursPl, getActionRowKey, type ActionWithRoundedTime } from "./cas-action-utils"
 import {
@@ -283,6 +284,9 @@ export default function BrandmasterPage() {
     hourlyRate,
     monthSalesStats,
     awaryjneSummary,
+    hasOneTwoOne,
+    mojstanItems,
+    oneTwoOneLoading,
     hostessCode,
   } = useBrandmasterDashboard(monthPeriod)
 
@@ -503,8 +507,16 @@ export default function BrandmasterPage() {
                 veloNet={monthSalesStats.veloNet}
                 monthLabel={monthLabel}
                 awaryjne={awaryjneSummary}
+                hasOneTwoOne={hasOneTwoOne}
+                oneTwoOneLoading={oneTwoOneLoading}
               />
             ) : null}
+
+            <StanyCard
+              hasOneTwoOne={hasOneTwoOne}
+              items={mojstanItems}
+              loading={oneTwoOneLoading}
+            />
 
             <Card className="overflow-hidden shadow-sm">
               <CardHeader className="space-y-2 px-3.5 py-3 pb-2 sm:px-4">

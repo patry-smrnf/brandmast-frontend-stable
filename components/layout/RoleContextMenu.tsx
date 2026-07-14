@@ -147,6 +147,7 @@ export function RoleContextMenu() {
             key: "bm-121-myglo-kody",
             label: "121 Myglo Kody",
             href: "/brandmaster/121MygloKody",
+            disabled: is121SamplingDisabled,
             icon: <ClipboardListIcon className="size-4" />,
           },
           { key: "sep-1", label: "-" },
@@ -318,12 +319,11 @@ export function RoleContextMenu() {
                 >
                   {item.icon ? <span className="shrink-0">{item.icon}</span> : null}
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {(item.key === "bm-editor" || item.key === "bm-121-sampling") && item.disabled ? (
-                    <span className="shrink-0 text-[10px] text-muted-foreground">
-                      disabled
-                    </span>
-                  ) : null}
-                  {(item.key === "bm-editor" || item.key === "bm-121-aplikacje") && item.disabled ? (
+                  {(item.key === "bm-editor" ||
+                    item.key === "bm-121-sampling" ||
+                    item.key === "bm-121-aplikacje" ||
+                    item.key === "bm-121-myglo-kody") &&
+                  item.disabled ? (
                     <span className="shrink-0 text-[10px] text-muted-foreground">
                       disabled
                     </span>

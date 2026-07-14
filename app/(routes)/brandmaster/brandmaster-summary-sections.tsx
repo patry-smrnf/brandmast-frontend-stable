@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   ChevronDownIcon,
   GaugeIcon,
+  LayersIcon,
   PackageIcon,
   SparklesIcon,
   WalletIcon,
@@ -17,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { brandmastApi, type OneTwoOneMagazynItem, type SampleStatsGloCounts } from "@/lib/api"
 
 import {
   formatEfficiencyPl,
@@ -27,10 +29,10 @@ import {
   type RegularBonusBreakdown,
   type TierProgressHint,
 } from "./brandmaster-bonus-utils"
+import type { MojstanDisplayItem } from "./brandmaster-mojstan-utils"
 import { formatHoursPl, formatMoneyPl } from "./cas-action-utils"
 import { BonusExtrasSection } from "./brandmaster-bonus-extras-section"
 import { useBrandmasterBonusExtras } from "./use-brandmaster-bonus-extras"
-import type { SampleStatsGloCounts } from "@/lib/api"
 
 const CURRENT_MONTH_GLO_METRICS = [
   { key: "hilo" as const, label: "Hilo" },
@@ -262,16 +264,224 @@ function QualitativeBonusSection({
   )
 }
 
+const MAGAZYN_LIST_SCROLL_CLASS =
+  "max-h-52 overflow-y-auto overscroll-y-contain rounded-lg border border-border/80"
+
+function MagazynWysylkiSkeleton() {
+  return (
+    <div className={cn(MAGAZYN_LIST_SCROLL_CLASS, "bg-background/60")}>
+      <ul className="divide-y divide-border/50">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <li key={i} className="flex items-center justify-between gap-3 px-2.5 py-2.5">
+            <div className="h-3 max-w-[65%] flex-1 animate-pulse rounded bg-muted" />
+            <div className="h-3.5 w-9 shrink-0 animate-pulse rounded bg-muted" />
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function MagazynWysylkiSection({ hasOneTwoOne }: { hasOneTwoOne: boolean }) {
+  const [expanded, setExpanded] = React.useState(false)
+  const [loading, setLoading] = React.useState(false)
+  const [items, setItems] = React.useState<OneTwoOneMagazynItem[]>([])
+  const [error, setError] = React.useState<string | null>(null)
+  const [fetched, setFetched] = React.useState(false)
+  const requestRef = React.useRef(0)
+
+  const fetchMagazyn = React.useCallback(() => {
+    const requestId = ++requestRef.current
+    setLoading(true)
+    setError(null)
+
+    void (async () => {
+      try {
+        const res = await brandmastApi.fetchMagazyn()
+        if (requestRef.current !== requestId) return
+
+        if (res.success === false) {
+          setError(res.message ?? "Nie udało się pobrać magazynu wysyłki.")
+          setItems([])
+        } else {
+          setItems(res.data ?? [])
+        }
+        setFetched(true)
+      } catch (e) {
+        if (requestRef.current !== requestId) return
+        setError(e instanceof Error ? e.message : "Nie udało się pobrać magazynu wysyłki.")
+        setItems([])
+        setFetched(true)
+      } finally {
+        if (requestRef.current === requestId) {
+          setLoading(false)
+        }
+      }
+    })()
+  }, [])
+
+  const handleToggle = React.useCallback(() => {
+    const nextExpanded = !expanded
+    setExpanded(nextExpanded)
+
+    if (!nextExpanded || !hasOneTwoOne || loading) return
+    if (fetched && !error) return
+
+    fetchMagazyn()
+  }, [expanded, hasOneTwoOne, loading, fetched, error, fetchMagazyn])
+
+  return (
+    <div
+      className={cn(
+        "overflow-hidden rounded-lg border border-border/80 bg-muted/20 transition-colors",
+        expanded && "border-border bg-muted/30",
+      )}
+    >
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        onClick={handleToggle}
+        aria-expanded={expanded}
+      >
+        <span className="text-[11px] font-medium text-foreground">Magazyn wysyłki</span>
+        <ChevronDownIcon
+          className={cn(
+            "size-3.5 shrink-0 text-muted-foreground transition-transform",
+            expanded && "rotate-180",
+          )}
+          aria-hidden
+        />
+      </button>
+
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-300 ease-out",
+          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t border-border/60 px-2.5 py-2">
+            {!hasOneTwoOne ? (
+              <p className="text-xs leading-snug text-muted-foreground">
+                Skonfiguruj 121 w ustawieniach, żeby wyświetlić magazyn wysyłki
+              </p>
+            ) : loading ? (
+              <MagazynWysylkiSkeleton />
+            ) : error ? (
+              <p className="text-xs leading-snug text-destructive">{error}</p>
+            ) : items.length === 0 ? (
+              <p className="text-xs leading-snug text-muted-foreground">
+                Brak produktów w magazynie wysyłki.
+              </p>
+            ) : (
+              <div
+                className={cn(MAGAZYN_LIST_SCROLL_CLASS, "bg-background/60")}
+                role="region"
+                aria-label="Lista produktów magazynu wysyłki"
+              >
+                <ul className="divide-y divide-border/50">
+                  {items.map((item) => {
+                    const isActive = item.active == null || item.active === 1
+                    return (
+                      <li
+                        key={item.idProduktu ?? item.nazwa}
+                        className={cn(
+                          "flex items-baseline justify-between gap-3 px-2.5 py-2 text-xs",
+                          !isActive && "opacity-60",
+                        )}
+                      >
+                        <span className="min-w-0 truncate font-medium text-muted-foreground">
+                          {item.nazwa?.trim() || "Produkt"}
+                        </span>
+                        <span className="shrink-0 font-semibold tabular-nums text-foreground">
+                          {item.ilosc ?? 0}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function StanyCard({
+  hasOneTwoOne,
+  items,
+  loading,
+}: {
+  hasOneTwoOne: boolean
+  items: MojstanDisplayItem[]
+  loading?: boolean
+}) {
+  return (
+    <Card className="shadow-sm">
+      <CardHeader className="space-y-0.5 px-3.5 py-3 pb-2 sm:px-4">
+        <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+          <LayersIcon className="size-3.5 text-muted-foreground" aria-hidden />
+          Stany
+        </CardTitle>
+        <CardDescription className="text-xs">Twój stan (121)</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2.5 px-3.5 pb-3.5 sm:px-4 sm:pb-4">
+        {loading ? (
+          <div className="grid grid-cols-2 gap-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 animate-pulse rounded-lg border border-border/60 bg-muted/40"
+              />
+            ))}
+          </div>
+        ) : !hasOneTwoOne ? (
+          <p className="rounded-lg border border-dashed border-border/80 bg-muted/20 px-3 py-4 text-center text-xs leading-snug text-muted-foreground">
+            Skonfiguruj 121 w ustawieniach, żeby wyświetlić stan
+          </p>
+        ) : items.length === 0 ? (
+          <p className="text-xs leading-snug text-muted-foreground">
+            Brak danych stanu magazynowego.
+          </p>
+        ) : (
+          <ul className="grid grid-cols-2 gap-2">
+            {items.map((item) => (
+              <li
+                key={item.label}
+                className="flex items-baseline justify-between gap-2 rounded-lg border border-border/80 bg-muted/30 px-2.5 py-2 text-xs"
+              >
+                <span className="min-w-0 truncate font-medium text-muted-foreground">
+                  {item.label}
+                </span>
+                <span className="shrink-0 text-base font-semibold tabular-nums leading-none text-foreground">
+                  {item.quantity}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <MagazynWysylkiSection hasOneTwoOne={hasOneTwoOne} />
+      </CardContent>
+    </Card>
+  )
+}
+
 export function GloSamplesCard({
   glo,
   monthLabel,
   veloNet,
   awaryjne,
+  hasOneTwoOne,
+  oneTwoOneLoading,
 }: {
   glo: SampleStatsGloCounts
   monthLabel: string
   veloNet?: number
   awaryjne?: { glo: number; velo: number }
+  hasOneTwoOne: boolean
+  oneTwoOneLoading?: boolean
 }) {
   return (
     <Card className="shadow-sm">
@@ -306,27 +516,34 @@ export function GloSamplesCard({
             <span className="font-semibold tabular-nums text-foreground">{veloNet}</span>
           </p>
         ) : null}
-        {awaryjne ? (
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/25 px-2.5 py-2">
-            <span className="text-[11px] font-medium text-muted-foreground">
-              Awaryjne/Tickety
-            </span>
-            <span className="flex items-center gap-3 text-xs">
+        <div className="rounded-lg border border-border/80 bg-muted/25 px-2.5 py-2">
+          <p className="text-[11px] font-medium text-muted-foreground">Awaryjne/Tickety</p>
+          {oneTwoOneLoading ? (
+            <div className="mt-1 flex items-center gap-3">
+              <div className="h-3.5 w-12 animate-pulse rounded bg-muted" />
+              <div className="h-3.5 w-14 animate-pulse rounded bg-muted" />
+            </div>
+          ) : !hasOneTwoOne ? (
+            <p className="mt-1 text-xs leading-snug text-muted-foreground">
+              Skonfiguruj 121 w ustawieniach, żeby wyświetlić awaryjne i tickety
+            </p>
+          ) : (
+            <div className="mt-1 flex items-center gap-3 text-xs">
               <span className="text-muted-foreground">
                 GLO{" "}
                 <span className="font-semibold tabular-nums text-foreground">
-                  {awaryjne.glo}
+                  {awaryjne?.glo ?? 0}
                 </span>
               </span>
               <span className="text-muted-foreground">
                 VELO{" "}
                 <span className="font-semibold tabular-nums text-foreground">
-                  {awaryjne.velo}
+                  {awaryjne?.velo ?? 0}
                 </span>
               </span>
-            </span>
-          </div>
-        ) : null}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   )

@@ -14,6 +14,7 @@ import {
   sumAwaryjneGlo,
   type AwaryjneCounts,
 } from "./brandmaster-awaryjne-utils"
+import { parseMojstanItems, type MojstanDisplayItem } from "./brandmaster-mojstan-utils"
 import {
   computeBrandmasterBonus,
   type BrandmasterBonusBreakdown,
@@ -49,6 +50,9 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     React.useState<SampleStatsCountsByField | null>(null)
   const [awaryjneCounts, setAwaryjneCounts] =
     React.useState<AwaryjneCounts>(EMPTY_AWARYJNE_COUNTS)
+  const [hasOneTwoOne, setHasOneTwoOne] = React.useState(false)
+  const [mojstanItems, setMojstanItems] = React.useState<MojstanDisplayItem[]>([])
+  const [oneTwoOneLoading, setOneTwoOneLoading] = React.useState(false)
   const [hostessCode, setHostessCode] = React.useState("")
 
   const refetch = React.useCallback(() => setTick((t) => t + 1), [])
@@ -69,15 +73,6 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
             : getMonthDateRange(fetchNow)
 
         const configPromise = brandmastApi.fetchConfig()
-        const awaryjnePromise = configPromise
-          .then((cfg) => {
-            const hasOneTwoOne = cfg.data?.myData?.hasOneTwoOne === true
-            if (!hasOneTwoOne) return []
-            return brandmastApi
-              .fetchZgloszeniaAwaryjne()
-              .then((res) => (res.success === false ? [] : (res.data ?? [])))
-          })
-          .catch(() => [])
 
         const [startedActionResponse, monthActionsResponse] = await Promise.all([
           brandmastApi.fetchBMActions({
@@ -101,6 +96,9 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
           setMonthActions([])
           setSampleStatsCounts(null)
           setAwaryjneCounts(EMPTY_AWARYJNE_COUNTS)
+          setHasOneTwoOne(false)
+          setMojstanItems([])
+          setOneTwoOneLoading(false)
           setHostessCode("")
           return
         }
@@ -112,6 +110,9 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
           setMonthActions([])
           setSampleStatsCounts(null)
           setAwaryjneCounts(EMPTY_AWARYJNE_COUNTS)
+          setHasOneTwoOne(false)
+          setMojstanItems([])
+          setOneTwoOneLoading(false)
           setHostessCode("")
           return
         }
@@ -132,6 +133,8 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
           getConfigState().config?.brandmasterData?.login?.trim() ??
           ""
 
+        const configuredOneTwoOne = configResponse.data?.myData?.hasOneTwoOne === true
+
         let nextSampleStats: SampleStatsCountsByField | null = null
         if (resolvedHostessCode && statsActionIdent) {
           try {
@@ -145,8 +148,6 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
           }
         }
 
-        const awaryjneItems = await awaryjnePromise
-
         if (cancelled) return
 
         setPolandNow(nowInPoland())
@@ -154,7 +155,9 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
         setMonthActions(mapFinishedActionsWithRoundedTime(finishedItems))
         setHostessCode(resolvedHostessCode)
         setSampleStatsCounts(nextSampleStats)
-        setAwaryjneCounts(computeAwaryjneCounts(awaryjneItems))
+        setHasOneTwoOne(configuredOneTwoOne)
+
+        void fetchOneTwoOneData(configuredOneTwoOne)
       } catch (e) {
         if (cancelled) return
         setError(e instanceof Error ? e.message : "Nie udało się pobrać danych.")
@@ -163,11 +166,52 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
         setMonthActions([])
         setSampleStatsCounts(null)
         setAwaryjneCounts(EMPTY_AWARYJNE_COUNTS)
+        setHasOneTwoOne(false)
+        setMojstanItems([])
+        setOneTwoOneLoading(false)
         setHostessCode("")
       } finally {
         if (!cancelled) {
           setIsLoading(false)
           setHasFetched(true)
+        }
+      }
+    }
+
+    async function fetchOneTwoOneData(configured: boolean) {
+      if (cancelled) return
+
+      if (!configured) {
+        setAwaryjneCounts(EMPTY_AWARYJNE_COUNTS)
+        setMojstanItems([])
+        setOneTwoOneLoading(false)
+        return
+      }
+
+      setOneTwoOneLoading(true)
+
+      try {
+        const [awaryjneResponse, mojstanResponse] = await Promise.all([
+          brandmastApi.fetchZgloszeniaAwaryjne(),
+          brandmastApi.fetchMojstan(),
+        ])
+
+        if (cancelled) return
+
+        const awaryjneItems =
+          awaryjneResponse.success === false ? [] : (awaryjneResponse.data ?? [])
+        const mojstanRows =
+          mojstanResponse.success === false ? [] : (mojstanResponse.data ?? [])
+
+        setAwaryjneCounts(computeAwaryjneCounts(awaryjneItems))
+        setMojstanItems(parseMojstanItems(mojstanRows))
+      } catch {
+        if (cancelled) return
+        setAwaryjneCounts(EMPTY_AWARYJNE_COUNTS)
+        setMojstanItems([])
+      } finally {
+        if (!cancelled) {
+          setOneTwoOneLoading(false)
         }
       }
     }
@@ -287,6 +331,9 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     monthSalesStats,
     awaryjneCounts,
     awaryjneSummary,
+    hasOneTwoOne,
+    mojstanItems,
+    oneTwoOneLoading,
     hostessCode,
     monthPeriod,
   }
