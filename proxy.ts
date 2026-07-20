@@ -1,11 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { decodeJwtPayload } from "@/lib/auth/jwt";
-
-type UserRole = "brandmaster" | "supervisor";
+import { homePathForRole, isUserRole, type UserRole } from "@/lib/api/token";
 
 function asUserRole(value: unknown): UserRole | null {
-  return value === "brandmaster" || value === "supervisor" ? value : null;
+  return isUserRole(value) ? value : null;
 }
 
 function getRoleFromJwt(token: string): UserRole | null {
@@ -35,6 +34,12 @@ function redirectTo(request: NextRequest, pathname: string) {
   return NextResponse.redirect(new URL(pathname, request.url));
 }
 
+function redirectNoAccess(request: NextRequest, pathname: string, search: string) {
+  const url = new URL("/no-access", request.url);
+  url.searchParams.set("from", `${pathname}${search}`);
+  return NextResponse.redirect(url);
+}
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
@@ -51,6 +56,7 @@ export function proxy(request: NextRequest) {
 
   const isBrandmasterRoute = pathname === "/brandmaster" || pathname.startsWith("/brandmaster/");
   const isSupervisorRoute = pathname === "/supervisor" || pathname.startsWith("/supervisor/");
+  const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
 
   // No token: protect everything except /login and /no-access
   if (!hasToken) {
@@ -60,27 +66,27 @@ export function proxy(request: NextRequest) {
 
   // Token present: prevent staying on /login
   if (isLogin) {
-    if (role === "supervisor") return redirectTo(request, "/supervisor");
+    if (role) return redirectTo(request, homePathForRole(role));
     return redirectTo(request, "/brandmaster");
   }
 
   // Landing route: redirect based on role
   if (isRoot) {
-    if (role === "supervisor") return redirectTo(request, "/supervisor");
+    if (role) return redirectTo(request, homePathForRole(role));
     return redirectTo(request, "/brandmaster");
   }
 
   // Role guards
   if (isBrandmasterRoute && role !== "brandmaster") {
-    const url = new URL("/no-access", request.url);
-    url.searchParams.set("from", `${pathname}${search}`);
-    return NextResponse.redirect(url);
+    return redirectNoAccess(request, pathname, search);
   }
 
   if (isSupervisorRoute && role !== "supervisor") {
-    const url = new URL("/no-access", request.url);
-    url.searchParams.set("from", `${pathname}${search}`);
-    return NextResponse.redirect(url);
+    return redirectNoAccess(request, pathname, search);
+  }
+
+  if (isAdminRoute && role !== "admin") {
+    return redirectNoAccess(request, pathname, search);
   }
 
   return NextResponse.next();
@@ -97,4 +103,3 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map)$|api).*)",
   ],
 };
-

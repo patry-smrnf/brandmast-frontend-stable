@@ -23,6 +23,7 @@ import type {
   ApiResponseListOneTwoOneMojstanItem,
   ApiResponseListOneTwoOneTeam,
   ApiResponseListBonusResponse,
+  ApiResponseListServiceLogResponse,
   ApiResponseOneTwoOneAplikacjaZgloszenieCreated,
   ApiResponseOneTwoOnePhotoUploaded,
   ApiResponseOneTwoOneSamplingCreated,
@@ -38,6 +39,7 @@ import type {
   CreateCasActionRequest,
   DeleteBmActionRequest,
   LoginRequest,
+  LogsHistoryParams,
   PointCasRequest,
   ShopAddRequest,
   ShopDeleteRequest,
@@ -475,6 +477,18 @@ export class BrandmastApi {
       body,
       options,
     );
+    return res.data;
+  }
+
+  /**
+   * GET /api/logs
+   * Historia logów serwisowych (admin only).
+   */
+  async fetchLogs(params?: LogsHistoryParams, options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseListServiceLogResponse>("/api/logs", {
+      ...options,
+      params,
+    });
     return res.data;
   }
 

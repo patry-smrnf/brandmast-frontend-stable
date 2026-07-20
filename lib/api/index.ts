@@ -3,10 +3,19 @@ export { apiFetch } from "@/lib/api/http";
 export { api } from "@/lib/api/client";
 export * as healthApi from "@/lib/api/modules/health";
 export {
+  mergeServiceLogs,
+  subscribeLogsStream,
+  type LogsStreamHandlers,
+  type LogsStreamSubscription,
+  type SubscribeLogsStreamOptions,
+} from "@/lib/api/modules/logs";
+export {
   tokenStore,
   roleStore,
   setAuthCookies,
   clearAuthCookies,
+  isUserRole,
+  homePathForRole,
   type UserRole,
 } from "@/lib/api/token";
 export type { SettingResponse } from "@/lib/api/generated/types";

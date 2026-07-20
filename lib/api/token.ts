@@ -1,7 +1,17 @@
 const STORAGE_KEY = "brandmast.token";
 const ROLE_STORAGE_KEY = "brandmast.role";
 
-export type UserRole = "brandmaster" | "supervisor";
+export type UserRole = "brandmaster" | "supervisor" | "admin";
+
+export function isUserRole(value: unknown): value is UserRole {
+  return value === "brandmaster" || value === "supervisor" || value === "admin";
+}
+
+export function homePathForRole(role: UserRole): string {
+  if (role === "admin") return "/admin";
+  if (role === "supervisor") return "/supervisor";
+  return "/brandmaster";
+}
 
 const TOKEN_COOKIE_KEY = STORAGE_KEY;
 const ROLE_COOKIE_KEY = ROLE_STORAGE_KEY;
@@ -81,7 +91,7 @@ export const roleStore: RoleStore = {
     if (typeof window === "undefined") return null;
     try {
       const raw = window.localStorage.getItem(ROLE_STORAGE_KEY);
-      if (raw === "brandmaster" || raw === "supervisor") return raw;
+      if (isUserRole(raw)) return raw;
       return null;
     } catch {
       return null;

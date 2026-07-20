@@ -12,6 +12,7 @@ import {
   UsersIcon,
   CalendarRangeIcon,
   ClipboardListIcon,
+  CompassIcon,
   DockIcon,
   FileSpreadsheetIcon,
   PlusIcon,
@@ -95,138 +96,155 @@ export function RoleContextMenu() {
   const isEditorDisabled = isAddingAllowed === false
   const is121SamplingDisabled = config?.myData?.hasOneTwoOne === false
 
+  const logoutItem: MenuItem = {
+    key: "logout",
+    label: "Wyloguj",
+    icon: <LogOutIcon className="size-4" />,
+    onSelect: () => {
+      tokenStore.clear()
+      roleStore.clear()
+      clearAuthCookies()
+      if (typeof window !== "undefined") window.dispatchEvent(new Event(ROLE_CHANGED_EVENT))
+      router.push("/login")
+    },
+  }
+
+  const brandmasterItems: MenuItem[] = [
+    {
+      key: "bm-home",
+      label: "Home",
+      href: "/brandmaster",
+      icon: <UserIcon className="size-4" />,
+    },
+    {
+      key: "bm-actions",
+      label: "Akcje",
+      href: "/brandmaster/actions",
+      icon: <DockIcon className="size-4" />,
+    },
+    {
+      key: "bm-nowosci",
+      label: "Nowości",
+      href: "/brandmaster/nowosci",
+      icon: <SparklesIcon className="size-4" />,
+    },
+    {
+      key: "bm-settings",
+      label: "Ustawienia",
+      href: "/brandmaster/settings",
+      icon: <SettingsIcon className="size-4" />,
+    },
+    {
+      key: "bm-editor",
+      label: "Dodaj akcje",
+      href: "/brandmaster/editor",
+      disabled: isEditorDisabled,
+      icon: <PlusIcon className="size-4" />,
+    },
+    {
+      key: "bm-121-sampling",
+      label: "121 Sampling",
+      href: "/brandmaster/121Sampling",
+      disabled: is121SamplingDisabled,
+      icon: <ClipboardListIcon className="size-4" />,
+    },
+    {
+      key: "bm-121-aplikacje",
+      label: "121 Paczka za apke",
+      href: "/brandmaster/121Aplikacje",
+      disabled: is121SamplingDisabled,
+      icon: <ClipboardListIcon className="size-4" />,
+    },
+    {
+      key: "bm-121-myglo-kody",
+      label: "121 Myglo Kody",
+      href: "/brandmaster/121MygloKody",
+      disabled: is121SamplingDisabled,
+      icon: <ClipboardListIcon className="size-4" />,
+    },
+    { key: "sep-1", label: "-" },
+    logoutItem,
+  ]
+
+  const supervisorItems: MenuItem[] = [
+    {
+      key: "sv-home",
+      label: "Dashboard",
+      href: "/supervisor",
+      icon: <ShieldIcon className="size-4" />,
+    },
+    {
+      key: "sv-shops",
+      label: "Sklepy",
+      href: "/supervisor/shops",
+      icon: <StoreIcon className="size-4" />,
+    },
+    {
+      key: "sv-brandmasters",
+      label: "Brandmasterzy",
+      href: "/supervisor/brandmasters",
+      icon: <UsersIcon className="size-4" />,
+    },
+    {
+      key: "sv-cas-panel",
+      label: "Panel CAS",
+      href: "/supervisor/casPanel",
+      icon: <ClipboardListIcon className="size-4" />,
+    },
+    {
+      key: "sv-planner-akcji",
+      label: "Planner Akcji",
+      href: "/supervisor/planner-akcji",
+      icon: <CalendarRangeIcon className="size-4" />,
+    },
+    {
+      key: "sv-excel",
+      label: "Eksport Excel",
+      href: "/supervisor/excel",
+      icon: <FileSpreadsheetIcon className="size-4" />,
+    },
+    {
+      key: "sv-nowosci",
+      label: "Nowości",
+      href: "/supervisor/nowosci",
+      icon: <SparklesIcon className="size-4" />,
+    },
+    {
+      key: "sv-settings",
+      label: "Ustawienia",
+      href: "/supervisor/settings",
+      icon: <SettingsIcon className="size-4" />,
+    },
+    { key: "sep-1", label: "-" },
+    logoutItem,
+  ]
+
+  const adminItems: MenuItem[] = [
+    {
+      key: "admin-home",
+      label: "Panel",
+      href: "/admin",
+      icon: <ShieldIcon className="size-4" />,
+    },
+    {
+      key: "admin-discover",
+      label: "Discover",
+      href: "/admin/discover",
+      icon: <CompassIcon className="size-4" />,
+    },
+    { key: "sep-1", label: "-" },
+    logoutItem,
+  ]
+
   const items: MenuItem[] =
     role === "brandmaster"
-      ? [
-          {
-            key: "bm-home",
-            label: "Home",
-            href: "/brandmaster",
-            icon: <UserIcon className="size-4" />,
-          },
-          {
-            key: "bm-actions",
-            label: "Akcje",
-            href: "/brandmaster/actions",
-            icon: <DockIcon className="size-4" />,
-          },
-          {
-            key: "bm-nowosci",
-            label: "Nowości",
-            href: "/brandmaster/nowosci",
-            icon: <SparklesIcon className="size-4" />,
-          },
-          {
-            key: "bm-settings",
-            label: "Ustawienia",
-            href: "/brandmaster/settings",
-            icon: <SettingsIcon className="size-4" />,
-          },
-          {
-            key: "bm-editor",
-            label: "Dodaj akcje",
-            href: "/brandmaster/editor",
-            disabled: isEditorDisabled,
-            icon: <PlusIcon className="size-4" />,
-          },
-          {
-            key: "bm-121-sampling",
-            label: "121 Sampling",
-            href: "/brandmaster/121Sampling",
-            disabled: is121SamplingDisabled,
-            icon: <ClipboardListIcon className="size-4" />,
-          },
-          {
-            key: "bm-121-aplikacje",
-            label: "121 Paczka za apke",
-            href: "/brandmaster/121Aplikacje",
-            disabled: is121SamplingDisabled,
-            icon: <ClipboardListIcon className="size-4" />,
-          },
-          {
-            key: "bm-121-myglo-kody",
-            label: "121 Myglo Kody",
-            href: "/brandmaster/121MygloKody",
-            disabled: is121SamplingDisabled,
-            icon: <ClipboardListIcon className="size-4" />,
-          },
-          { key: "sep-1", label: "-" },
-          {
-            key: "logout",
-            label: "Wyloguj",
-            icon: <LogOutIcon className="size-4" />,
-            onSelect: () => {
-              tokenStore.clear()
-              roleStore.clear()
-              clearAuthCookies()
-              if (typeof window !== "undefined") window.dispatchEvent(new Event(ROLE_CHANGED_EVENT))
-              router.push("/login")
-            },
-          },
-        ]
-      : [
-          {
-            key: "sv-home",
-            label: "Dashboard",
-            href: "/supervisor",
-            icon: <ShieldIcon className="size-4" />,
-          },
-          {
-            key: "sv-shops",
-            label: "Sklepy",
-            href: "/supervisor/shops",
-            icon: <StoreIcon className="size-4" />,
-          },
-          {
-            key: "sv-brandmasters",
-            label: "Brandmasterzy",
-            href: "/supervisor/brandmasters",
-            icon: <UsersIcon className="size-4" />,
-          },
-          {
-            key: "sv-cas-panel",
-            label: "Panel CAS",
-            href: "/supervisor/casPanel",
-            icon: <ClipboardListIcon className="size-4" />,
-          },
-          {
-            key: "sv-planner-akcji",
-            label: "Planner Akcji",
-            href: "/supervisor/planner-akcji",
-            icon: <CalendarRangeIcon className="size-4" />,
-          },
-          {
-            key: "sv-excel",
-            label: "Eksport Excel",
-            href: "/supervisor/excel",
-            icon: <FileSpreadsheetIcon className="size-4" />,
-          },
-          {
-            key: "sv-nowosci",
-            label: "Nowości",
-            href: "/supervisor/nowosci",
-            icon: <SparklesIcon className="size-4" />,
-          },
-          {
-            key: "sv-settings",
-            label: "Ustawienia",
-            href: "/supervisor/settings",
-            icon: <SettingsIcon className="size-4" />,
-          },
-          { key: "sep-1", label: "-" },
-          {
-            key: "logout",
-            label: "Wyloguj",
-            icon: <LogOutIcon className="size-4" />,
-            onSelect: () => {
-              tokenStore.clear()
-              roleStore.clear()
-              clearAuthCookies()
-              if (typeof window !== "undefined") window.dispatchEvent(new Event(ROLE_CHANGED_EVENT))
-              router.push("/login")
-            },
-          },
-        ]
+      ? brandmasterItems
+      : role === "admin"
+        ? adminItems
+        : supervisorItems
+
+  const roleLabel =
+    role === "brandmaster" ? "Brandmaster" : role === "admin" ? "Admin" : "Supervisor"
 
   React.useEffect(() => {
     if (!open) return
@@ -296,7 +314,7 @@ export function RoleContextMenu() {
           className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg"
         >
           <div className="px-3 py-2 text-xs text-muted-foreground">
-            {role === "brandmaster" ? "Brandmaster" : "Supervisor"}
+            {roleLabel}
           </div>
           <div className="h-px bg-border" />
           <div className="py-1">

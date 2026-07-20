@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { brandmastApi, roleStore, tokenStore, type UserRole } from "@/lib/api"
+import { brandmastApi, isUserRole, roleStore, tokenStore } from "@/lib/api"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -60,8 +60,8 @@ export default function LoginPage() {
         const token = res.data?.token
         if (token) tokenStore.set(token)
         const role = res.data?.accountDetails?.role
-        if (role === "brandmaster" || role === "supervisor") {
-          roleStore.set(role satisfies UserRole)
+        if (isUserRole(role)) {
+          roleStore.set(role)
         } else {
           roleStore.clear()
         }

@@ -22,6 +22,8 @@ export interface LoginResponse {
 
 export interface Meta {
   id?: string;
+  /** Backend may send endpoint path, e.g. `/api/logs`. */
+  endpointId?: string;
   timestamp?: string;
 }
 
@@ -759,6 +761,53 @@ export interface ApiResponseListBonusResponse {
   meta?: Meta;
   success?: boolean;
   data?: BonusResponse[];
+  violations?: Violation[];
+}
+
+/** GET /api/logs, GET /api/logs/stream (SSE `log` event) */
+export type ServiceLogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR";
+
+export interface ServiceLogResponse {
+  id?: number | null; // int64
+  trackingId?: string | null; // uuid
+  jobId?: string | null; // uuid
+  serviceName?: string | null;
+  methodName?: string | null;
+  level?: ServiceLogLevel | null;
+  message?: string | null;
+  /** Arbitrary JSON map; null fields omitted by backend (NON_NULL). */
+  details?: Record<string, unknown> | null;
+  createdAt?: string | null; // date-time
+}
+
+/** Same shape as ServiceLogResponse (SSE payload). */
+export type ServiceLogEntry = ServiceLogResponse;
+
+/** GET /api/logs query params */
+export interface LogsHistoryParams {
+  /** Exact serviceName filter (trimmed server-side). */
+  service?: string;
+  trackingId?: string; // uuid
+  /** ISO-8601 date-time, e.g. 2026-07-14T00:00:00Z */
+  from?: string;
+  /** ISO-8601 date-time */
+  to?: string;
+  /** Default 100, clamped 1–500 */
+  limit?: number;
+}
+
+/** GET /api/logs/stream query params (access_token set by client helpers). */
+export interface LogsStreamParams {
+  service?: string;
+}
+
+/** GET /api/logs */
+export interface ApiResponseListServiceLogResponse {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: ServiceLogResponse[];
   violations?: Violation[];
 }
 
