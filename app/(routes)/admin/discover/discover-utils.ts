@@ -1,5 +1,31 @@
 import type { ServiceLogLevel, ServiceLogResponse } from "@/lib/api/generated/types"
 
+/** Known exact-match serviceName values (API may grow beyond this). */
+export const KNOWN_SERVICE_NAMES = [
+  "AuthService",
+  "JwtService",
+  "BonusService",
+  "BrandmasterService",
+  "SettingsService",
+  "ShopService",
+  "ActionService",
+  "ActionBrandmasterService",
+  "ActionSupervisorService",
+  "CasService",
+  "OneTwo1Service",
+  "CasTourPlannerClient",
+  "OneTwoOneClient",
+  "OneTwoOneSsoLoginFlow",
+] as const
+
+export function getLogLogin(log: ServiceLogResponse): string | null {
+  const details = log.details
+  if (!details || typeof details !== "object") return null
+  const login = (details as Record<string, unknown>).login
+  if (typeof login === "string" && login.trim()) return login.trim()
+  return null
+}
+
 export type LogMarkColor =
   | "red"
   | "orange"
@@ -149,6 +175,33 @@ export function mergeServiceNameLists(...lists: string[][]): string[] {
     }
   }
   return Array.from(set).sort((a, b) => a.localeCompare(b, "pl"))
+}
+
+/**
+ * Safe pretty-print for log details. Avoids throwing on exotic values
+ * and soft-wraps very long strings so the UI doesn't break.
+ */
+export function formatJsonForDisplay(value: unknown, space = 2): string {
+  try {
+    return JSON.stringify(
+      value,
+      (_key, v) => {
+        if (typeof v === "bigint") return v.toString()
+        if (typeof v === "string" && v.length > 8_000) {
+          return `${v.slice(0, 8_000)}… [truncated ${v.length - 8_000} chars]`
+        }
+        return v
+      },
+      space,
+    )
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Nie udało się zserializować JSON"
+    try {
+      return String(value)
+    } catch {
+      return `/* ${message} */`
+    }
+  }
 }
 
 export function levelBadgeVariant(

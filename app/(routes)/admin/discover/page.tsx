@@ -1,60 +1,33 @@
 "use client"
 
 import * as React from "react"
-import {
-  Loader2Icon,
-  PauseIcon,
-  PlayIcon,
-  RefreshCwIcon,
-  SearchIcon,
-  XIcon,
-} from "lucide-react"
+import { Loader2Icon, PauseIcon, PlayIcon, RefreshCwIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
+import { DiscoverFilterPanel } from "./_components/DiscoverFilterPanel"
 import { DiscoverLogRow } from "./_components/DiscoverLogRow"
 import {
+  countActiveRules,
+  createDefaultFilterPreset,
+  filterLogsByRules,
+  loadFilterPreset,
+  resolvePresetSize,
+  saveFilterPreset,
+  type DiscoverFilterPreset,
+} from "./discover-filters"
+import {
   collectServiceNames,
-  filterLogsByText,
+  KNOWN_SERVICE_NAMES,
   loadLogColors,
   logRowKey,
   mergeServiceNameLists,
   saveLogColors,
   type LogMarkColor,
 } from "./discover-utils"
-import {
-  DISCOVER_DEFAULT_LIMIT,
-  DISCOVER_MAX_LIMIT,
-  DISCOVER_MIN_LIMIT,
-  useDiscoverLogs,
-  type DiscoverStreamStatus,
-} from "./use-discover-logs"
-
-const ALL_SERVICES = "__all__"
-const NO_EXCLUDE = "__none__"
-const LIMIT_PRESETS = [25, 50, 100, 200, 500] as const
-
-
-function useDebouncedValue<T>(value: T, delayMs: number): T {
-  const [debounced, setDebounced] = React.useState(value)
-  React.useEffect(() => {
-    const id = window.setTimeout(() => setDebounced(value), delayMs)
-    return () => window.clearTimeout(id)
-  }, [value, delayMs])
-  return debounced
-}
+import { useDiscoverLogs, type DiscoverStreamStatus } from "./use-discover-logs"
 
 function statusLabel(status: DiscoverStreamStatus, liveEnabled: boolean): string {
   if (status === "loading") return "Ładowanie"
@@ -72,23 +45,23 @@ function statusDotClass(status: DiscoverStreamStatus, liveEnabled: boolean): str
   return "bg-sky-400 animate-pulse"
 }
 
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = React.useState(value)
+  React.useEffect(() => {
+    const id = window.setTimeout(() => setDebounced(value), delayMs)
+    return () => window.clearTimeout(id)
+  }, [value, delayMs])
+  return debounced
+}
+
 export default function AdminDiscoverPage() {
-  const [textQuery, setTextQuery] = React.useState("")
-  const deferredText = React.useDeferredValue(textQuery)
-
-  const [serviceDraft, setServiceDraft] = React.useState("")
-  const serviceFilter = useDebouncedValue(serviceDraft.trim(), 350)
-
-  const [excludeDraft, setExcludeDraft] = React.useState("")
-  const excludeService = useDebouncedValue(excludeDraft.trim(), 350)
-
-  const [limit, setLimit] = React.useState(DISCOVER_DEFAULT_LIMIT)
+  const [preset, setPreset] = React.useState<DiscoverFilterPreset>(() =>
+    createDefaultFilterPreset(),
+  )
+  const [filtersReady, setFiltersReady] = React.useState(false)
 
   const [expandedKey, setExpandedKey] = React.useState<string | null>(null)
   const [colors, setColors] = React.useState<Record<string, LogMarkColor>>({})
-
-  const { logs, status, error, hasLoaded, liveEnabled, seenServices, refresh, pause, resume } =
-    useDiscoverLogs(serviceFilter, limit, excludeService)
 
   const isClient = React.useSyncExternalStore(
     () => () => {},
@@ -97,29 +70,74 @@ export default function AdminDiscoverPage() {
   )
 
   React.useEffect(() => {
+    setPreset(loadFilterPreset())
     setColors(loadLogColors())
+    setFiltersReady(true)
   }, [])
 
+  React.useEffect(() => {
+    if (!filtersReady) return
+    saveFilterPreset(preset)
+  }, [preset, filtersReady])
+
+  const serviceInclude = useDebouncedValue((preset.serviceInclude ?? "").trim(), 350)
+  const trackingId = useDebouncedValue((preset.trackingId ?? "").trim(), 350)
+  const from = useDebouncedValue((preset.from ?? "").trim(), 350)
+  const to = useDebouncedValue((preset.to ?? "").trim(), 350)
+  const size = resolvePresetSize(preset)
+  const activeRuleCount = countActiveRules(preset.rules)
+
+  const {
+    logs,
+    status,
+    error,
+    hasLoaded,
+    liveEnabled,
+    bufferLimit,
+    page,
+    totalPages,
+    totalElements,
+    canPrev,
+    canNext,
+    goToPage,
+    seenServices,
+    refresh,
+    pause,
+    resume,
+  } = useDiscoverLogs(serviceInclude, size, "", {
+    expandBufferForClientFilters: activeRuleCount > 0,
+    trackingId,
+    from,
+    to,
+  })
+
   const knownServices = React.useMemo(
-    () => mergeServiceNameLists(seenServices, collectServiceNames(logs)),
+    () =>
+      mergeServiceNameLists(
+        [...KNOWN_SERVICE_NAMES],
+        seenServices,
+        collectServiceNames(logs),
+      ),
     [seenServices, logs],
   )
 
-  const serviceOptions = React.useMemo(() => {
-    const set = new Set(knownServices)
-    const includeDraft = serviceDraft.trim()
-    const exclDraft = excludeDraft.trim()
-    if (includeDraft) set.add(includeDraft)
-    if (exclDraft) set.add(exclDraft)
-    if (serviceFilter) set.add(serviceFilter)
-    if (excludeService) set.add(excludeService)
-    return Array.from(set).sort((a, b) => a.localeCompare(b, "pl"))
-  }, [knownServices, serviceDraft, excludeDraft, serviceFilter, excludeService])
-
-  const filteredLogs = React.useMemo(
-    () => filterLogsByText(logs, deferredText),
-    [logs, deferredText],
+  const matchedLogs = React.useMemo(
+    () => filterLogsByRules(logs, preset.rules),
+    [logs, preset.rules],
   )
+
+  // When local rules are active we over-fetch; still cap displayed rows by size.
+  const filteredLogs = React.useMemo(() => {
+    if (activeRuleCount === 0) return matchedLogs
+    return matchedLogs.length > size ? matchedLogs.slice(0, size) : matchedLogs
+  }, [matchedLogs, size, activeRuleCount])
+
+  const hasFilters =
+    activeRuleCount > 0 ||
+    Boolean(serviceInclude) ||
+    Boolean(trackingId) ||
+    Boolean(from) ||
+    Boolean(to)
 
   const setLogColor = React.useCallback((key: string, color: LogMarkColor | null) => {
     setColors((prev) => {
@@ -131,13 +149,9 @@ export default function AdminDiscoverPage() {
     })
   }, [])
 
-  const clearFilters = () => {
-    setTextQuery("")
-    setServiceDraft("")
-    setExcludeDraft("")
-  }
-
-  const hasFilters = Boolean(textQuery.trim() || serviceDraft.trim() || excludeDraft.trim())
+  const onTrackingIdClick = React.useCallback((id: string) => {
+    setPreset((prev) => ({ ...prev, trackingId: id }))
+  }, [])
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-3 py-6 sm:px-4 sm:py-8 lg:px-6">
@@ -150,7 +164,7 @@ export default function AdminDiscoverPage() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Historia i podgląd na żywo logów serwisowych — w stylu OpenSearch Discover.
+            Historia (page/size) + live SSE — klik trackingId filtruje cały łańcuch requestu.
           </p>
         </div>
 
@@ -194,197 +208,21 @@ export default function AdminDiscoverPage() {
         </div>
       </header>
 
-      <section className="rounded-xl border border-border bg-card/40 shadow-sm">
-        <div className="flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-end">
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Label htmlFor="discover-search" className="text-xs text-muted-foreground">
-              Szukaj w logach
-            </Label>
-            <div className="relative">
-              <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="discover-search"
-                value={textQuery}
-                onChange={(e) => setTextQuery(e.target.value)}
-                placeholder="message, service, trackingId, details…"
-                className="h-9 pr-9 pl-9"
-                autoComplete="off"
-              />
-              {textQuery ? (
-                <button
-                  type="button"
-                  className="absolute top-1/2 right-2 -translate-y-1/2 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  onClick={() => setTextQuery("")}
-                  aria-label="Wyczyść wyszukiwanie"
-                >
-                  <XIcon className="size-3.5" />
-                </button>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="w-full space-y-1.5 sm:w-36 lg:w-40">
-            <Label htmlFor="discover-limit" className="text-xs text-muted-foreground">
-              Limit
-            </Label>
-            <Select
-              value={String(limit)}
-              onValueChange={(v) => {
-                const n = Number(v)
-                if (!Number.isFinite(n)) return
-                setLimit(
-                  Math.min(DISCOVER_MAX_LIMIT, Math.max(DISCOVER_MIN_LIMIT, Math.trunc(n))),
-                )
-              }}
-            >
-              <SelectTrigger id="discover-limit" className="h-9 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LIMIT_PRESETS.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="w-full space-y-1.5 lg:w-64">
-            <Label htmlFor="discover-service" className="text-xs text-muted-foreground">
-              Tylko serviceName
-            </Label>
-            <Select
-              value={serviceDraft.trim() || ALL_SERVICES}
-              onValueChange={(v) => {
-                const next = v === ALL_SERVICES ? "" : (v ?? "")
-                setServiceDraft(next)
-                if (next && excludeDraft.trim() === next) setExcludeDraft("")
-              }}
-            >
-              <SelectTrigger id="discover-service" className="h-9 w-full">
-                <SelectValue placeholder="Wszystkie serwisy" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_SERVICES}>Wszystkie serwisy</SelectItem>
-                {serviceOptions.map((name) => (
-                  <SelectItem key={name} value={name}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              value={serviceDraft}
-              onChange={(e) => setServiceDraft(e.target.value)}
-              onBlur={() => {
-                setServiceDraft((s) => {
-                  const next = s.trim()
-                  if (next && excludeDraft.trim() === next) setExcludeDraft("")
-                  return next
-                })
-              }}
-              placeholder="Lub wpisz serviceName…"
-              className="h-8 text-xs"
-              list="discover-service-options"
-              autoComplete="off"
-            />
-          </div>
-
-          <div className="w-full space-y-1.5 lg:w-64">
-            <Label htmlFor="discover-exclude" className="text-xs text-muted-foreground">
-              Wyklucz serviceName
-            </Label>
-            <Select
-              value={excludeDraft.trim() || NO_EXCLUDE}
-              onValueChange={(v) => {
-                const next = v === NO_EXCLUDE ? "" : (v ?? "")
-                setExcludeDraft(next)
-                if (next && serviceDraft.trim() === next) setServiceDraft("")
-              }}
-            >
-              <SelectTrigger id="discover-exclude" className="h-9 w-full">
-                <SelectValue placeholder="Bez wykluczenia" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_EXCLUDE}>Bez wykluczenia</SelectItem>
-                {serviceOptions.map((name) => (
-                  <SelectItem key={`ex-${name}`} value={name}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input
-              value={excludeDraft}
-              onChange={(e) => setExcludeDraft(e.target.value)}
-              onBlur={() => {
-                setExcludeDraft((s) => {
-                  const next = s.trim()
-                  if (next && serviceDraft.trim() === next) setServiceDraft("")
-                  return next
-                })
-              }}
-              placeholder="Lub wpisz serwis do ukrycia…"
-              className="h-8 text-xs"
-              list="discover-service-options"
-              autoComplete="off"
-            />
-            <datalist id="discover-service-options">
-              {serviceOptions.map((name) => (
-                <option key={name} value={name} />
-              ))}
-            </datalist>
-          </div>
-
-          {hasFilters ? (
-            <Button type="button" variant="ghost" size="sm" className="lg:mb-0.5" onClick={clearFilters}>
-              <XIcon data-icon="inline-start" />
-              Wyczyść filtry
-            </Button>
-          ) : null}
-        </div>
-
-        <Separator />
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 text-xs text-muted-foreground sm:px-4">
-          <span>
-            Hits:{" "}
-            <span className="font-medium text-foreground tabular-nums">{filteredLogs.length}</span>
-            {deferredText.trim() || serviceFilter || excludeService ? (
-              <span className="text-muted-foreground"> / {logs.length}</span>
-            ) : null}
-          </span>
-          <span className="hidden sm:inline">·</span>
-          <span>
-            Limit:{" "}
-            <span className="font-medium text-foreground tabular-nums">{limit}</span>
-          </span>
-          <span className="hidden sm:inline">·</span>
-          <span>
-            Serwisy:{" "}
-            <span className="font-medium text-foreground tabular-nums">
-              {serviceOptions.length}
-            </span>
-          </span>
-          {serviceFilter ? (
-            <>
-              <span className="hidden sm:inline">·</span>
-              <span>
-                Tylko: <span className="font-mono text-foreground">{serviceFilter}</span>
-              </span>
-            </>
-          ) : null}
-          {excludeService ? (
-            <>
-              <span className="hidden sm:inline">·</span>
-              <span>
-                Bez: <span className="font-mono text-foreground">{excludeService}</span>
-              </span>
-            </>
-          ) : null}
-        </div>
-      </section>
+      <DiscoverFilterPanel
+        preset={preset}
+        onChange={setPreset}
+        serviceOptions={knownServices}
+        hits={filteredLogs.length}
+        matched={matchedLogs.length}
+        total={logs.length}
+        bufferLimit={bufferLimit}
+        page={page}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        canPrev={canPrev}
+        canNext={canNext}
+        onPageChange={goToPage}
+      />
 
       {error ? (
         <div
@@ -414,7 +252,7 @@ export default function AdminDiscoverPage() {
             <p className="font-medium text-foreground">Brak logów</p>
             <p className="text-xs">
               {hasFilters
-                ? "Spróbuj zmienić filtry lub wyczyścić wyszukiwanie."
+                ? "Żaden log nie spełnia filtrów / reguł — zmień je lub wyczyść."
                 : "Gdy pojawią się nowe wpisy, zobaczysz je tutaj na żywo."}
             </p>
           </div>
@@ -433,6 +271,7 @@ export default function AdminDiscoverPage() {
                       setExpandedKey((prev) => (prev === key ? null : key))
                     }
                     onColorChange={(color) => setLogColor(key, color)}
+                    onTrackingIdClick={onTrackingIdClick}
                   />
                 )
               })}

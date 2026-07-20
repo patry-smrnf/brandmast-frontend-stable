@@ -23,7 +23,7 @@ import type {
   ApiResponseListOneTwoOneMojstanItem,
   ApiResponseListOneTwoOneTeam,
   ApiResponseListBonusResponse,
-  ApiResponseListServiceLogResponse,
+  ApiResponseServiceLogPage,
   ApiResponseOneTwoOneAplikacjaZgloszenieCreated,
   ApiResponseOneTwoOnePhotoUploaded,
   ApiResponseOneTwoOneSamplingCreated,
@@ -481,11 +481,12 @@ export class BrandmastApi {
   }
 
   /**
-   * GET /api/logs
-   * Historia logów serwisowych (admin only).
+   * GET /api/logs?page=&size=&service=&trackingId=&from=&to=
+   * Historia logów serwisowych (admin only), paginacja 0-based.
+   * Sort: createdAt DESC.
    */
   async fetchLogs(params?: LogsHistoryParams, options?: RequestOptions) {
-    const res = await this.http.get<ApiResponseListServiceLogResponse>("/api/logs", {
+    const res = await this.http.get<ApiResponseServiceLogPage>("/api/logs", {
       ...options,
       params,
     });

@@ -768,23 +768,36 @@ export interface ApiResponseListBonusResponse {
 export type ServiceLogLevel = "TRACE" | "DEBUG" | "INFO" | "WARN" | "ERROR";
 
 export interface ServiceLogResponse {
-  id?: number | null; // int64
+  id?: number | null; // int64 — may be null briefly on live SSE
   trackingId?: string | null; // uuid
   jobId?: string | null; // uuid
   serviceName?: string | null;
   methodName?: string | null;
   level?: ServiceLogLevel | null;
   message?: string | null;
-  /** Arbitrary JSON map; null fields omitted by backend (NON_NULL). */
+  /** Arbitrary JSON map; often includes `login` (actor). */
   details?: Record<string, unknown> | null;
-  createdAt?: string | null; // date-time
+  createdAt?: string | null; // date-time OffsetDateTime ISO
 }
 
 /** Same shape as ServiceLogResponse (SSE payload). */
 export type ServiceLogEntry = ServiceLogResponse;
 
+/** Paginated history payload — GET /api/logs `data` */
+export interface ServiceLogPage {
+  items?: ServiceLogResponse[];
+  page?: number; // 0-based
+  size?: number;
+  totalElements?: number;
+  totalPages?: number;
+}
+
 /** GET /api/logs query params */
 export interface LogsHistoryParams {
+  /** Page index from 0. Default 0. */
+  page?: number;
+  /** Page size, default 100, max 500. Replaces legacy `limit`. */
+  size?: number;
   /** Exact serviceName filter (trimmed server-side). */
   service?: string;
   trackingId?: string; // uuid
@@ -792,8 +805,6 @@ export interface LogsHistoryParams {
   from?: string;
   /** ISO-8601 date-time */
   to?: string;
-  /** Default 100, clamped 1–500 */
-  limit?: number;
 }
 
 /** GET /api/logs/stream query params (access_token set by client helpers). */
@@ -802,12 +813,15 @@ export interface LogsStreamParams {
 }
 
 /** GET /api/logs */
-export interface ApiResponseListServiceLogResponse {
+export interface ApiResponseServiceLogPage {
   errorCode?: string;
   message?: string;
   meta?: Meta;
   success?: boolean;
-  data?: ServiceLogResponse[];
+  data?: ServiceLogPage;
   violations?: Violation[];
 }
+
+/** @deprecated Use ApiResponseServiceLogPage — kept for transitional imports. */
+export type ApiResponseListServiceLogResponse = ApiResponseServiceLogPage;
 

@@ -12,20 +12,23 @@ import {
 } from "@/lib/api"
 import {
   collectServiceNames,
-  filterLogsExcludingService,
   mergeServiceNameLists,
   sortLogsNewestFirst,
 } from "./discover-utils"
 
-export const DISCOVER_DEFAULT_LIMIT = 50
-export const DISCOVER_MIN_LIMIT = 1
-export const DISCOVER_MAX_LIMIT = 500
+export const DISCOVER_DEFAULT_SIZE = 50
+export const DISCOVER_MIN_SIZE = 1
+export const DISCOVER_MAX_SIZE = 500
+/** @deprecated use DISCOVER_DEFAULT_SIZE */
+export const DISCOVER_DEFAULT_LIMIT = DISCOVER_DEFAULT_SIZE
+export const DISCOVER_MIN_LIMIT = DISCOVER_MIN_SIZE
+export const DISCOVER_MAX_LIMIT = DISCOVER_MAX_SIZE
 
 export type DiscoverStreamStatus = "idle" | "loading" | "live" | "paused" | "error"
 
-function clampLimit(limit: number): number {
-  if (!Number.isFinite(limit)) return DISCOVER_DEFAULT_LIMIT
-  return Math.min(DISCOVER_MAX_LIMIT, Math.max(DISCOVER_MIN_LIMIT, Math.trunc(limit)))
+function clampSize(size: number): number {
+  if (!Number.isFinite(size)) return DISCOVER_DEFAULT_SIZE
+  return Math.min(DISCOVER_MAX_SIZE, Math.max(DISCOVER_MIN_SIZE, Math.trunc(size)))
 }
 
 function readApiError(err: unknown): string {
@@ -42,24 +45,35 @@ function takeNewest(logs: ServiceLogResponse[], limit: number): ServiceLogRespon
   return sorted.length > limit ? sorted.slice(0, limit) : sorted
 }
 
-function applyExcludeAndLimit(
-  logs: ServiceLogResponse[],
-  excludeService: string,
-  limit: number,
-): ServiceLogResponse[] {
-  return takeNewest(filterLogsExcludingService(logs, excludeService), limit)
+export type UseDiscoverLogsOptions = {
+  /**
+   * When true (client-side filter rules active), fetch page 0 with size=MAX (500)
+   * so local filters can still fill the display size.
+   */
+  expandBufferForClientFilters?: boolean
+  trackingId?: string
+  from?: string
+  to?: string
 }
 
 export function useDiscoverLogs(
   serviceFilter: string,
-  limit: number = DISCOVER_DEFAULT_LIMIT,
-  excludeService: string = "",
+  size: number = DISCOVER_DEFAULT_SIZE,
+  _excludeService: string = "",
+  options: UseDiscoverLogsOptions = {},
 ) {
-  const clampedLimit = clampLimit(limit)
-  const excludeTrimmed = excludeService.trim()
+  const displaySize = clampSize(size)
+  const expandBuffer = Boolean(options.expandBufferForClientFilters)
+  const trackingId = (options.trackingId ?? "").trim()
+  const from = (options.from ?? "").trim()
+  const to = (options.to ?? "").trim()
 
+  const fetchSize = expandBuffer ? DISCOVER_MAX_SIZE : displaySize
+
+  const [page, setPage] = React.useState(0)
   const [logs, setLogs] = React.useState<ServiceLogResponse[]>([])
-  // Start as idle so SSR + first client paint match (loading is set in the fetch effect).
+  const [totalElements, setTotalElements] = React.useState(0)
+  const [totalPages, setTotalPages] = React.useState(0)
   const [status, setStatus] = React.useState<DiscoverStreamStatus>("idle")
   const [hasLoaded, setHasLoaded] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -70,26 +84,30 @@ export function useDiscoverLogs(
 
   const subRef = React.useRef<LogsStreamSubscription | null>(null)
   const serviceRef = React.useRef(serviceFilter)
-  const excludeRef = React.useRef(excludeTrimmed)
   const liveRef = React.useRef(liveEnabled)
-  const limitRef = React.useRef(clampedLimit)
+  const pageRef = React.useRef(page)
+  const fetchSizeRef = React.useRef(fetchSize)
+
+  // Reset to first page when server-side filters / size mode change.
+  React.useEffect(() => {
+    setPage(0)
+  }, [serviceFilter, trackingId, from, to, fetchSize, expandBuffer])
 
   React.useEffect(() => {
     serviceRef.current = serviceFilter
   }, [serviceFilter])
 
   React.useEffect(() => {
-    excludeRef.current = excludeTrimmed
-  }, [excludeTrimmed])
-
-  React.useEffect(() => {
     liveRef.current = liveEnabled
   }, [liveEnabled])
 
   React.useEffect(() => {
-    limitRef.current = clampedLimit
-    setLogs((prev) => applyExcludeAndLimit(prev, excludeRef.current, clampedLimit))
-  }, [clampedLimit])
+    pageRef.current = page
+  }, [page])
+
+  React.useEffect(() => {
+    fetchSizeRef.current = fetchSize
+  }, [fetchSize])
 
   const rememberServices = React.useCallback((batch: ServiceLogResponse[]) => {
     const names = collectServiceNames(batch)
@@ -119,34 +137,52 @@ export function useDiscoverLogs(
     setStatus((s) => (s === "error" ? s : "idle"))
   }, [])
 
+  const goToPage = React.useCallback(
+    (next: number) => {
+      setPage((prev) => {
+        const max = Math.max(totalPages - 1, 0)
+        return Math.min(Math.max(0, next), max)
+      })
+    },
+    [totalPages],
+  )
+
   // History
   React.useEffect(() => {
     let cancelled = false
 
     async function loadHistory() {
-      // Don't clobber an already-live stream indicator while refreshing history.
       setStatus((prev) => (prev === "live" ? "live" : "loading"))
       setError(null)
 
-      // Over-fetch a bit when excluding so the visible limit still fills after client filter.
-      const fetchLimit = excludeTrimmed
-        ? Math.min(DISCOVER_MAX_LIMIT, Math.max(clampedLimit * 3, clampedLimit + 50))
-        : clampedLimit
+      const requestPage = expandBuffer ? 0 : page
 
       try {
         const res = await brandmastApi.fetchLogs({
-          limit: fetchLimit,
+          page: requestPage,
+          size: fetchSize,
           ...(serviceFilter ? { service: serviceFilter } : {}),
+          ...(trackingId ? { trackingId } : {}),
+          ...(from ? { from } : {}),
+          ...(to ? { to } : {}),
         })
         if (cancelled) return
-        const raw = res.data ?? []
-        rememberServices(raw)
-        setLogs(applyExcludeAndLimit(raw, excludeTrimmed, clampedLimit))
+
+        if (res.success === false) {
+          throw new Error(res.message || res.errorCode || "Nie udało się pobrać logów")
+        }
+
+        const data = res.data
+        const items = sortLogsNewestFirst(data?.items ?? [])
+        rememberServices(items)
+        setLogs(items)
+        setTotalElements(data?.totalElements ?? items.length)
+        setTotalPages(data?.totalPages ?? 1)
         setHasLoaded(true)
+
         if (!liveRef.current) {
           setStatus("paused")
         } else {
-          // Preserve "live" if SSE already connected; otherwise stay in connecting (idle).
           setStatus((prev) => (prev === "live" ? "live" : "idle"))
         }
       } catch (err) {
@@ -155,6 +191,8 @@ export function useDiscoverLogs(
         setHasLoaded(true)
         setStatus("error")
         setLogs([])
+        setTotalElements(0)
+        setTotalPages(0)
       }
     }
 
@@ -162,9 +200,19 @@ export function useDiscoverLogs(
     return () => {
       cancelled = true
     }
-  }, [serviceFilter, excludeTrimmed, clampedLimit, reloadToken, rememberServices])
+  }, [
+    serviceFilter,
+    trackingId,
+    from,
+    to,
+    page,
+    fetchSize,
+    expandBuffer,
+    reloadToken,
+    rememberServices,
+  ])
 
-  // Live SSE — owns stream lifecycle (history must not stopStream permanently).
+  // Live SSE — only merge into list when viewing page 0 (or buffer mode).
   React.useEffect(() => {
     if (!liveEnabled) {
       stopStream()
@@ -183,23 +231,26 @@ export function useDiscoverLogs(
         setError(null)
       },
       onLog: (entry) => {
-        // If backend skips `connected`, first log still means the stream works.
         setStatus((prev) => (prev === "live" ? prev : "live"))
 
         const currentService = serviceRef.current
         if (currentService && entry.serviceName !== currentService) return
 
+        // Respect trackingId drill-down while live.
+        if (trackingId && entry.trackingId !== trackingId) return
+
         if (entry.serviceName?.trim()) {
           rememberServices([entry])
         }
 
-        const excluded = excludeRef.current
-        if (excluded && (entry.serviceName?.trim() ?? "") === excluded) return
+        // Don't prepend live rows into deep history pages — avoids pagination races.
+        if (pageRef.current > 0 && !expandBuffer) return
 
         setLogs((prev) => {
           const merged = mergeServiceLogs(prev, entry)
-          return applyExcludeAndLimit(merged, excludeRef.current, limitRef.current)
+          return takeNewest(merged, fetchSizeRef.current)
         })
+        setTotalElements((n) => n + 1)
       },
       onUnauthorized: () => {
         setError("Sesja wygasła — zaloguj się ponownie.")
@@ -223,7 +274,18 @@ export function useDiscoverLogs(
     return () => {
       stopStream()
     }
-  }, [liveEnabled, serviceFilter, reloadToken, stopStream, rememberServices])
+  }, [
+    liveEnabled,
+    serviceFilter,
+    trackingId,
+    expandBuffer,
+    reloadToken,
+    stopStream,
+    rememberServices,
+  ])
+
+  const canPrev = page > 0 && !expandBuffer
+  const canNext = !expandBuffer && page + 1 < totalPages
 
   return {
     logs,
@@ -232,7 +294,16 @@ export function useDiscoverLogs(
     hasLoaded,
     liveEnabled,
     lastConnectedAt,
-    limit: clampedLimit,
+    limit: displaySize,
+    size: displaySize,
+    bufferLimit: fetchSize,
+    page: expandBuffer ? 0 : page,
+    totalElements,
+    totalPages: expandBuffer ? 1 : totalPages,
+    canPrev,
+    canNext,
+    goToPage,
+    setPage: goToPage,
     seenServices,
     refresh,
     pause,
