@@ -30,7 +30,7 @@ import {
   type TierProgressHint,
 } from "./brandmaster-bonus-utils"
 import type { MojstanDisplayItem } from "./brandmaster-mojstan-utils"
-import { formatHoursPl, formatMoneyPl } from "./cas-action-utils"
+import { formatHoursPl, formatMoneyPl, HOURLY_TOUR_BONUS_LABEL } from "./cas-action-utils"
 import { BonusExtrasSection } from "./brandmaster-bonus-extras-section"
 import { useBrandmasterBonusExtras } from "./use-brandmaster-bonus-extras"
 
@@ -604,20 +604,24 @@ export function EfficiencyCard({
 
 export function PayoutCard({
   basePayout,
+  hourlyTourPayout,
+  totalRemainderMinutes,
   bonusBreakdown,
-  predictedPayout,
   hourlyRate,
-  totalRoundedHours,
+  totalDurationHours,
+  totalBaseHours,
   monthLabel,
   includeExtras = true,
   expanded,
   onToggle,
 }: {
   basePayout: number
+  hourlyTourPayout: number
+  totalRemainderMinutes: number
   bonusBreakdown: BrandmasterBonusBreakdown | null
-  predictedPayout: number
   hourlyRate: number
-  totalRoundedHours: number
+  totalDurationHours: number
+  totalBaseHours: number
   monthLabel: string
   includeExtras?: boolean
   expanded: boolean
@@ -626,7 +630,8 @@ export function PayoutCard({
   const bonusExtras = useBrandmasterBonusExtras(includeExtras)
   const qualitativeBonus = bonusBreakdown?.qualitative.total ?? 0
   const extrasAmount = includeExtras ? bonusExtras.extrasTotal : 0
-  const displayedPayout = basePayout + qualitativeBonus + extrasAmount
+  const displayedPayout =
+    basePayout + hourlyTourPayout + qualitativeBonus + extrasAmount
 
   return (
     <Card className="overflow-hidden shadow-sm">
@@ -662,8 +667,13 @@ export function PayoutCard({
           </p>
           <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
             <span>
-              Podstawa: {formatMoneyPl(basePayout)} ({formatHoursPl(totalRoundedHours)})
+              Podstawa: {formatMoneyPl(basePayout)} ({formatHoursPl(totalBaseHours)})
             </span>
+            {hourlyTourPayout > 0 ? (
+              <span className="font-medium text-foreground/90">
+                {HOURLY_TOUR_BONUS_LABEL}: {formatMoneyPl(hourlyTourPayout)}
+              </span>
+            ) : null}
             {bonusBreakdown ? (
               <span className="font-medium text-foreground/90">
                 Bonus: {formatMoneyPl(qualitativeBonus)}
@@ -682,10 +692,25 @@ export function PayoutCard({
         <CardContent className="space-y-2.5 border-t border-border/80 px-3.5 pb-3.5 pt-2 sm:px-4 sm:pb-4">
           <div className="flex items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/25 px-3 py-2 text-xs">
             <span className="text-muted-foreground">
-              Stawka godzinowa ({hourlyRate} zł × {formatHoursPl(totalRoundedHours)})
+              Stawka godzinowa ({hourlyRate} zł × {formatHoursPl(totalBaseHours)}
+              {totalDurationHours !== totalBaseHours
+                ? ` z ${formatHoursPl(totalDurationHours)}`
+                : ""}
+              )
             </span>
             <span className="font-semibold tabular-nums">{formatMoneyPl(basePayout)}</span>
           </div>
+
+          {hourlyTourPayout > 0 ? (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/25 px-3 py-2 text-xs">
+              <span className="text-muted-foreground">
+                {HOURLY_TOUR_BONUS_LABEL} ({totalRemainderMinutes} min × {hourlyRate} zł/h)
+              </span>
+              <span className="font-semibold tabular-nums">
+                {formatMoneyPl(hourlyTourPayout)}
+              </span>
+            </div>
+          ) : null}
 
           {bonusBreakdown ? (
             <>

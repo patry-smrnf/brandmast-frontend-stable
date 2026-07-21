@@ -14,10 +14,11 @@ import {
 export type BrandmasterBonusInput = {
   glo: SampleStatsGloCounts
   veloNet: number
-  roundedHours: number
-  /** Godziny do liczenia efektywności Glo (domyślnie roundedHours). */
+  /** Rzeczywisty czas pracy w godzinach (co do minuty). */
+  durationHours: number
+  /** Godziny do liczenia efektywności Glo (domyślnie durationHours). */
   gloEfficiencyHours?: number
-  /** Godziny do liczenia efektywności Velo (domyślnie roundedHours). */
+  /** Godziny do liczenia efektywności Velo (domyślnie durationHours). */
   veloEfficiencyHours?: number
 }
 
@@ -49,7 +50,7 @@ export type QualitativeBonusBreakdown = {
 }
 
 export type BrandmasterEfficiency = {
-  roundedHours: number
+  durationHours: number
   gloEfficiencyHours: number
   veloEfficiencyHours: number
   gloTimeDivisor: number
@@ -76,13 +77,13 @@ export function sumRegularGloDeviceCount(glo: SampleStatsGloCounts): number {
   return glo.hilo + glo.hiloPlus
 }
 
-export function computeTimeDivisor(roundedHours: number): number {
-  if (!Number.isFinite(roundedHours) || roundedHours <= 0) return 0
-  return roundedHours / 4
+export function computeTimeDivisor(durationHours: number): number {
+  if (!Number.isFinite(durationHours) || durationHours <= 0) return 0
+  return durationHours / 4
 }
 
-export function computeEfficiency(count: number, roundedHours: number): number {
-  const divisor = computeTimeDivisor(roundedHours)
+export function computeEfficiency(count: number, durationHours: number): number {
+  const divisor = computeTimeDivisor(durationHours)
   if (divisor <= 0) return 0
   return count / divisor
 }
@@ -183,13 +184,13 @@ export function computeBrandmasterEfficiency(
 ): BrandmasterEfficiency {
   const gloCount = sumGloDeviceCount(input.glo)
   const veloCount = Math.max(0, input.veloNet)
-  const gloEfficiencyHours = input.gloEfficiencyHours ?? input.roundedHours
-  const veloEfficiencyHours = input.veloEfficiencyHours ?? input.roundedHours
+  const gloEfficiencyHours = input.gloEfficiencyHours ?? input.durationHours
+  const veloEfficiencyHours = input.veloEfficiencyHours ?? input.durationHours
   const gloTimeDivisor = computeTimeDivisor(gloEfficiencyHours)
   const veloTimeDivisor = computeTimeDivisor(veloEfficiencyHours)
 
   return {
-    roundedHours: input.roundedHours,
+    durationHours: input.durationHours,
     gloEfficiencyHours,
     veloEfficiencyHours,
     gloTimeDivisor,

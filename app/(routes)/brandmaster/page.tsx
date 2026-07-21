@@ -227,7 +227,7 @@ function WorkTimeActionRow({
           </p>
         </div>
         <p className="shrink-0 pt-0.5 text-sm font-semibold tabular-nums">
-          {formatHoursPl(item.roundedHours)}
+          {formatHoursPl(item.durationHours)}
         </p>
       </div>
       </button>
@@ -277,9 +277,11 @@ export default function BrandmasterPage() {
     currentActionPointLabel,
     currentActionStats,
     monthActions,
-    totalRoundedHours,
+    totalDurationHours,
+    totalBaseHours,
+    totalRemainderMinutes,
     basePayout,
-    predictedPayout,
+    hourlyTourPayout,
     bonusBreakdown,
     hourlyRate,
     monthSalesStats,
@@ -296,8 +298,7 @@ export default function BrandmasterPage() {
     error: emptyHoursError,
     emptyActionKeys,
     statsByActionKey,
-    rawHours: emptyRawHours,
-    roundedHours: emptyRoundedHours,
+    emptyHours,
     calculate: calculateEmptyHours,
     reset: resetEmptyWorkHours,
   } = useEmptyWorkHours(monthActions, hostessCode)
@@ -487,10 +488,12 @@ export default function BrandmasterPage() {
 
             <PayoutCard
               basePayout={basePayout}
+              hourlyTourPayout={hourlyTourPayout}
+              totalRemainderMinutes={totalRemainderMinutes}
               bonusBreakdown={bonusBreakdown}
-              predictedPayout={predictedPayout}
               hourlyRate={hourlyRate}
-              totalRoundedHours={totalRoundedHours}
+              totalDurationHours={totalDurationHours}
+              totalBaseHours={totalBaseHours}
               monthLabel={monthLabel}
               includeExtras={monthPeriod === "current"}
               expanded={payoutExpanded}
@@ -533,10 +536,10 @@ export default function BrandmasterPage() {
                         Czas pracy
                       </CardTitle>
                       <CardDescription className="text-xs" suppressHydrationWarning>
-                        {totalRoundedHours / 4}{" "}
-                        {totalRoundedHours / 4 === 1
+                        {monthActions.length}{" "}
+                        {monthActions.length === 1
                           ? "akcja"
-                          : totalRoundedHours / 4 > 1 && totalRoundedHours / 4 < 5
+                          : monthActions.length > 1 && monthActions.length < 5
                             ? "akcje"
                             : "akcji"}{" "}
                         · {monthLabel}
@@ -545,12 +548,7 @@ export default function BrandmasterPage() {
                         <p className="mt-1.5 text-xs text-destructive">
                           Puste godziny:{" "}
                           <span className="font-semibold tabular-nums">
-                            {formatHoursPl(emptyRawHours)}
-                          </span>
-                          {" · "}
-                          zaokraglone:{" "}
-                          <span className="font-semibold tabular-nums">
-                            {formatHoursPl(emptyRoundedHours)}
+                            {formatHoursPl(emptyHours)}
                           </span>
                           {emptyActionKeys.size > 0 ? (
                             <span className="text-destructive/80">
@@ -568,7 +566,7 @@ export default function BrandmasterPage() {
                     </div>
                     <div className="flex shrink-0 items-center gap-2 pt-0.5">
                       <span className="text-lg font-semibold tabular-nums leading-none">
-                        {formatHoursPl(totalRoundedHours)}
+                        {formatHoursPl(totalDurationHours)}
                       </span>
                       <ChevronDownIcon
                         className={cn(

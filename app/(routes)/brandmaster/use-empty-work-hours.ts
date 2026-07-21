@@ -7,7 +7,6 @@ import type { SampleStatsFieldCounts } from "@/lib/api"
 
 import {
   type ActionWithRoundedTime,
-  getActionDurationHours,
   getActionRowKey,
   isEmptyActionSampleStats,
   isExcludedFromEmptyHoursCalculation,
@@ -21,8 +20,7 @@ type EmptyWorkHoursState = {
   error: string | null
   emptyActionKeys: ReadonlySet<string>
   statsByActionKey: ReadonlyMap<string, SampleStatsFieldCounts>
-  rawHours: number
-  roundedHours: number
+  emptyHours: number
   failedCount: number
 }
 
@@ -32,8 +30,7 @@ const INITIAL_STATE: EmptyWorkHoursState = {
   error: null,
   emptyActionKeys: new Set(),
   statsByActionKey: new Map(),
-  rawHours: 0,
-  roundedHours: 0,
+  emptyHours: 0,
   failedCount: 0,
 }
 
@@ -134,8 +131,7 @@ export function useEmptyWorkHours(
 
         const emptyActionKeys = new Set<string>()
         const statsByActionKey = new Map<string, SampleStatsFieldCounts>()
-        let rawHours = 0
-        let roundedHours = 0
+        let emptyHours = 0
         let failedCount = 0
 
         for (const row of rows) {
@@ -150,10 +146,7 @@ export function useEmptyWorkHours(
           if (isExcludedFromEmptyHoursCalculation(row.item)) continue
 
           emptyActionKeys.add(row.rowKey)
-          if (row.item.start && row.item.stop) {
-            rawHours += getActionDurationHours(row.item.start, row.item.stop)
-          }
-          roundedHours += row.item.roundedHours
+          emptyHours += row.item.durationHours
         }
 
         setState({
@@ -167,8 +160,7 @@ export function useEmptyWorkHours(
               : null,
           emptyActionKeys,
           statsByActionKey,
-          rawHours,
-          roundedHours,
+          emptyHours,
           failedCount,
         })
       } catch {

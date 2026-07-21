@@ -23,14 +23,21 @@ export function actionDurationHours(sinceIso: string, untilIso: string): number 
   const start = parseIso(sinceIso)
   const end = parseIso(untilIso)
   if (!start || !end) return 0
-  return Math.max(0, (end.getTime() - start.getTime()) / 3_600_000)
+  const ms = end.getTime() - start.getTime()
+  if (ms <= 0) return 0
+  return Math.floor(ms / 60_000) / 60
 }
 
+/** Rzeczywisty czas: „3 h 38 min”, „45 min”, „2 h”. */
 export function formatHoursPl(hours: number): string {
   if (!Number.isFinite(hours) || hours <= 0) return "0 h"
-  const rounded = Math.round(hours * 10) / 10
-  const n = Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(".", ",")
-  return `${n} h`
+  const totalMinutes = Math.round(hours * 60)
+  if (totalMinutes <= 0) return "0 h"
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  if (h === 0) return `${m} min`
+  if (m === 0) return `${h} h`
+  return `${h} h ${m} min`
 }
 
 function emptyBmStats() {

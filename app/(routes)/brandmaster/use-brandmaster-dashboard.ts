@@ -23,15 +23,16 @@ import { computeBrandmasterPreviousMonthBonus } from "./brandmaster-previous-mon
 import {
   type ActionWithRoundedTime,
   computeEfficiencyHoursFromActions,
+  computeHourlyPay,
   formatCasAddress,
   formatHoursPl,
+  getActionDurationHours,
   getCasActionTitle,
   getMonthDateRange,
   getPreviousMonthDateRange,
   mapFinishedActionsWithRoundedTime,
   parseActionFallbackStart,
   resolveSampleStatsActionIdent,
-  roundActionDurationHours,
 } from "./cas-action-utils"
 
 const HOURLY_RATE = 45
@@ -222,8 +223,18 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     }
   }, [tick, monthPeriod])
 
-  const totalRoundedHours = React.useMemo(
-    () => monthActions.reduce((sum, a) => sum + a.roundedHours, 0),
+  const totalDurationHours = React.useMemo(
+    () => monthActions.reduce((sum, a) => sum + a.durationHours, 0),
+    [monthActions],
+  )
+
+  const totalBaseHours = React.useMemo(
+    () => monthActions.reduce((sum, a) => sum + a.baseHours, 0),
+    [monthActions],
+  )
+
+  const totalRemainderMinutes = React.useMemo(
+    () => monthActions.reduce((sum, a) => sum + a.remainderMinutes, 0),
     [monthActions],
   )
 
@@ -232,10 +243,11 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     [monthActions],
   )
 
-  const basePayout = totalRoundedHours * HOURLY_RATE
+  const basePayout = computeHourlyPay(totalBaseHours * 60, HOURLY_RATE)
+  const hourlyTourPayout = computeHourlyPay(totalRemainderMinutes, HOURLY_RATE)
 
   const bonusBreakdown = React.useMemo((): BrandmasterBonusBreakdown | null => {
-    if (!sampleStatsCounts || totalRoundedHours <= 0) return null
+    if (!sampleStatsCounts || totalDurationHours <= 0) return null
     const monthStats =
       monthPeriod === "previous"
         ? sampleStatsCounts.lastMonth
@@ -243,14 +255,14 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     const input = {
       glo: addAwaryjneToGlo(monthStats.glo, awaryjneCounts),
       veloNet: monthStats.veloNet + awaryjneCounts.velo,
-      roundedHours: totalRoundedHours,
+      durationHours: totalDurationHours,
       gloEfficiencyHours: efficiencyHours.glo,
       veloEfficiencyHours: efficiencyHours.velo,
     }
     return monthPeriod === "previous"
       ? computeBrandmasterPreviousMonthBonus(input)
       : computeBrandmasterBonus(input)
-  }, [sampleStatsCounts, awaryjneCounts, totalRoundedHours, efficiencyHours, monthPeriod])
+  }, [sampleStatsCounts, awaryjneCounts, totalDurationHours, efficiencyHours, monthPeriod])
 
   const monthSalesStats = React.useMemo(() => {
     if (!sampleStatsCounts) return null
@@ -267,7 +279,8 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     [awaryjneCounts],
   )
 
-  const predictedPayout = basePayout + (bonusBreakdown?.totalBonus ?? 0)
+  const predictedPayout =
+    basePayout + hourlyTourPayout + (bonusBreakdown?.totalBonus ?? 0)
 
   const currentAction = startedActions[0] ?? null
 
@@ -282,17 +295,17 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     return start ? formatPlDateTimePoland(start) : "-"
   }, [currentAction])
 
-  const currentActionRoundedHours = React.useMemo(() => {
+  const currentActionDurationHours = React.useMemo(() => {
     if (!currentAction || !polandNow) return null
     const start = parseActionFallbackStart(currentAction)
     if (!start) return null
-    return roundActionDurationHours(start, polandNow)
+    return getActionDurationHours(start, polandNow)
   }, [currentAction, polandNow])
 
   const currentActionRoundedHoursLabel = React.useMemo(() => {
-    if (currentActionRoundedHours == null) return null
-    return formatHoursPl(currentActionRoundedHours)
-  }, [currentActionRoundedHours])
+    if (currentActionDurationHours == null) return null
+    return formatHoursPl(currentActionDurationHours)
+  }, [currentActionDurationHours])
 
   const currentActionPointLabel = React.useMemo(() => {
     if (!currentAction) return null
@@ -322,8 +335,11 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     currentActionPointLabel,
     currentActionStats,
     monthActions,
-    totalRoundedHours,
+    totalDurationHours,
+    totalBaseHours,
+    totalRemainderMinutes,
     basePayout,
+    hourlyTourPayout,
     predictedPayout,
     bonusBreakdown,
     hourlyRate: HOURLY_RATE,

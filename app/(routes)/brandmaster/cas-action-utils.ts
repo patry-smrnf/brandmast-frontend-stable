@@ -13,11 +13,31 @@ import type {
   TourPlannerActionListItem,
 } from "@/lib/api"
 
+export type ActionDurationSplit = {
+  /** Rzeczywisty czas w pełnych minutach. */
+  totalMinutes: number
+  /** Pełne godziny + pół godziny (zaokrąglenie w dół do 30 min) — wypłata podstawowa. */
+  baseMinutes: number
+  /** Brakujące minuty do pełnej / pół godziny — wypłata w „godzinowka || TURA”. */
+  remainderMinutes: number
+  /** totalMinutes / 60 */
+  durationHours: number
+  /** baseMinutes / 60 */
+  baseHours: number
+  /** remainderMinutes / 60 */
+  remainderHours: number
+}
+
 export type ActionWithRoundedTime = {
   action: TourPlannerActionListItem
   start: Date | null
   stop: Date | null
-  roundedHours: number
+  /** Rzeczywisty czas trwania (co do minuty). */
+  durationHours: number
+  /** Godziny do wypłaty podstawowej (pełne + pół, w dół). */
+  baseHours: number
+  /** Minuty do linii „godzinowka || TURA”. */
+  remainderMinutes: number
   dateLabel: string
   startLabel: string
   stopLabel: string
@@ -26,6 +46,8 @@ export type ActionWithRoundedTime = {
   actionName: string | null
   actionIdent: string | null
 }
+
+export const HOURLY_TOUR_BONUS_LABEL = "godzinowka || TURA"
 
 export function getMonthDateRange(reference: Date) {
   const y = reference.getFullYear()
@@ -76,51 +98,90 @@ export function formatCasTime(block?: CasDatetimeBlock): string {
   return formatTimePoland(d)
 }
 
-/** Dopłata za niepełną godzinę (minuty ponad pełne godziny). */
-const PARTIAL_HOUR_NO_EXTRA_MAX_MINUTES = 14
-const PARTIAL_HOUR_HALF_EXTRA_MAX_MINUTES = 44
+/** Rzeczywisty czas trwania akcji w pełnych minutach. */
+export function getActionDurationMinutes(start: Date, stop: Date): number {
+  const ms = stop.getTime() - start.getTime()
+  if (ms <= 0) return 0
+  return Math.floor(ms / 60_000)
+}
+
+/** Rzeczywisty czas trwania akcji w godzinach (co do minuty, bez zaokrągleń rozliczeniowych). */
+export function getActionDurationHours(start: Date, stop: Date): number {
+  return getActionDurationMinutes(start, stop) / 60
+}
+
+const EMPTY_DURATION_SPLIT: ActionDurationSplit = {
+  totalMinutes: 0,
+  baseMinutes: 0,
+  remainderMinutes: 0,
+  durationHours: 0,
+  baseHours: 0,
+  remainderHours: 0,
+}
 
 /**
- * Godziny rozliczeniowe: pełne godziny + niepełna końcówka w krokach co 15 min (0 / 30 / 60 min).
- * Np. 1 h 46 min → 2 h, 2 h 14 min → 2 h, 2 h 28 min → 2,5 h, 2 h 59 min lub 3 h → 3 h.
+ * Podział czasu na wypłatę:
+ * - baza: pełne godziny + pół godziny (floor do 30 min),
+ * - reszta minut: linia „godzinowka || TURA”.
+ *
+ * Np. 3 h 38 min → baza 3 h 30 min, reszta 8 min.
  */
-/** Rzeczywisty czas trwania akcji w godzinach (bez zaokrąglenia rozliczeniowego). */
-export function getActionDurationHours(start: Date, stop: Date): number {
-  const ms = stop.getTime() - start.getTime()
-  if (ms <= 0) return 0
-  return ms / 3_600_000
-}
+export function splitActionDurationForPayout(start: Date, stop: Date): ActionDurationSplit {
+  const totalMinutes = getActionDurationMinutes(start, stop)
+  if (totalMinutes <= 0) return EMPTY_DURATION_SPLIT
 
-export function roundActionDurationHours(start: Date, stop: Date): number {
-  const ms = stop.getTime() - start.getTime()
-  if (ms <= 0) return 0
+  const baseMinutes = Math.floor(totalMinutes / 30) * 30
+  const remainderMinutes = totalMinutes - baseMinutes
 
-  const totalMinutes = Math.floor(ms / 60_000)
-  const fullHours = Math.floor(totalMinutes / 60)
-  const partialMinutes = totalMinutes % 60
-
-  let billedMinutes = fullHours * 60
-  if (partialMinutes > PARTIAL_HOUR_NO_EXTRA_MAX_MINUTES) {
-    if (partialMinutes <= PARTIAL_HOUR_HALF_EXTRA_MAX_MINUTES) {
-      billedMinutes += 30
-    } else {
-      billedMinutes += 60
-    }
+  return {
+    totalMinutes,
+    baseMinutes,
+    remainderMinutes,
+    durationHours: totalMinutes / 60,
+    baseHours: baseMinutes / 60,
+    remainderHours: remainderMinutes / 60,
   }
-
-  return billedMinutes / 60
 }
 
+export function splitActionDurationFromMinutes(totalMinutes: number): ActionDurationSplit {
+  if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return EMPTY_DURATION_SPLIT
+  const mins = Math.floor(totalMinutes)
+  const baseMinutes = Math.floor(mins / 30) * 30
+  const remainderMinutes = mins - baseMinutes
+  return {
+    totalMinutes: mins,
+    baseMinutes,
+    remainderMinutes,
+    durationHours: mins / 60,
+    baseHours: baseMinutes / 60,
+    remainderHours: remainderMinutes / 60,
+  }
+}
+
+/** Kwota za minuty przy stawce godzinowej (np. 8 min × 45 zł/h = 6 zł). */
+export function computeHourlyPay(minutes: number, hourlyRate: number): number {
+  if (!Number.isFinite(minutes) || minutes <= 0 || !Number.isFinite(hourlyRate)) return 0
+  return (minutes * hourlyRate) / 60
+}
+
+/** Rzeczywisty czas: „3 h 38 min”, „45 min”, „2 h”. */
 export function formatHoursPl(hours: number): string {
   if (!Number.isFinite(hours) || hours <= 0) return "0 h"
-  const rounded = Math.round(hours * 10) / 10
-  const n = Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(".", ",")
-  return `${n} h`
+  const totalMinutes = Math.round(hours * 60)
+  if (totalMinutes <= 0) return "0 h"
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  if (h === 0) return `${m} min`
+  if (m === 0) return `${h} h`
+  return `${h} h ${m} min`
 }
 
 export function formatMoneyPl(amount: number): string {
-  if (!Number.isFinite(amount) || amount <= 0) return "0 zł"
-  return `${Math.round(amount).toLocaleString("pl-PL")} zł`
+  if (!Number.isFinite(amount) || amount === 0) return "0,00 zł"
+  return `${amount.toLocaleString("pl-PL", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} zł`
 }
 
 export const BRANDMASTER_EVENT_SZKOLENIE_UUID = "9b98715f-a000-11ee-aeba-065ed9e1cfca"
@@ -169,7 +230,7 @@ export function computeEfficiencyHoursFromActions(actions: ActionWithRoundedTime
   let veloHours = 0
 
   for (const item of actions) {
-    const hours = item.roundedHours
+    const hours = item.durationHours
     if (isSzkolenieAction(item.action)) continue
     veloHours += hours
     if (!isVeloEventAction(item.action)) {
@@ -205,14 +266,16 @@ export function mapFinishedActionsWithRoundedTime(
       parseCasDatetime(action.history?.stop) ?? (action.until ? parseIso(action.until) : null)
     if (!start || !stop) continue
 
-    const roundedHours = roundActionDurationHours(start, stop)
-    if (roundedHours <= 0) continue
+    const split = splitActionDurationForPayout(start, stop)
+    if (split.durationHours <= 0) continue
 
     mapped.push({
       action,
       start,
       stop,
-      roundedHours,
+      durationHours: split.durationHours,
+      baseHours: split.baseHours,
+      remainderMinutes: split.remainderMinutes,
       dateLabel: formatPlDatePoland(start),
       startLabel: formatTimePoland(start),
       stopLabel: formatTimePoland(stop),
