@@ -10,7 +10,6 @@ import {
   RefreshCwIcon,
   Trash2Icon,
 } from "lucide-react"
-import { isAxiosError } from "axios"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -19,20 +18,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 import { getRegionLabel } from "../121Sampling/121-sampling-utils"
 import { use121ResolvedTeam } from "../121Sampling/use-121-resolved-team"
-
-function readApiError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
-}
 
 function formatFileSize(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) return "—"
@@ -275,7 +265,7 @@ export default function OneTwoOneMygloKodyPage() {
         setUploadedPhotoUrl(res.data.url)
       } catch (e) {
         if (cancelled) return
-        setPhotoUploadError(readApiError(e))
+        setPhotoUploadError(getApiErrorMessage(e))
         setUploadedPhotoUrl(null)
       } finally {
         if (!cancelled) setIsUploadingPhoto(false)
@@ -328,7 +318,7 @@ export default function OneTwoOneMygloKodyPage() {
       setPhoto(null)
       toast.success(res.message ?? "Zgłoszenie wysłane.", { id: toastId })
     } catch (e) {
-      toast.error(readApiError(e), { id: toastId })
+      toast.error(getApiErrorMessage(e), { id: toastId })
     } finally {
       setIsSubmitting(false)
     }

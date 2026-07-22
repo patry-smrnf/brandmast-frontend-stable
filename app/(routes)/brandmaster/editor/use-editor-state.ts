@@ -4,7 +4,7 @@ import * as React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type { ShopResponse } from "@/lib/api/generated/types"
 import { useConfigState } from "@/lib/config/configStore"
 
@@ -113,7 +113,7 @@ export function useEditorState() {
       } catch (e) {
         if (cancelled) return
         setMonthActions([])
-        toast.error(e instanceof Error ? e.message : "Nie udało się pobrać akcji miesiąca.")
+        toast.error(getApiErrorMessage(e, "Nie udało się pobrać akcji miesiąca."))
       } finally {
         if (cancelled) return
         loadedMonthKeyRef.current = monthKey
@@ -217,7 +217,7 @@ export function useEditorState() {
           if (matched) setSelectedShop(matched)
         }
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Nie udało się pobrać listy lokalizacji.")
+        toast.error(getApiErrorMessage(e, "Nie udało się pobrać listy lokalizacji."))
       } finally {
         if (cancelled) return
         setShopsLoading(false)
@@ -396,7 +396,7 @@ export function useEditorState() {
       })
       void router.push("/brandmaster/actions")
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nie udało się zapisać.", {
+      toast.error(getApiErrorMessage(e, "Nie udało się zapisać."), {
         id: "bm-editor-submit",
       })
     }

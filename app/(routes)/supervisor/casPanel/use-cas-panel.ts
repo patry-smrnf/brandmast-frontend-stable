@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type { TourPlannerActionListItem } from "@/lib/api/generated/types"
 import type { CasActionStatus } from "@/lib/cas-status"
 export function useCasPanelActions(dateKey: string) {
@@ -42,7 +42,7 @@ export function useCasPanelActions(dateKey: string) {
       } catch (e) {
         if (cancelled) return
         setActions([])
-        setError(e instanceof Error ? e.message : "Nie udało się pobrać akcji CAS.")
+        setError(getApiErrorMessage(e, "Nie udało się pobrać akcji CAS."))
       } finally {
         if (!cancelled) setIsLoading(false)
       }

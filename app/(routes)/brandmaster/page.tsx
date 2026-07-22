@@ -10,7 +10,7 @@ import {
   RefreshCwIcon,
 } from "lucide-react"
 
-import { fetchSampleStats } from "@/lib/api"
+import { fetchSampleStats, getApiErrorMessage } from "@/lib/api"
 import type { SampleStatsFieldCounts } from "@/lib/api"
 
 import { Button } from "@/components/ui/button"
@@ -363,7 +363,7 @@ export default function BrandmasterPage() {
         } catch (e) {
           if (actionStatsRequestRef.current !== requestId) return
           setActionStatsError(
-            e instanceof Error ? e.message : "Nie udało się pobrać wyników akcji.",
+            getApiErrorMessage(e, "Nie udało się pobrać wyników akcji."),
           )
         } finally {
           if (actionStatsRequestRef.current === requestId) {

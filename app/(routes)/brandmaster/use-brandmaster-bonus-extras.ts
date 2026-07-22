@@ -3,17 +3,12 @@
 import * as React from "react"
 import { toast } from "sonner"
 
-import { brandmastApi, type BonusResponse } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage, type BonusResponse } from "@/lib/api"
 
 type EditingState =
   | { mode: "idle" }
   | { mode: "edit"; idBonus: number; title: string; amount: string }
   | { mode: "create"; title: string; amount: string }
-
-function readApiError(err: unknown): string {
-  if (err instanceof Error) return err.message
-  return "Wystąpił nieoczekiwany błąd."
-}
 
 function parseAmountInput(value: string): number | null {
   const normalized = value.trim().replace(",", ".")
@@ -50,7 +45,7 @@ export function useBrandmasterBonusExtras(enabled = true) {
       setItems(res.data ?? [])
     } catch (e) {
       if (fetchRequestRef.current !== requestId) return
-      setLoadError(readApiError(e))
+      setLoadError(getApiErrorMessage(e, "Wystąpił nieoczekiwany błąd."))
       setItems([])
     } finally {
       if (fetchRequestRef.current === requestId) {
@@ -147,7 +142,7 @@ export function useBrandmasterBonusExtras(enabled = true) {
       setEditing({ mode: "idle" })
       await loadExtras()
     } catch (e) {
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e, "Wystąpił nieoczekiwany błąd."))
     } finally {
       setSavingId(null)
     }
@@ -172,7 +167,7 @@ export function useBrandmasterBonusExtras(enabled = true) {
       setEditing({ mode: "idle" })
       await loadExtras()
     } catch (e) {
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e, "Wystąpił nieoczekiwany błąd."))
     } finally {
       setSavingId(null)
     }
@@ -199,7 +194,7 @@ export function useBrandmasterBonusExtras(enabled = true) {
       }
       await loadExtras()
     } catch (e) {
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e, "Wystąpił nieoczekiwany błąd."))
     } finally {
       setDeletingId(null)
     }

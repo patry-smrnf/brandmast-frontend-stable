@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { brandmastApi, type OneTwoOneRivoVirto, type TourPlannerActionListItem } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage, type OneTwoOneRivoVirto, type TourPlannerActionListItem } from "@/lib/api"
 import { nowInPoland } from "@/lib/dates/date-utils"
 
 import { getMonthToTodayCasRange } from "./121-sampling-utils"
@@ -65,7 +65,7 @@ export function use121SubmitSampling(enabled: boolean, teamId: number | null) {
         setProducts(productItems)
       } catch (e) {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : "Nie udało się pobrać danych.")
+        setError(getApiErrorMessage(e, "Nie udało się pobrać danych."))
         setActions([])
         setProducts([])
       } finally {

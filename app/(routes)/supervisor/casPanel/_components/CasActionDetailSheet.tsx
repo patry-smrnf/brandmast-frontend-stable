@@ -9,7 +9,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { fetchSampleStats } from "@/lib/api"
+import { fetchSampleStats, getApiErrorMessage } from "@/lib/api"
 import type { SampleStatsFieldCounts } from "@/lib/api"
 import type { TourPlannerActionListItem } from "@/lib/api/generated/types"
 import { Badge } from "@/components/ui/badge"
@@ -104,7 +104,7 @@ export function CasActionDetailSheet({
       })
       .catch((e) => {
         if (statsRequestRef.current !== requestId) return
-        setStatsError(e instanceof Error ? e.message : "Nie udało się pobrać wyników.")
+        setStatsError(getApiErrorMessage(e, "Nie udało się pobrać wyników."))
       })
       .finally(() => {
         if (statsRequestRef.current === requestId) setStatsLoading(false)
@@ -139,7 +139,7 @@ export function CasActionDetailSheet({
         })
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nie udało się zapisać statusu.", {
+      toast.error(getApiErrorMessage(e, "Nie udało się zapisać statusu."), {
         id: toastId,
       })
     } finally {

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ConfigBootstrap } from "@/app/providers/ConfigBootstrap";
+import { AuthSessionDialog } from "@/components/auth/AuthSessionDialog";
 import { RoleContextMenu } from "@/components/layout/RoleContextMenu";
 
 const geistSans = Geist({
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ConfigBootstrap ttlMs={0} />
         <RoleContextMenu />
+        <AuthSessionDialog />
         {children}
         <Toaster richColors closeButton />
       </body>

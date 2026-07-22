@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { createPortal } from "react-dom"
-import { isAxiosError } from "axios"
 import {
   AlertTriangleIcon,
   CheckCircle2Icon,
@@ -16,7 +15,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type {
   Event,
   ShopAddRequest,
@@ -30,15 +29,6 @@ import {
 } from "@/lib/shops/cas-point-utils"
 import { buildExistingShopTpIdSet } from "@/lib/shops/shop-utils"
 import { cn } from "@/lib/utils"
-
-function readApiError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
-}
 
 export type AddShopsSheetProps = {
   open: boolean
@@ -203,7 +193,7 @@ export function AddShopsSheet({
         setSelectedEventId(list[0]!.id!)
       }
     } catch (e) {
-      setEventsError(readApiError(e))
+      setEventsError(getApiErrorMessage(e))
       setEvents([])
     } finally {
       setEventsLoading(false)
@@ -223,7 +213,7 @@ export function AddShopsSheet({
       }
       setCasPoints(res.data ?? [])
     } catch (e) {
-      setPointsError(readApiError(e))
+      setPointsError(getApiErrorMessage(e))
     } finally {
       setPointsLoading(false)
     }
@@ -312,7 +302,7 @@ export function AddShopsSheet({
       onOpenChange(false)
       onShopsAdded?.()
     } catch (e) {
-      toast.error(readApiError(e), { id: toastId })
+      toast.error(getApiErrorMessage(e), { id: toastId })
     } finally {
       setIsSubmitting(false)
     }

@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type { ShopResponse } from "@/lib/api/generated/types"
 import { cn } from "@/lib/utils"
 
@@ -108,7 +108,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
         }
       } catch (e) {
         if (!cancelled) {
-          toast.error(e instanceof Error ? e.message : "Nie udało się pobrać sklepów.")
+          toast.error(getApiErrorMessage(e, "Nie udało się pobrać sklepów."))
           setShops([])
         }
       } finally {
@@ -209,7 +209,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
       )
       onOpenChange(false)
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nie udało się zapisać zmian.", { id: toastId })
+      toast.error(getApiErrorMessage(e, "Nie udało się zapisać zmian."), { id: toastId })
     } finally {
       setIsSubmitting(false)
     }

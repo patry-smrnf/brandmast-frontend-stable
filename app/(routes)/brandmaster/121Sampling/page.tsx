@@ -20,8 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { brandmastApi, type OneTwoOneSampling, type TourPlannerActionListItem } from "@/lib/api"
-import { isAxiosError } from "axios"
+import { brandmastApi, getApiErrorMessage, type OneTwoOneSampling, type TourPlannerActionListItem } from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
@@ -42,15 +41,6 @@ import {
 import { use121ResolvedTeam } from "./use-121-resolved-team"
 import { use121SamplingList } from "./use-121-sampling-list"
 import { use121SubmitSampling } from "./use-121-submit-sampling"
-
-function readApiError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
-}
 
 function ViewSwitcher({
   view,
@@ -499,7 +489,7 @@ export default function OneTwoOneSamplingPage() {
       setSelectedProductId(null)
       list.refetch()
     } catch (e) {
-      toast.error(readApiError(e), { id: toastId })
+      toast.error(getApiErrorMessage(e), { id: toastId })
     } finally {
       setIsSubmitting(false)
     }

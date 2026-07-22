@@ -2,9 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { isAxiosError } from "axios";
 
-import { brandmastApi, tokenStore } from "@/lib/api";
+import { brandmastApi, getApiErrorMessage, tokenStore } from "@/lib/api";
 import {
   getConfigState,
   hydrateConfigFromStorage,
@@ -53,14 +52,7 @@ export function ConfigBootstrap({ ttlMs = 60_000 }: Props) {
         setConfigError(res.message ?? "Nie udało się pobrać konfiguracji.");
       } catch (err) {
         if (cancelled) return;
-        if (isAxiosError(err)) {
-          const maybeData = err.response?.data as
-            | { message?: string; success?: boolean }
-            | undefined;
-          setConfigError(maybeData?.message ?? "Błąd sieci podczas pobierania konfiguracji.");
-          return;
-        }
-        setConfigError("Błąd podczas pobierania konfiguracji.");
+        setConfigError(getApiErrorMessage(err, "Błąd sieci podczas pobierania konfiguracji."));
       }
     })();
 

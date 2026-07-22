@@ -4,6 +4,7 @@ import * as React from "react"
 
 import {
   brandmastApi,
+  getApiErrorMessage,
   type OneTwoOneRivoVirto,
   type OneTwoOneSampling,
 } from "@/lib/api"
@@ -59,7 +60,7 @@ export function use121SamplingList(resolved: Resolved121TeamContext) {
         if (!resolved.error) setError(null)
       } catch (e) {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : "Nie udało się pobrać danych.")
+        setError(getApiErrorMessage(e, "Nie udało się pobrać danych."))
         setProducts([])
         setSamplings([])
       } finally {

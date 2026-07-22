@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, ApiError, getApiErrorMessage } from "@/lib/api"
 import { toDateKey, toMonthKey } from "@/lib/dates/date-utils"
 
 type ExportKind = "brandmasters" | "actions"
@@ -39,28 +39,40 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-async function readApiError(err: unknown): Promise<string> {
+async function readExportError(err: unknown): Promise<string> {
   if (isAxiosError(err)) {
     const data = err.response?.data
     if (data instanceof Blob) {
       try {
         const text = await data.text()
-        if (!text.trim()) return err.message ?? "Błąd sieci."
+        if (!text.trim()) return getApiErrorMessage(err, "Błąd sieci.")
         try {
-          const json = JSON.parse(text) as { message?: string }
-          return json.message ?? text
+          const json = JSON.parse(text) as {
+            message?: string
+            errorCode?: string
+            violations?: Array<{ field?: string; message?: string }>
+          }
+          return getApiErrorMessage(
+            new ApiError({
+              message:
+                (typeof json.message === "string" && json.message.trim()) ||
+                text ||
+                "Błąd sieci.",
+              status: err.response?.status ?? 0,
+              code: typeof json.errorCode === "string" ? json.errorCode : undefined,
+              details: json,
+            }),
+            "Błąd sieci.",
+          )
         } catch {
           return text
         }
       } catch {
-        return err.message ?? "Błąd sieci."
+        return getApiErrorMessage(err, "Błąd sieci.")
       }
     }
-    const json = data as { message?: string } | undefined
-    return json?.message ?? err.message ?? "Błąd sieci."
   }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
+  return getApiErrorMessage(err, "Błąd sieci.")
 }
 
 function ExportStatusBanner({
@@ -138,7 +150,7 @@ export default function SupervisorExcelPage() {
         toast.success("Pobrano raport akcji.")
       }
     } catch (e) {
-      toast.error(await readApiError(e))
+      toast.error(await readExportError(e))
     } finally {
       setExporting(null)
     }

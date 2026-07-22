@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { brandmastApi, fetchSampleStats } from "@/lib/api"
+import { brandmastApi, fetchSampleStats, getApiErrorMessage } from "@/lib/api"
 import type { SampleStatsCountsByField, TourPlannerActionListItem } from "@/lib/api"
 import { getConfigState, setConfig } from "@/lib/config/configStore"
 import { formatPlDateTimePoland, nowInPoland, toDateKeyInPoland } from "@/lib/dates/date-utils"
@@ -161,7 +161,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
         void fetchOneTwoOneData(configuredOneTwoOne)
       } catch (e) {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : "Nie udało się pobrać danych.")
+        setError(getApiErrorMessage(e, "Nie udało się pobrać danych."))
         setPolandNow(null)
         setStartedActions([])
         setMonthActions([])

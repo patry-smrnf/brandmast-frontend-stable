@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 import { formatTime, parseIso } from "@/lib/dates/date-utils"
@@ -133,7 +133,7 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
       onOpenChange(false)
       onAccepted()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nie udało się zaakceptować.", { id: toastId })
+      toast.error(getApiErrorMessage(e, "Nie udało się zaakceptować."), { id: toastId })
     } finally {
       setIsSubmitting(false)
     }

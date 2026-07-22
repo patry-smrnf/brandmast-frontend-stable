@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { isAxiosError } from "axios"
 import { Loader2Icon, RefreshCwIcon, ShieldIcon, UsersIcon } from "lucide-react"
 import { toast } from "sonner"
 
@@ -18,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
-import { brandmastApi, tokenStore } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage, tokenStore } from "@/lib/api"
 import type { SettingResponse } from "@/lib/api/generated/types"
 import { setConfig, useConfigState } from "@/lib/config/configStore"
 import { cn } from "@/lib/utils"
@@ -42,15 +41,6 @@ function BoolBadge({ value }: { value: boolean | null | undefined }) {
       {value ? "Tak" : "Nie"}
     </Badge>
   )
-}
-
-function readApiError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
 }
 
 type ActionFlagKey =
@@ -154,7 +144,7 @@ export default function SupervisorSettingsPage() {
       setCasPasswordDraft("")
       await refreshConfig()
     } catch (e) {
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e))
     } finally {
       setCasDetachSaving(false)
     }
@@ -182,7 +172,7 @@ export default function SupervisorSettingsPage() {
       setCasPasswordDraft("")
       await refreshConfig()
     } catch (e) {
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e))
     } finally {
       setCasConnectSaving(false)
     }
@@ -207,7 +197,7 @@ export default function SupervisorSettingsPage() {
       toast.success("Zapisano uprawnienia akcji.")
       await refreshConfig()
     } catch (e) {
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e))
     } finally {
       setActionSavingKey(null)
     }
@@ -228,7 +218,7 @@ export default function SupervisorSettingsPage() {
       setRequirePwdOverride(null)
     } catch (e) {
       setRequirePwdOverride(null)
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e))
     } finally {
       setRequirePwdSaving(false)
     }
@@ -255,7 +245,7 @@ export default function SupervisorSettingsPage() {
       setAccountPwd2("")
       await refreshConfig()
     } catch (e) {
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e))
     } finally {
       setAccountPwdSaving(false)
     }

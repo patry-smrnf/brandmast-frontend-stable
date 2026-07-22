@@ -18,7 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { brandmastApi, type OneTwoOneMagazynItem, type SampleStatsGloCounts } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage, type OneTwoOneMagazynItem, type SampleStatsGloCounts } from "@/lib/api"
 
 import {
   formatEfficiencyPl,
@@ -309,7 +309,7 @@ function MagazynWysylkiSection({ hasOneTwoOne }: { hasOneTwoOne: boolean }) {
         setFetched(true)
       } catch (e) {
         if (requestRef.current !== requestId) return
-        setError(e instanceof Error ? e.message : "Nie udało się pobrać magazynu wysyłki.")
+        setError(getApiErrorMessage(e, "Nie udało się pobrać magazynu wysyłki."))
         setItems([])
         setFetched(true)
       } finally {

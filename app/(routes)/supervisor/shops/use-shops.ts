@@ -1,20 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { isAxiosError } from "axios"
 
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type { ShopResponse } from "@/lib/api/generated/types"
 import { useIsClient } from "@/lib/hooks/use-is-client"
-
-function readFetchError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
-}
 
 export function useShops() {
   const isClient = useIsClient()
@@ -34,7 +24,7 @@ export function useShops() {
       }
       setShops(res.data ?? [])
     } catch (e) {
-      setError(readFetchError(e))
+      setError(getApiErrorMessage(e))
       setShops([])
     } finally {
       setIsLoading(false)

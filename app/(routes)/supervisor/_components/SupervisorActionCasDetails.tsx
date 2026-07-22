@@ -5,7 +5,7 @@ import { ChevronDownIcon, Link2Icon, Loader2Icon } from "lucide-react"
 import { toast } from "sonner"
 
 import { Checkbox } from "@/components/ui/checkbox"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type { CasDetails } from "@/lib/api"
 import {
   getCasStatusPresentationFromRaw,
@@ -150,7 +150,7 @@ export function SupervisorActionCasDetails({
       })
     } catch (e) {
       onCasStatusPatched({ idAction, externalUuid, status: previousStatus })
-      toast.error(e instanceof Error ? e.message : "Nie udało się zaktualizować statusu CAS.")
+      toast.error(getApiErrorMessage(e, "Nie udało się zaktualizować statusu CAS."))
     } finally {
       pendingRef.current = null
       setPendingUuid(null)

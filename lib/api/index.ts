@@ -1,4 +1,4 @@
-export { ApiError } from "@/lib/api/errors";
+export { ApiError, getApiErrorMessage, isAuthApiError } from "@/lib/api/errors";
 export { apiFetch } from "@/lib/api/http";
 export { api } from "@/lib/api/client";
 export * as healthApi from "@/lib/api/modules/health";
@@ -18,6 +18,12 @@ export {
   homePathForRole,
   type UserRole,
 } from "@/lib/api/token";
+export { forceLogout } from "@/lib/api/auth-session";
+export {
+  notifyAuthSessionError,
+  subscribeAuthSessionError,
+  type AuthSessionErrorPayload,
+} from "@/lib/api/auth-session-events";
 export type { SettingResponse } from "@/lib/api/generated/types";
 export * from "@/lib/api/generated/types";
 export { BrandmastApi, brandmastApi } from "@/lib/api/generated/brandmast";

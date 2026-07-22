@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import { useConfigState } from "@/lib/config/configStore"
 import { toast } from "sonner"
 
@@ -215,7 +215,7 @@ export default function BrandmasterActionsPage() {
         toast.success("Akcja została usunięta.")
         refetch()
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Nie udało się usunąć akcji.")
+        toast.error(getApiErrorMessage(e, "Nie udało się usunąć akcji."))
       }
     },
     [refetch]
@@ -232,7 +232,7 @@ export default function BrandmasterActionsPage() {
         toast.success("Akcja została odwołana.")
         refetch()
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Nie udało się odwołać akcji.")
+        toast.error(getApiErrorMessage(e, "Nie udało się odwołać akcji."))
       }
     },
     [refetch]

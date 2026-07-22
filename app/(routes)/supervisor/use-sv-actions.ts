@@ -6,7 +6,7 @@ import {
   getShopEventId,
   getShopEventName,
 } from "@/app/(routes)/brandmaster/editor/editor-utils"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type { ActionsResponse, CasDetails } from "@/lib/api"
 import type { ShopResponse } from "@/lib/api/generated/types"
 import { normalizeActionStatus, type NormalizedActionStatus } from "@/lib/action-status"
@@ -194,7 +194,7 @@ export function useSvActions(monthKey: string, options?: { enabled?: boolean }) 
         setRows(flattenResponse(res.data))
       } catch (e) {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : "Nie udało się pobrać akcji.")
+        setError(getApiErrorMessage(e, "Nie udało się pobrać akcji."))
         setRows([])
       } finally {
         if (!cancelled) setIsLoading(false)

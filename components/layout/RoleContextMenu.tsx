@@ -21,7 +21,7 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { clearAuthCookies, roleStore, tokenStore, type UserRole } from "@/lib/api"
+import { forceLogout, roleStore, type UserRole } from "@/lib/api"
 import { useConfigState } from "@/lib/config/configStore"
 
 type MenuItem = {
@@ -101,11 +101,7 @@ export function RoleContextMenu() {
     label: "Wyloguj",
     icon: <LogOutIcon className="size-4" />,
     onSelect: () => {
-      tokenStore.clear()
-      roleStore.clear()
-      clearAuthCookies()
-      if (typeof window !== "undefined") window.dispatchEvent(new Event(ROLE_CHANGED_EVENT))
-      router.push("/login")
+      forceLogout()
     },
   }
 

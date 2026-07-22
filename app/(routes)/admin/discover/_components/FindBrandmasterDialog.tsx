@@ -1,35 +1,19 @@
 "use client"
 
 import * as React from "react"
-import { isAxiosError } from "axios"
 import { Loader2Icon, SearchIcon, XIcon } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { brandmastApi, type BrandmastersResponse, type Violation } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage, type BrandmastersResponse } from "@/lib/api"
 
 type FindBrandmasterDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** Optional: apply found login as Discover details filter. */
   onUseLogin?: (login: string) => void
-}
-
-function readError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as
-      | { message?: string; violations?: Violation[] }
-      | undefined
-    const violations = data?.violations?.filter((v) => v.message?.trim())
-    if (violations && violations.length > 0) {
-      return violations.map((v) => v.message).join(" · ")
-    }
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
 }
 
 export function FindBrandmasterDialog({
@@ -82,7 +66,7 @@ export function FindBrandmasterDialog({
       }
       setResult(res.data)
     } catch (err) {
-      setError(readError(err))
+      setError(getApiErrorMessage(err))
     } finally {
       setLoading(false)
     }

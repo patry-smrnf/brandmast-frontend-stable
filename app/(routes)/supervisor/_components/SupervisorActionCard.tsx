@@ -5,7 +5,7 @@ import { ArrowRightIcon, CalendarDaysIcon, ClockIcon, MapPinIcon, PenLineIcon } 
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 import { formatPlDateTimeFromIso, formatTime, parseIso } from "@/lib/dates/date-utils"
@@ -80,7 +80,7 @@ function SupervisorActionCardInner({
       toast.success("Akcja została odwołana.", { id: toastId })
       onApproved()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nie udało się odwołać akcji.", { id: toastId })
+      toast.error(getApiErrorMessage(e, "Nie udało się odwołać akcji."), { id: toastId })
     } finally {
       setIsCancelling(false)
     }

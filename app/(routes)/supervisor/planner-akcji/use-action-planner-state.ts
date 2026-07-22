@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { isAxiosError } from "axios"
 
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type { Event, ShopResponse } from "@/lib/api/generated/types"
 import { useIsClient } from "@/lib/hooks/use-is-client"
 import { toDateKey } from "@/lib/dates/date-utils"
@@ -22,15 +21,6 @@ import {
   type PlannerTask,
   type ShopViewMode,
 } from "./planner-utils"
-
-function readFetchError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
-}
 
 export function useActionPlannerState() {
   const isClient = useIsClient()
@@ -98,7 +88,7 @@ export function useActionPlannerState() {
       }
       setEvents(res.data ?? [])
     } catch (e) {
-      setEventsError(readFetchError(e))
+      setEventsError(getApiErrorMessage(e))
       setEvents([])
     } finally {
       setEventsLoading(false)
@@ -127,7 +117,7 @@ export function useActionPlannerState() {
         setShops(filterShopsByEventId(res.data ?? [], eventId))
       }
     } catch (e) {
-      setShopsError(readFetchError(e))
+      setShopsError(getApiErrorMessage(e))
       setShops([])
     } finally {
       setShopsLoading(false)
@@ -278,7 +268,7 @@ export function useActionPlannerState() {
         setTasks((prev) =>
           prev.map((t) =>
             t.key === task.key
-              ? { ...t, status: "error", errorMessage: readFetchError(e) }
+              ? { ...t, status: "error", errorMessage: getApiErrorMessage(e) }
               : t,
           ),
         )

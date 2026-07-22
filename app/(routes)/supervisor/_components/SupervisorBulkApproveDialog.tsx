@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import { AlertCircleIcon, CheckCircle2Icon, Loader2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { formatTime, parseIso } from "@/lib/dates/date-utils"
 
@@ -136,7 +136,7 @@ export function SupervisorBulkApproveDialog({
           setCompletedCount(i + 1)
         } catch (e) {
           if (runIdRef.current !== runId) return
-          setErrorMessage(e instanceof Error ? e.message : "Nie udało się zaakceptować akcji.")
+          setErrorMessage(getApiErrorMessage(e, "Nie udało się zaakceptować akcji."))
           setPhase("error")
           return
         }

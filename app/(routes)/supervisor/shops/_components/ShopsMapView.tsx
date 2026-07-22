@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import dynamic from "next/dynamic"
-import { isAxiosError } from "axios"
 import {
   AlertTriangleIcon,
   Loader2Icon,
@@ -23,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type { ShopResponse } from "@/lib/api/generated/types"
 import {
   buildShopLabel,
@@ -49,15 +48,6 @@ const EditorShopsMap = dynamic(
     ),
   }
 )
-
-function readApiError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
-}
 
 export type ShopsMapViewProps = {
   shops: ShopResponse[]
@@ -113,7 +103,7 @@ export function ShopsMapView({ shops, isLoading, onShopDeleted }: ShopsMapViewPr
       setSelectedShop(null)
       setConfirmDelete(false)
     } catch (e) {
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e))
     } finally {
       setDeleting(false)
     }

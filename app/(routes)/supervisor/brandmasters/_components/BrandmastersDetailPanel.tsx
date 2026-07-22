@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { isAxiosError } from "axios"
 import {
   AlertTriangleIcon,
   Loader2Icon,
@@ -19,7 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type { BrandmastersResponse } from "@/lib/api/generated/types"
 import {
   buildBrandmasterLabel,
@@ -28,15 +27,6 @@ import {
   getBrandmasterTpUuid,
 } from "@/lib/brandmasters/brandmaster-utils"
 import { cn } from "@/lib/utils"
-
-function readApiError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
-}
 
 export type BrandmastersDetailPanelProps = {
   selected: BrandmastersResponse | null
@@ -68,7 +58,7 @@ export function BrandmastersDetailPanel({ selected, onDeleted }: BrandmastersDet
       onDeleted(id)
       setConfirmDelete(false)
     } catch (e) {
-      toast.error(readApiError(e))
+      toast.error(getApiErrorMessage(e))
     } finally {
       setDeleting(false)
     }

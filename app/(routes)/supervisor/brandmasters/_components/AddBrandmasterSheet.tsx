@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { createPortal } from "react-dom"
-import { isAxiosError } from "axios"
 import {
   AlertTriangleIcon,
   CheckCircle2Icon,
@@ -16,7 +15,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import type {
   BrandmastersResponse,
   TourPlannerBrandmasterListItem,
@@ -30,15 +29,6 @@ import {
   getCasBrandmasterKey,
 } from "@/lib/brandmasters/cas-brandmaster-utils"
 import { cn } from "@/lib/utils"
-
-function readApiError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
-}
 
 export type AddBrandmasterSheetProps = {
   open: boolean
@@ -129,7 +119,7 @@ export function AddBrandmasterSheet({
       }
       setCasBrandmasters(res.data ?? [])
     } catch (e) {
-      setListError(readApiError(e))
+      setListError(getApiErrorMessage(e))
     } finally {
       setListLoading(false)
     }
@@ -189,7 +179,7 @@ export function AddBrandmasterSheet({
       onOpenChange(false)
       onBrandmasterAdded?.()
     } catch (e) {
-      toast.error(readApiError(e), { id: toastId })
+      toast.error(getApiErrorMessage(e), { id: toastId })
     } finally {
       setIsSubmitting(false)
     }

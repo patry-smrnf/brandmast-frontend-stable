@@ -1,5 +1,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
 import { getBrowserApiBaseUrl } from "@/lib/api/base-url";
+import { notifyAuthSessionError } from "@/lib/api/auth-session-events";
+import { getApiErrorMessage, isAuthApiError } from "@/lib/api/errors";
 import { tokenStore } from "../token";
 
 export type ApiClientOptions = {
@@ -40,6 +42,19 @@ export function createBrandmastHttpClient(opts: ApiClientOptions = {}): AxiosIns
     }
     return config;
   });
+
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (typeof window !== "undefined" && isAuthApiError(error)) {
+        const path = window.location.pathname;
+        if (path !== "/login" && path !== "/no-access") {
+          notifyAuthSessionError(getApiErrorMessage(error, "Sesja wygasła lub token jest nieprawidłowy."));
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
 
   return instance;
 }

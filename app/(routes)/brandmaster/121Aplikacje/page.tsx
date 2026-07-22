@@ -23,10 +23,10 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import {
   brandmastApi,
+  getApiErrorMessage,
   type OneTwoOneAplikacjaZgloszenie,
   type TourPlannerActionListItem,
 } from "@/lib/api"
-import { isAxiosError } from "axios"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import {
@@ -49,15 +49,6 @@ import {
 } from "./121-aplikacje-utils"
 import { use121AplikacjeList } from "./use-121-aplikacje-list"
 import { use121SubmitAplikacje } from "./use-121-submit-aplikacje"
-
-function readApiError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
-}
 
 function ViewSwitcher({
   view,
@@ -509,7 +500,7 @@ export default function OneTwoOneAplikacjePage() {
             successCount++
           }
         } catch (e) {
-          lastError = readApiError(e)
+          lastError = getApiErrorMessage(e)
         }
       }
 

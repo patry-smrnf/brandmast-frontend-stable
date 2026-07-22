@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { brandmastApi } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage } from "@/lib/api"
 import { normalizeActionStatus } from "@/lib/action-status"
 import type { ActionsPayload } from "./types"
 
@@ -73,7 +73,7 @@ export function useBmActions(monthKey: string) {
         setData(payload)
       } catch (e) {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : "Nie udało się pobrać akcji.")
+        setError(getApiErrorMessage(e, "Nie udało się pobrać akcji."))
         setData(emptyPayload())
       } finally {
         if (cancelled) return

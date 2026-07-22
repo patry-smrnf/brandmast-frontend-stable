@@ -1,16 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { isAxiosError } from "axios"
 
 import {
   brandmastApi,
+  getApiErrorMessage,
   mergeServiceLogs,
+  notifyAuthSessionError,
   subscribeLogsStream,
   type LogsStreamSubscription,
   type LogsSearchTotal,
   type ServiceLogResponse,
-  type Violation,
 } from "@/lib/api"
 import type { DiscoverFilterPreset } from "./discover-filters"
 import {
@@ -38,23 +38,6 @@ export type DiscoverStreamStatus = "idle" | "loading" | "live" | "paused" | "err
 function clampSize(size: number): number {
   if (!Number.isFinite(size)) return DISCOVER_DEFAULT_SIZE
   return Math.min(DISCOVER_MAX_SIZE, Math.max(DISCOVER_MIN_SIZE, Math.trunc(size)))
-}
-
-function readApiError(err: unknown): string {
-  if (isAxiosError(err)) {
-    const data = err.response?.data as
-      | { message?: string; errorCode?: string; violations?: Violation[] }
-      | undefined
-    const violations = data?.violations?.filter((v) => v.message?.trim())
-    if (violations && violations.length > 0) {
-      return violations
-        .map((v) => (v.field ? `${v.field}: ${v.message}` : v.message))
-        .join(" · ")
-    }
-    return data?.message ?? err.message ?? "Błąd sieci."
-  }
-  if (err instanceof Error) return err.message
-  return "Nieznany błąd."
 }
 
 function takeNewest(logs: ServiceLogResponse[], limit: number): ServiceLogResponse[] {
@@ -279,7 +262,7 @@ export function useDiscoverLogs({
         }
       } catch (err) {
         if (cancelled) return
-        setError(readApiError(err))
+        setError(getApiErrorMessage(err))
         setHasLoaded(true)
         setStatus("error")
         setLogs([])
@@ -347,14 +330,18 @@ export function useDiscoverLogs({
         })
       },
       onUnauthorized: () => {
-        setError("Sesja wygasła — zaloguj się ponownie.")
+        const message = "Sesja wygasła — zaloguj się ponownie."
+        setError(message)
         setStatus("error")
         stopStream()
+        notifyAuthSessionError(message)
       },
       onForbidden: () => {
-        setError("Brak uprawnień admina do podglądu logów.")
+        const message = "Brak uprawnień admina do podglądu logów."
+        setError(message)
         setStatus("error")
         stopStream()
+        notifyAuthSessionError(message)
       },
       onError: () => {
         setStatus((prev) => {

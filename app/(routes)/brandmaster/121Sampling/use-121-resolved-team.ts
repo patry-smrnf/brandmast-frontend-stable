@@ -2,7 +2,7 @@
 
 import * as React from "react"
 
-import { brandmastApi, type OneTwoOneTeam, type SettingResponse } from "@/lib/api"
+import { brandmastApi, getApiErrorMessage, type OneTwoOneTeam, type SettingResponse } from "@/lib/api"
 import { getConfigState, setConfig, useConfigState } from "@/lib/config/configStore"
 
 import { resolveUserTeamFromConfig, type Resolved121Team } from "./121-sampling-utils"
@@ -80,7 +80,7 @@ export function use121ResolvedTeam(): Resolved121TeamContext {
         }
       } catch (e) {
         if (cancelled) return
-        setError(e instanceof Error ? e.message : "Nie udało się dopasować zespołu.")
+        setError(getApiErrorMessage(e, "Nie udało się dopasować zespołu."))
         setTeams([])
         setResolved({ teamId: null, teamName: null, territoryIdent: null })
       } finally {
