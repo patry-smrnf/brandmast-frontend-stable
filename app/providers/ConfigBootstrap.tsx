@@ -31,6 +31,8 @@ export function ConfigBootstrap({ ttlMs = 60_000 }: Props) {
   }, []);
 
   useEffect(() => {
+    if (pathname === "/admin" || pathname.startsWith("/admin/")) return;
+
     const token = tokenStore.get();
     if (!token) return;
 
