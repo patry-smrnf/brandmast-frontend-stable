@@ -165,6 +165,27 @@ export function collectServiceNames(logs: ServiceLogResponse[]): string[] {
   return Array.from(set).sort((a, b) => a.localeCompare(b, "pl"))
 }
 
+export function collectMethodNames(logs: ServiceLogResponse[]): string[] {
+  const set = new Set<string>()
+  for (const log of logs) {
+    const name = log.methodName?.trim()
+    if (name) set.add(name)
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "pl"))
+}
+
+/** Case-insensitive contains in serialized details JSON (mirrors API `detailsContains`). */
+export function logDetailsContains(log: ServiceLogResponse, needle: string): boolean {
+  const q = needle.trim().toLowerCase()
+  if (!q) return true
+  try {
+    const serialized = JSON.stringify(log.details ?? null) ?? ""
+    return serialized.toLowerCase().includes(q)
+  } catch {
+    return false
+  }
+}
+
 /** Merge service name lists (e.g. visible + previously seen / excluded). */
 export function mergeServiceNameLists(...lists: string[][]): string[] {
   const set = new Set<string>()
@@ -245,6 +266,97 @@ export function formatLogTimeShort(iso: string | null | undefined): string {
     minute: "2-digit",
     second: "2-digit",
   })
+}
+
+/** Day key YYYY-MM-DD in local timezone (for separators). */
+export function logDayKey(iso: string | null | undefined): string {
+  if (!iso) return ""
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ""
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+export function formatLogDayLabel(iso: string | null | undefined): string {
+  if (!iso) return "Bez daty"
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  const key = logDayKey(iso)
+  const today = new Date()
+  const yesterday = new Date()
+  yesterday.setDate(today.getDate() - 1)
+  if (key === localDayKey(today)) return "Dzisiaj"
+  if (key === localDayKey(yesterday)) return "Wczoraj"
+  return d.toLocaleDateString("pl-PL", {
+    weekday: "short",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+}
+
+function localDayKey(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** Relative time for fresh live rows (&lt; ~5 min). */
+export function formatRelativeTime(
+  iso: string | null | undefined,
+  nowMs: number = Date.now(),
+): string | null {
+  if (!iso) return null
+  const t = Date.parse(iso)
+  if (Number.isNaN(t)) return null
+  const diffSec = Math.round((nowMs - t) / 1000)
+  if (diffSec < 0 || diffSec > 5 * 60) return null
+  if (diffSec < 5) return "przed chwilą"
+  if (diffSec < 60) return `${diffSec} s temu`
+  const mins = Math.floor(diffSec / 60)
+  return `${mins} min temu`
+}
+
+/** Split text into plain / highlight segments for filter hit marking. */
+export function splitHighlightSegments(
+  text: string,
+  terms: string[],
+): { text: string; hit: boolean }[] {
+  if (!text || terms.length === 0) return [{ text, hit: false }]
+  const lower = text.toLowerCase()
+  const ranges: { start: number; end: number }[] = []
+  for (const term of terms) {
+    if (!term) continue
+    const needle = term.toLowerCase()
+    let from = 0
+    while (from < lower.length) {
+      const idx = lower.indexOf(needle, from)
+      if (idx < 0) break
+      ranges.push({ start: idx, end: idx + needle.length })
+      from = idx + Math.max(needle.length, 1)
+    }
+  }
+  if (ranges.length === 0) return [{ text, hit: false }]
+  ranges.sort((a, b) => a.start - b.start || b.end - a.end)
+  const merged: { start: number; end: number }[] = []
+  for (const r of ranges) {
+    const last = merged[merged.length - 1]
+    if (last && r.start <= last.end) {
+      last.end = Math.max(last.end, r.end)
+    } else {
+      merged.push({ ...r })
+    }
+  }
+  const parts: { text: string; hit: boolean }[] = []
+  let cursor = 0
+  for (const r of merged) {
+    if (r.start > cursor) {
+      parts.push({ text: text.slice(cursor, r.start), hit: false })
+    }
+    parts.push({ text: text.slice(r.start, r.end), hit: true })
+    cursor = r.end
+  }
+  if (cursor < text.length) parts.push({ text: text.slice(cursor), hit: false })
+  return parts
 }
 
 /** Keep newest-first for Discover table. */

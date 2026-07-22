@@ -13,10 +13,12 @@ import {
   formatJsonForDisplay,
   formatLogTime,
   formatLogTimeShort,
+  formatRelativeTime,
   getLogLogin,
   levelBadgeVariant,
   LOG_MARK_COLOR_CLASS,
   logRowKey,
+  splitHighlightSegments,
   type LogMarkColor,
 } from "../discover-utils"
 
@@ -27,6 +29,8 @@ type DiscoverLogRowProps = {
   onToggle: () => void
   onColorChange: (color: LogMarkColor | null) => void
   onTrackingIdClick?: (trackingId: string) => void
+  highlightTerms?: string[]
+  nowMs?: number
 }
 
 export function DiscoverLogRow({
@@ -36,10 +40,13 @@ export function DiscoverLogRow({
   onToggle,
   onColorChange,
   onTrackingIdClick,
+  highlightTerms = [],
+  nowMs,
 }: DiscoverLogRowProps) {
   const key = logRowKey(log)
   const mark = color ? LOG_MARK_COLOR_CLASS[color] : null
   const login = getLogLogin(log)
+  const relative = formatRelativeTime(log.createdAt, nowMs)
 
   const detailsJson = React.useMemo(() => {
     if (!log.details || Object.keys(log.details).length === 0) return null
@@ -96,7 +103,6 @@ export function DiscoverLogRow({
           />
         </div>
 
-        {/* Mobile stacked meta */}
         <div className="min-w-0 space-y-1 sm:contents">
           <div className="flex flex-wrap items-center gap-2 sm:contents">
             <time
@@ -105,7 +111,14 @@ export function DiscoverLogRow({
               title={formatLogTime(log.createdAt)}
             >
               <span className="sm:hidden">{formatLogTime(log.createdAt)}</span>
-              <span className="hidden sm:inline">{formatLogTimeShort(log.createdAt)}</span>
+              <span className="hidden sm:inline">
+                {formatLogTimeShort(log.createdAt)}
+                {relative ? (
+                  <span className="ml-1 text-[10px] text-emerald-600 dark:text-emerald-400">
+                    {relative}
+                  </span>
+                ) : null}
+              </span>
             </time>
 
             <div className="sm:pt-0.5">
@@ -118,7 +131,7 @@ export function DiscoverLogRow({
               className="max-w-full truncate font-mono text-xs text-foreground/90 sm:pt-1"
               title={log.serviceName ?? undefined}
             >
-              {log.serviceName ?? "—"}
+              <HighlightText text={log.serviceName ?? "—"} terms={highlightTerms} />
             </div>
           </div>
 
@@ -126,14 +139,16 @@ export function DiscoverLogRow({
             <p className="truncate text-sm text-foreground">
               {log.methodName ? (
                 <span className="mr-1.5 font-mono text-xs text-muted-foreground">
-                  {log.methodName}
+                  <HighlightText text={log.methodName} terms={highlightTerms} />
                 </span>
               ) : null}
               {login ? (
-                <span className="mr-1.5 font-mono text-[11px] text-primary/90">@{login}</span>
+                <span className="mr-1.5 font-mono text-[11px] text-primary/90">
+                  @<HighlightText text={login} terms={highlightTerms} />
+                </span>
               ) : null}
               <span className="wrap-break-word whitespace-normal sm:truncate sm:whitespace-nowrap">
-                {log.message ?? "—"}
+                <HighlightText text={log.message ?? "—"} terms={highlightTerms} />
               </span>
             </p>
           </div>
@@ -164,7 +179,7 @@ export function DiscoverLogRow({
                     title="Filtruj po trackingId (cały request)"
                     onClick={() => onTrackingIdClick?.(log.trackingId!)}
                   >
-                    {log.trackingId}
+                    <HighlightText text={log.trackingId} terms={highlightTerms} />
                   </button>
                 ) : (
                   <span className="font-mono">—</span>
@@ -196,7 +211,7 @@ export function DiscoverLogRow({
                   "[overflow-wrap:anywhere]",
                 )}
               >
-                {detailsJson}
+                <HighlightText text={detailsJson} terms={highlightTerms} />
               </pre>
             </div>
           ) : (
@@ -205,6 +220,27 @@ export function DiscoverLogRow({
         </div>
       ) : null}
     </div>
+  )
+}
+
+function HighlightText({ text, terms }: { text: string; terms: string[] }) {
+  const parts = React.useMemo(() => splitHighlightSegments(text, terms), [text, terms])
+  if (parts.length === 1 && !parts[0]?.hit) return <>{text}</>
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.hit ? (
+          <mark
+            key={i}
+            className="rounded-sm bg-amber-300/50 px-0.5 text-inherit dark:bg-amber-400/25"
+          >
+            {part.text}
+          </mark>
+        ) : (
+          <React.Fragment key={i}>{part.text}</React.Fragment>
+        ),
+      )}
+    </>
   )
 }
 

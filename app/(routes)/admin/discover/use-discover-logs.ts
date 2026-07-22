@@ -8,9 +8,18 @@ import {
   mergeServiceLogs,
   subscribeLogsStream,
   type LogsStreamSubscription,
+  type LogsSearchTotal,
   type ServiceLogResponse,
+  type Violation,
 } from "@/lib/api"
+import type { DiscoverFilterPreset } from "./discover-filters"
 import {
+  buildLogsSearchRequest,
+  discoverSearchIdentity,
+  liveEntryMatchesPreset,
+} from "./discover-search"
+import {
+  collectMethodNames,
   collectServiceNames,
   mergeServiceNameLists,
   sortLogsNewestFirst,
@@ -33,7 +42,15 @@ function clampSize(size: number): number {
 
 function readApiError(err: unknown): string {
   if (isAxiosError(err)) {
-    const data = err.response?.data as { message?: string; errorCode?: string } | undefined
+    const data = err.response?.data as
+      | { message?: string; errorCode?: string; violations?: Violation[] }
+      | undefined
+    const violations = data?.violations?.filter((v) => v.message?.trim())
+    if (violations && violations.length > 0) {
+      return violations
+        .map((v) => (v.field ? `${v.field}: ${v.message}` : v.message))
+        .join(" · ")
+    }
     return data?.message ?? err.message ?? "Błąd sieci."
   }
   if (err instanceof Error) return err.message
@@ -46,68 +63,81 @@ function takeNewest(logs: ServiceLogResponse[], limit: number): ServiceLogRespon
 }
 
 export type UseDiscoverLogsOptions = {
-  /**
-   * When true (client-side filter rules active), fetch page 0 with size=MAX (500)
-   * so local filters can still fill the display size.
-   */
-  expandBufferForClientFilters?: boolean
-  trackingId?: string
-  from?: string
-  to?: string
+  /** Full UI preset — built into POST /api/logs/search Filter AST. */
+  preset: DiscoverFilterPreset
+  size?: number
+  /** When false, skip history/SSE (e.g. waiting for localStorage hydrate). */
+  enabled?: boolean
 }
 
-export function useDiscoverLogs(
-  serviceFilter: string,
-  size: number = DISCOVER_DEFAULT_SIZE,
-  _excludeService: string = "",
-  options: UseDiscoverLogsOptions = {},
-) {
-  const displaySize = clampSize(size)
-  const expandBuffer = Boolean(options.expandBufferForClientFilters)
-  const trackingId = (options.trackingId ?? "").trim()
-  const from = (options.from ?? "").trim()
-  const to = (options.to ?? "").trim()
+type CursorNav = {
+  after: string | null
+  before: string | null
+}
 
-  const fetchSize = expandBuffer ? DISCOVER_MAX_SIZE : displaySize
+export function useDiscoverLogs({
+  preset,
+  size,
+  enabled = true,
+}: UseDiscoverLogsOptions) {
+  const displaySize = clampSize(size ?? DISCOVER_DEFAULT_SIZE)
+  const searchKey = React.useMemo(() => discoverSearchIdentity(preset), [preset])
+  const serviceForStream = (preset.serviceInclude ?? "").trim()
 
-  const [page, setPage] = React.useState(0)
   const [logs, setLogs] = React.useState<ServiceLogResponse[]>([])
-  const [totalElements, setTotalElements] = React.useState(0)
-  const [totalPages, setTotalPages] = React.useState(0)
+  const [total, setTotal] = React.useState<LogsSearchTotal | null>(null)
+  const [tookMs, setTookMs] = React.useState<number | null>(null)
+  const [nextCursor, setNextCursor] = React.useState<string | null>(null)
+  const [prevCursor, setPrevCursor] = React.useState<string | null>(null)
+  const [hasMore, setHasMore] = React.useState(false)
+  const [pageIndex, setPageIndex] = React.useState(0)
+  const [cursorNav, setCursorNav] = React.useState<CursorNav>({ after: null, before: null })
+  /** Search key for which `cursorNav` is valid — avoids fetching with stale cursors. */
+  const [navSearchKey, setNavSearchKey] = React.useState(searchKey)
+
   const [status, setStatus] = React.useState<DiscoverStreamStatus>("idle")
   const [hasLoaded, setHasLoaded] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [liveEnabled, setLiveEnabled] = React.useState(true)
+  const [liveNewCount, setLiveNewCount] = React.useState(0)
   const [lastConnectedAt, setLastConnectedAt] = React.useState<number | null>(null)
   const [reloadToken, setReloadToken] = React.useState(0)
   const [seenServices, setSeenServices] = React.useState<string[]>([])
+  const [seenMethods, setSeenMethods] = React.useState<string[]>([])
 
   const subRef = React.useRef<LogsStreamSubscription | null>(null)
-  const serviceRef = React.useRef(serviceFilter)
+  const presetRef = React.useRef(preset)
   const liveRef = React.useRef(liveEnabled)
-  const pageRef = React.useRef(page)
-  const fetchSizeRef = React.useRef(fetchSize)
+  const pageIndexRef = React.useRef(pageIndex)
+  const sizeRef = React.useRef(displaySize)
+  const userWantsLiveRef = React.useRef(true)
+  const autoPausedByPageRef = React.useRef(false)
 
-  // Reset to first page when server-side filters / size mode change.
+  const liveBlockedByPage = pageIndex > 0
+  const cursorsReady = navSearchKey === searchKey
+
+  // Reset cursor when search identity changes (filters / size / time).
   React.useEffect(() => {
-    setPage(0)
-  }, [serviceFilter, trackingId, from, to, fetchSize, expandBuffer])
+    setCursorNav({ after: null, before: null })
+    setPageIndex(0)
+    setNavSearchKey(searchKey)
+  }, [searchKey])
 
   React.useEffect(() => {
-    serviceRef.current = serviceFilter
-  }, [serviceFilter])
+    presetRef.current = preset
+  }, [preset])
 
   React.useEffect(() => {
     liveRef.current = liveEnabled
   }, [liveEnabled])
 
   React.useEffect(() => {
-    pageRef.current = page
-  }, [page])
+    pageIndexRef.current = pageIndex
+  }, [pageIndex])
 
   React.useEffect(() => {
-    fetchSizeRef.current = fetchSize
-  }, [fetchSize])
+    sizeRef.current = displaySize
+  }, [displaySize])
 
   const rememberServices = React.useCallback((batch: ServiceLogResponse[]) => {
     const names = collectServiceNames(batch)
@@ -115,16 +145,51 @@ export function useDiscoverLogs(
     setSeenServices((prev) => mergeServiceNameLists(prev, names))
   }, [])
 
+  const rememberMethods = React.useCallback((batch: ServiceLogResponse[]) => {
+    const names = collectMethodNames(batch)
+    if (names.length === 0) return
+    setSeenMethods((prev) => mergeServiceNameLists(prev, names))
+  }, [])
+
   const stopStream = React.useCallback(() => {
     subRef.current?.close()
     subRef.current = null
   }, [])
 
+  // Auto-pause live when browsing history pages; resume on page 0 if user wants live.
+  React.useEffect(() => {
+    if (liveBlockedByPage) {
+      if (liveRef.current) {
+        autoPausedByPageRef.current = true
+        liveRef.current = false
+        setLiveEnabled(false)
+        stopStream()
+        setStatus("paused")
+      }
+      return
+    }
+    if (autoPausedByPageRef.current && userWantsLiveRef.current) {
+      autoPausedByPageRef.current = false
+      liveRef.current = true
+      setLiveEnabled(true)
+      setStatus((s) => (s === "error" ? s : "idle"))
+    }
+  }, [liveBlockedByPage, stopStream])
+
   const refresh = React.useCallback(() => {
+    setLiveNewCount(0)
+    setCursorNav({ after: null, before: null })
+    setPageIndex(0)
     setReloadToken((n) => n + 1)
   }, [])
 
+  const clearLiveNew = React.useCallback(() => {
+    setLiveNewCount(0)
+  }, [])
+
   const pause = React.useCallback(() => {
+    userWantsLiveRef.current = false
+    autoPausedByPageRef.current = false
     liveRef.current = false
     setLiveEnabled(false)
     stopStream()
@@ -132,40 +197,55 @@ export function useDiscoverLogs(
   }, [stopStream])
 
   const resume = React.useCallback(() => {
+    userWantsLiveRef.current = true
+    autoPausedByPageRef.current = false
+    if (pageIndexRef.current > 0) {
+      setCursorNav({ after: null, before: null })
+      setPageIndex(0)
+      setReloadToken((n) => n + 1)
+    }
     liveRef.current = true
     setLiveEnabled(true)
     setStatus((s) => (s === "error" ? s : "idle"))
   }, [])
 
-  const goToPage = React.useCallback(
-    (next: number) => {
-      setPage((prev) => {
-        const max = Math.max(totalPages - 1, 0)
-        return Math.min(Math.max(0, next), max)
-      })
-    },
-    [totalPages],
-  )
+  const goNext = React.useCallback(() => {
+    if (!nextCursor) return
+    setCursorNav({ after: nextCursor, before: null })
+    setPageIndex((i) => i + 1)
+  }, [nextCursor])
 
-  // History
+  const goPrev = React.useCallback(() => {
+    if (pageIndex <= 0) return
+    if (prevCursor) {
+      setCursorNav({ after: null, before: prevCursor })
+      setPageIndex((i) => Math.max(0, i - 1))
+      return
+    }
+    // Fallback when backend omits prevCursor — jump to first page
+    setCursorNav({ after: null, before: null })
+    setPageIndex(0)
+  }, [prevCursor, pageIndex])
+
+  // History via POST /api/logs/search
   React.useEffect(() => {
+    if (!enabled || !cursorsReady) return
+
     let cancelled = false
 
     async function loadHistory() {
       setStatus((prev) => (prev === "live" ? "live" : "loading"))
       setError(null)
 
-      const requestPage = expandBuffer ? 0 : page
-
       try {
-        const res = await brandmastApi.fetchLogs({
-          page: requestPage,
-          size: fetchSize,
-          ...(serviceFilter ? { service: serviceFilter } : {}),
-          ...(trackingId ? { trackingId } : {}),
-          ...(from ? { from } : {}),
-          ...(to ? { to } : {}),
+        const body = buildLogsSearchRequest({
+          preset: presetRef.current,
+          after: cursorNav.after,
+          before: cursorNav.before,
+          trackTotalHits: true,
+          highlight: false,
         })
+        const res = await brandmastApi.searchLogs(body)
         if (cancelled) return
 
         if (res.success === false) {
@@ -175,9 +255,21 @@ export function useDiscoverLogs(
         const data = res.data
         const items = sortLogsNewestFirst(data?.items ?? [])
         rememberServices(items)
+        rememberMethods(items)
         setLogs(items)
-        setTotalElements(data?.totalElements ?? items.length)
-        setTotalPages(data?.totalPages ?? 1)
+        setTotal(
+          data?.total
+            ? {
+                value: data.total.value ?? 0,
+                relation: data.total.relation === "gte" ? "gte" : "eq",
+              }
+            : { value: items.length, relation: "eq" },
+        )
+        setTookMs(typeof data?.tookMs === "number" ? data.tookMs : null)
+        setNextCursor(data?.page?.nextCursor ?? null)
+        setPrevCursor(data?.page?.prevCursor ?? null)
+        setHasMore(Boolean(data?.page?.hasMore))
+        setLiveNewCount(0)
         setHasLoaded(true)
 
         if (!liveRef.current) {
@@ -191,8 +283,11 @@ export function useDiscoverLogs(
         setHasLoaded(true)
         setStatus("error")
         setLogs([])
-        setTotalElements(0)
-        setTotalPages(0)
+        setTotal(null)
+        setTookMs(null)
+        setNextCursor(null)
+        setPrevCursor(null)
+        setHasMore(false)
       }
     }
 
@@ -201,20 +296,19 @@ export function useDiscoverLogs(
       cancelled = true
     }
   }, [
-    serviceFilter,
-    trackingId,
-    from,
-    to,
-    page,
-    fetchSize,
-    expandBuffer,
+    enabled,
+    cursorsReady,
+    searchKey,
+    cursorNav.after,
+    cursorNav.before,
     reloadToken,
     rememberServices,
+    rememberMethods,
   ])
 
-  // Live SSE — only merge into list when viewing page 0 (or buffer mode).
+  // Live SSE — Phase A: only `service` on wire; client filters until filterId (Phase B).
   React.useEffect(() => {
-    if (!liveEnabled) {
+    if (!enabled || !liveEnabled || liveBlockedByPage) {
       stopStream()
       return
     }
@@ -222,7 +316,7 @@ export function useDiscoverLogs(
     stopStream()
     setStatus((prev) => (prev === "error" ? prev : "idle"))
 
-    const streamParams = serviceFilter ? { service: serviceFilter } : undefined
+    const streamParams = serviceForStream ? { service: serviceForStream } : undefined
 
     subRef.current = subscribeLogsStream(streamParams, {
       onConnected: () => {
@@ -233,24 +327,24 @@ export function useDiscoverLogs(
       onLog: (entry) => {
         setStatus((prev) => (prev === "live" ? prev : "live"))
 
-        const currentService = serviceRef.current
-        if (currentService && entry.serviceName !== currentService) return
-
-        // Respect trackingId drill-down while live.
-        if (trackingId && entry.trackingId !== trackingId) return
+        if (!liveEntryMatchesPreset(entry, presetRef.current)) return
 
         if (entry.serviceName?.trim()) {
           rememberServices([entry])
         }
+        if (entry.methodName?.trim()) {
+          rememberMethods([entry])
+        }
 
-        // Don't prepend live rows into deep history pages — avoids pagination races.
-        if (pageRef.current > 0 && !expandBuffer) return
+        if (pageIndexRef.current > 0) {
+          setLiveNewCount((n) => n + 1)
+          return
+        }
 
         setLogs((prev) => {
           const merged = mergeServiceLogs(prev, entry)
-          return takeNewest(merged, fetchSizeRef.current)
+          return takeNewest(merged, sizeRef.current)
         })
-        setTotalElements((n) => n + 1)
       },
       onUnauthorized: () => {
         setError("Sesja wygasła — zaloguj się ponownie.")
@@ -275,17 +369,20 @@ export function useDiscoverLogs(
       stopStream()
     }
   }, [
+    enabled,
     liveEnabled,
-    serviceFilter,
-    trackingId,
-    expandBuffer,
+    liveBlockedByPage,
+    serviceForStream,
+    searchKey,
     reloadToken,
     stopStream,
     rememberServices,
+    rememberMethods,
   ])
 
-  const canPrev = page > 0 && !expandBuffer
-  const canNext = !expandBuffer && page + 1 < totalPages
+  const canPrev = pageIndex > 0
+  const canNext = hasMore && Boolean(nextCursor)
+  const totalElements = total?.value ?? 0
 
   return {
     logs,
@@ -293,18 +390,34 @@ export function useDiscoverLogs(
     error,
     hasLoaded,
     liveEnabled,
+    liveBlockedByPage,
+    liveNewCount,
+    clearLiveNew,
     lastConnectedAt,
     limit: displaySize,
     size: displaySize,
-    bufferLimit: fetchSize,
-    page: expandBuffer ? 0 : page,
+    pageIndex,
+    page: pageIndex,
+    total,
     totalElements,
-    totalPages: expandBuffer ? 1 : totalPages,
+    tookMs,
+    hasMore,
+    nextCursor,
+    prevCursor,
     canPrev,
     canNext,
-    goToPage,
-    setPage: goToPage,
+    goNext,
+    goPrev,
+    /** @deprecated offset pages — use goNext/goPrev */
+    goToPage: (next: number) => {
+      if (next <= 0) {
+        setCursorNav({ after: null, before: null })
+        setPageIndex(0)
+        setReloadToken((n) => n + 1)
+      }
+    },
     seenServices,
+    seenMethods,
     refresh,
     pause,
     resume,

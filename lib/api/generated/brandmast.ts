@@ -9,6 +9,7 @@ import type {
   ApiResponseActionsResponse,
   ApiResponseListActionsResponse,
   ApiResponseListBrandmastersResponse,
+  ApiResponseBrandmastersResponse,
   ApiResponseListTourPlannerBrandmasterListItem,
   ApiResponseListEvent,
   ApiResponseListShopResponse,
@@ -24,6 +25,7 @@ import type {
   ApiResponseListOneTwoOneTeam,
   ApiResponseListBonusResponse,
   ApiResponseServiceLogPage,
+  ApiResponseLogsSearchResult,
   ApiResponseOneTwoOneAplikacjaZgloszenieCreated,
   ApiResponseOneTwoOnePhotoUploaded,
   ApiResponseOneTwoOneSamplingCreated,
@@ -40,6 +42,7 @@ import type {
   DeleteBmActionRequest,
   LoginRequest,
   LogsHistoryParams,
+  LogsSearchRequest,
   PointCasRequest,
   ShopAddRequest,
   ShopDeleteRequest,
@@ -148,6 +151,21 @@ export class BrandmastApi {
     const res = await this.http.get<ApiResponseListBrandmastersResponse>(
       "/api/brandmaster/sv/fetch",
       options,
+    );
+    return res.data;
+  }
+
+  /**
+   * GET /api/brandmaster/admin/fetch?login=
+   * Admin: znajdź brandmastera po loginie.
+   */
+  async fetchAdminBrandmaster(login: string, options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseBrandmastersResponse>(
+      "/api/brandmaster/admin/fetch",
+      {
+        ...options,
+        params: { login },
+      },
     );
     return res.data;
   }
@@ -481,15 +499,29 @@ export class BrandmastApi {
   }
 
   /**
-   * GET /api/logs?page=&size=&service=&trackingId=&from=&to=
+   * GET /api/logs?page=&size=&service=&methodName=&level=&detailsContains=&trackingId=&from=&to=
    * Historia logów serwisowych (admin only), paginacja 0-based.
    * Sort: createdAt DESC.
+   * @deprecated Prefer `searchLogs` (POST /api/logs/search) for Discover — cursor + Filter AST.
    */
   async fetchLogs(params?: LogsHistoryParams, options?: RequestOptions) {
     const res = await this.http.get<ApiResponseServiceLogPage>("/api/logs", {
       ...options,
       params,
     });
+    return res.data;
+  }
+
+  /**
+   * POST /api/logs/search
+   * Discover: Filter AST v1 + time window + cursor pagination (admin only).
+   */
+  async searchLogs(body: LogsSearchRequest, options?: RequestOptions) {
+    const res = await this.http.post<ApiResponseLogsSearchResult>(
+      "/api/logs/search",
+      body,
+      options,
+    );
     return res.data;
   }
 

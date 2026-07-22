@@ -252,6 +252,16 @@ export interface ApiResponseListBrandmastersResponse {
   violations?: Violation[];
 }
 
+/** GET /api/brandmaster/admin/fetch?login= */
+export interface ApiResponseBrandmastersResponse {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: BrandmastersResponse;
+  violations?: Violation[];
+}
+
 export interface SettingResponse {
   id?: number; // int64
   brandmasterData?: BrandmasterData;
@@ -800,6 +810,12 @@ export interface LogsHistoryParams {
   size?: number;
   /** Exact serviceName filter (trimmed server-side). */
   service?: string;
+  /** Exact methodName filter. */
+  methodName?: string;
+  /** Exact level match (case-insensitive, e.g. `info` → `INFO`). */
+  level?: string;
+  /** Case-insensitive contains in serialized JSON `details`. */
+  detailsContains?: string;
   trackingId?: string; // uuid
   /** ISO-8601 date-time, e.g. 2026-07-14T00:00:00Z */
   from?: string;
@@ -824,4 +840,116 @@ export interface ApiResponseServiceLogPage {
 
 /** @deprecated Use ApiResponseServiceLogPage — kept for transitional imports. */
 export type ApiResponseListServiceLogResponse = ApiResponseServiceLogPage;
+
+// ─── Discover search (POST /api/logs/search) — Filter AST v1 ───────────────
+
+/** Clause operators supported by backend Filter AST v1. */
+export type LogFilterClauseOperator =
+  | "eq"
+  | "contains"
+  | "like"
+  | "prefix"
+  | "match"
+  | "regexp";
+
+export type LogFilterGroupOp = "and" | "or";
+
+export type LogFilterNode =
+  | {
+      type: "group";
+      op: LogFilterGroupOp;
+      children: LogFilterNode[];
+    }
+  | {
+      type: "clause";
+      field: string;
+      operator: LogFilterClauseOperator;
+      value: string | number | boolean;
+      negate?: boolean;
+    }
+  | {
+      type: "exists";
+      field: string;
+      negate?: boolean;
+    }
+  | {
+      type: "range";
+      field: string;
+      gte?: string | number;
+      lte?: string | number;
+      gt?: string | number;
+      lt?: string | number;
+    }
+  | {
+      type: "terms";
+      field: string;
+      values: Array<string | number>;
+      negate?: boolean;
+    };
+
+export interface LogsSearchTimeRange {
+  from: string; // ISO-8601
+  to: string; // ISO-8601
+}
+
+export interface LogsSearchSort {
+  field: string;
+  order: "asc" | "desc";
+}
+
+export interface LogsSearchPageRequest {
+  size: number; // 1..500
+  after?: string | null;
+  before?: string | null;
+}
+
+/**
+ * POST /api/logs/search body.
+ * `time.from` + `time.to` required (max range typically 30 days).
+ */
+export interface LogsSearchRequest {
+  version?: 1;
+  time: LogsSearchTimeRange;
+  /** Free-text → match on document (search bar). */
+  query?: string | null;
+  filter?: LogFilterNode | null;
+  sort?: LogsSearchSort[];
+  page: LogsSearchPageRequest;
+  /** true | false | number cap (e.g. 10000). */
+  trackTotalHits?: boolean | number;
+  highlight?: boolean;
+  fields?: string[] | null;
+}
+
+export type LogsSearchTotalRelation = "eq" | "gte";
+
+export interface LogsSearchTotal {
+  value: number;
+  relation: LogsSearchTotalRelation;
+}
+
+export interface LogsSearchPageResult {
+  size: number;
+  nextCursor?: string | null;
+  prevCursor?: string | null;
+  hasMore?: boolean;
+}
+
+/** POST /api/logs/search `data` */
+export interface LogsSearchResult {
+  items?: ServiceLogResponse[];
+  page?: LogsSearchPageResult;
+  total?: LogsSearchTotal;
+  tookMs?: number;
+}
+
+/** POST /api/logs/search */
+export interface ApiResponseLogsSearchResult {
+  errorCode?: string;
+  message?: string;
+  meta?: Meta;
+  success?: boolean;
+  data?: LogsSearchResult;
+  violations?: Violation[];
+}
 
