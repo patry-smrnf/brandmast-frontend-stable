@@ -22,15 +22,6 @@ function isTrackedModel(model: string): boolean {
   return false;
 }
 
-function sumBrandCounts(rows: SampleStatsRow[], brand: string): number {
-  const target = normalizeKey(brand);
-  return rows.reduce((sum, row) => {
-    if (normalizeKey(row.brand) !== target) return sum;
-    const count = Number(row.count);
-    return sum + (Number.isFinite(count) ? count : 0);
-  }, 0);
-}
-
 function sumBrandCountsForTrackedModels(rows: SampleStatsRow[], brand: string): number {
   const target = normalizeKey(brand);
   return rows.reduce((sum, row) => {
@@ -66,14 +57,25 @@ export function getGloCounts(rows: SampleStatsRow[]): SampleStatsGloCounts {
   return out;
 }
 
+function isBracketAnnotatedModel(model: string): boolean {
+  return model.includes("[") && model.includes("]");
+}
+
 /**
- * VELO: suma wszystkich wierszy z brandu "Velo".
+ * VELO: suma wierszy z brandu "Velo", bez modeli z adnotacją w nawiasach
+ * kwadratowych (np. "[H] …") — takie county nie wchodzą do sumy.
  *
  * Uwaga: historycznie to pole było liczone jako "VELO netto" (Velo − Glo),
  * ale w nowej regule biznesowej NIE odejmujemy już ilości brandu Glo.
  */
 export function getVeloNetTotal(rows: SampleStatsRow[]): number {
-  return sumBrandCounts(rows, "Velo");
+  const target = normalizeKey("Velo");
+  return rows.reduce((sum, row) => {
+    if (normalizeKey(row.brand) !== target) return sum;
+    if (isBracketAnnotatedModel(row.model)) return sum;
+    const count = Number(row.count);
+    return sum + (Number.isFinite(count) ? count : 0);
+  }, 0);
 }
 
 export function computeSampleStatsFieldCounts(rows: SampleStatsRow[]): SampleStatsFieldCounts {
