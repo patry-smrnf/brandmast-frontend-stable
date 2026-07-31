@@ -32,7 +32,7 @@ export type ActionWithRoundedTime = {
   action: TourPlannerActionListItem
   start: Date | null
   stop: Date | null
-  /** Czas trwania (co do minuty, max 8 h). */
+  /** Czas trwania (coo minuty, max 8 h). */
   durationHours: number
   /** Godziny do wypłaty podstawowej (pełne + pół, w dół). */
   baseHours: number
