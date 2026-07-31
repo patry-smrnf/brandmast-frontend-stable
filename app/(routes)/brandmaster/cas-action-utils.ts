@@ -14,7 +14,7 @@ import type {
 } from "@/lib/api"
 
 export type ActionDurationSplit = {
-  /** Czas w pełnych minutach (max 4 h = 240 min). */
+  /** Czas w pełnych minutach (max 8 h = 480 min). */
   totalMinutes: number
   /** Pełne godziny + pół godziny (zaokrąglenie w dół do 30 min) — wypłata podstawowa. */
   baseMinutes: number
@@ -32,7 +32,7 @@ export type ActionWithRoundedTime = {
   action: TourPlannerActionListItem
   start: Date | null
   stop: Date | null
-  /** Czas trwania (co do minuty, max 4 h). */
+  /** Czas trwania (co do minuty, max 8 h). */
   durationHours: number
   /** Godziny do wypłaty podstawowej (pełne + pół, w dół). */
   baseHours: number
@@ -98,8 +98,8 @@ export function formatCasTime(block?: CasDatetimeBlock): string {
   return formatTimePoland(d)
 }
 
-/** Maksymalny czas akcji liczony do godzin, wypłaty i efektywności (4 h). */
-export const MAX_ACTION_DURATION_MINUTES = 4 * 60
+/** Maksymalny czas akcji liczony do godzin, wypłaty i efektywności (8 h). */
+export const MAX_ACTION_DURATION_MINUTES = 8 * 60
 
 /** Rzeczywisty czas trwania akcji w pełnych minutach (cap: MAX_ACTION_DURATION_MINUTES). */
 export function getActionDurationMinutes(start: Date, stop: Date): number {
@@ -108,7 +108,7 @@ export function getActionDurationMinutes(start: Date, stop: Date): number {
   return Math.min(Math.floor(ms / 60_000), MAX_ACTION_DURATION_MINUTES)
 }
 
-/** Czas trwania akcji w godzinach (co do minuty, max 4 h, bez zaokrągleń rozliczeniowych). */
+/** Czas trwania akcji w godzinach (co do minuty, max 8 h, bez zaokrągleń rozliczeniowych). */
 export function getActionDurationHours(start: Date, stop: Date): number {
   return getActionDurationMinutes(start, stop) / 60
 }
@@ -123,12 +123,12 @@ const EMPTY_DURATION_SPLIT: ActionDurationSplit = {
 }
 
 /**
- * Podział czasu na wypłatę (czas akcji limitujemy do max 4 h):
+ * Podział czasu na wypłatę (czas akcji limitujemy do max 8 h):
  * - baza: pełne godziny + pół godziny (floor do 30 min),
  * - reszta minut: linia „godzinowka || TURA”.
  *
  * Np. 3 h 38 min → baza 3 h 30 min, reszta 8 min.
- * Np. 6 h → liczone jako 4 h.
+ * Np. 10 h → liczone jako 8 h.
  */
 export function splitActionDurationForPayout(start: Date, stop: Date): ActionDurationSplit {
   const totalMinutes = getActionDurationMinutes(start, stop)

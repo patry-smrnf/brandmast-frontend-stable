@@ -38,7 +38,7 @@ export function formatEfficiency(value: number | null): string {
 }
 
 /**
- * Czas trwania akcji w godzinach (max 4 h, co do pełnej minuty).
+ * Czas trwania akcji w godzinach (max 8 h, co do pełnej minuty).
  *
  * - status `started`: od czasu startu do `now` (domyślnie teraz),
  * - status `finished` (i inne z czasem stop): od czasu startu do czasu stop.
