@@ -10,14 +10,21 @@ export const bmCardPadContent = "px-4 pb-4 sm:px-5 sm:pb-5"
 export const bmMetricTileClass =
   "rounded-2xl border-0 bg-muted/30 shadow-sm ring-1 ring-border/50"
 
-export const bmIconBubble = (tone: "sky" | "orange" | "primary" | "teal" | "violet" | "amber") =>
+/**
+ * Icon bubbles on the Brandmast purple chart scale.
+ * Legacy tone names map onto primary / chart / accent -no sky/orange/teal accents.
+ * `amber` stays for warning-adjacent UI (Awaryjne).
+ */
+export type BmIconTone = "sky" | "orange" | "primary" | "teal" | "violet" | "amber"
+
+export const bmIconBubble = (tone: BmIconTone) =>
   cn(
     "inline-flex size-8 shrink-0 items-center justify-center rounded-xl",
-    tone === "sky" && "bg-sky-500/15 text-sky-400",
-    tone === "orange" && "bg-orange-500/15 text-orange-400",
     tone === "primary" && "bg-primary/15 text-primary",
-    tone === "teal" && "bg-teal-500/15 text-teal-400",
-    tone === "violet" && "bg-primary/15 text-primary",
+    tone === "violet" && "bg-accent text-accent-foreground",
+    tone === "sky" && "bg-chart-3/20 text-chart-3",
+    tone === "orange" && "bg-chart-2/20 text-chart-2",
+    tone === "teal" && "bg-chart-5/25 text-chart-5",
     tone === "amber" && "bg-amber-500/15 text-amber-400",
   )
 

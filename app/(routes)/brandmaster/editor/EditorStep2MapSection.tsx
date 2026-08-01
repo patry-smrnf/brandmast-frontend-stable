@@ -68,7 +68,7 @@ function EditorMapLocationPrompt({
             ? "Potwierdź dostęp w oknie systemowym. Nie zamykaj tej strony."
             : geolocationSupported
               ? "Mapa może pokazać Twoją okolicę i ułatwić wybór najbliższego sklepu. Lokalizacja nie jest wysyłana na serwer."
-              : "Twoja przeglądarka lub połączenie nie obsługuje lokalizacji — mapa załaduje się bez tej funkcji."}
+              : "Twoja przeglądarka lub połączenie nie obsługuje lokalizacji -mapa załaduje się bez tej funkcji."}
         </p>
         {locationFailed ? (
           <p className="text-xs leading-relaxed text-amber-700 dark:text-amber-400">

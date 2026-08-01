@@ -331,7 +331,7 @@ function SubmitActionsCard({
                   <SelectedActionSummary action={selectedAction} />
                 </div>
               ) : (
-                <CardDescription className="text-xs">Nie wybrano akcji — rozwiń listę.</CardDescription>
+                <CardDescription className="text-xs">Nie wybrano akcji -rozwiń listę.</CardDescription>
               )}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5">
@@ -703,7 +703,7 @@ export default function OneTwoOneAplikacjePage() {
               <CardHeader className="space-y-0.5 px-3.5 py-3 sm:px-4">
                 <CardTitle className="text-sm font-semibold">E-mail konsumenta</CardTitle>
                 <CardDescription className="text-xs">
-                  Możesz podać wiele adresów — oddziel je przecinkiem, spacją lub nową linią.
+                  Możesz podać wiele adresów -oddziel je przecinkiem, spacją lub nową linią.
                 </CardDescription>
               </CardHeader>
               <CardContent className="border-t border-border/80 px-3.5 pb-3.5 pt-2 sm:px-4 sm:pb-4">

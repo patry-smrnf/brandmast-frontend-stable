@@ -6,7 +6,7 @@ export type SupervisorNowosc = {
   description: string
 }
 
-/** Hardkodowana lista nowości dla supervisora — edytuj tutaj kolejne wpisy. */
+/** Hardkodowana lista nowości dla supervisora -edytuj tutaj kolejne wpisy. */
 export const SUPERVISOR_NOWOSCI: SupervisorNowosc[] = [
   {
     id: "iphone-inputs-fixed",

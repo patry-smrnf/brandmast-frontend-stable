@@ -91,7 +91,7 @@ export function use121SamplingList(resolved: Resolved121TeamContext) {
     teamId: resolved.teamId,
     teamName: resolved.teamName,
     territoryIdent: resolved.territoryIdent,
-    /** region_id w API — to samo co teamId */
+    /** region_id w API -to samo co teamId */
     regionId: resolved.teamId,
     currentMonthKey,
     isLoading: resolved.isLoading || isLoading,

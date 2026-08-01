@@ -455,7 +455,7 @@ export default function OneTwoOneMygloKodyPage() {
                 : photoUploadError
                   ? "Popraw błąd przesyłania zdjęcia, aby wysłać zgłoszenie."
                   : savedTeamId == null && !resolvedTeam.isLoading
-                    ? "Brak dopasowanego regionu — odśwież lub skontaktuj się z administratorem."
+                    ? "Brak dopasowanego regionu -odśwież lub skontaktuj się z administratorem."
                     : canSubmit
                       ? "Gotowe do wysłania."
                       : "Uzupełnij numer i dodaj zdjęcie, aby odblokować przycisk."}

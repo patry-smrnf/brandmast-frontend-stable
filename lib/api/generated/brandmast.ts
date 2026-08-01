@@ -453,7 +453,7 @@ export class BrandmastApi {
 
   /**
    * POST /api/121/photo/add
-   * multipart/form-data — pole upload[]
+   * multipart/form-data -pole upload[]
    */
   async add121Photo(file: File | Blob, options?: RequestOptions) {
     const formData = new FormData();

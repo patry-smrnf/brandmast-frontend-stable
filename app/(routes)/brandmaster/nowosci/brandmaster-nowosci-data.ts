@@ -6,7 +6,7 @@ export type BrandmasterNowosc = {
   description: string
 }
 
-/** Hardkodowana lista nowości — edytuj tutaj kolejne wpisy. */
+/** Hardkodowana lista nowości -edytuj tutaj kolejne wpisy. */
 export const BRANDMASTER_NOWOSCI: BrandmasterNowosc[] = [
   {
     id: "geolocation-editor-map",

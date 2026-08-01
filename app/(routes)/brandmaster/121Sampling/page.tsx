@@ -329,7 +329,7 @@ function SubmitActionsCard({
                   <SelectedActionSummary action={selectedAction} />
                 </div>
               ) : (
-                <CardDescription className="text-xs">Nie wybrano akcji — rozwiń listę.</CardDescription>
+                <CardDescription className="text-xs">Nie wybrano akcji -rozwiń listę.</CardDescription>
               )}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5">

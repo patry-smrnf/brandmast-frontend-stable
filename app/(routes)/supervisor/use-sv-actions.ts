@@ -52,7 +52,7 @@ export type SvActionLocalPatch = {
   editedAt: string
 }
 
-/** Pełny patch lokalny ze sklepu — obejmuje event powiązany ze sklepem. */
+/** Pełny patch lokalny ze sklepu -obejmuje event powiązany ze sklepem. */
 export function buildSvActionLocalPatch(input: {
   idAction: number
   shop: ShopResponse

@@ -66,7 +66,7 @@ export function CasDayStatsSheet({
 
     const requestId = ++requestRef.current
     const total = targets.length
-    // Snapshot czasu przy otwarciu — spójny czas trwania dla akcji "started".
+    // Snapshot czasu przy otwarciu -spójny czas trwania dla akcji "started".
     const now = new Date()
 
     if (total === 0) {

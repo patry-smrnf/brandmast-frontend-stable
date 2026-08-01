@@ -39,6 +39,7 @@ import {
   bmCardPadHeader,
   bmIconBubble,
   bmMetricTileClass,
+  type BmIconTone,
 } from "./brandmaster-ui"
 import { formatHoursPl, formatMoneyPl } from "./cas-action-utils"
 import { BonusExtrasSection } from "./brandmaster-bonus-extras-section"
@@ -520,14 +521,7 @@ export function GloSamplesCard({
               key={key}
               className={cn("px-2 py-3 text-center", bmMetricTileClass)}
             >
-              <span
-                className={cn(
-                  "mx-auto mb-1.5 flex size-7 items-center justify-center rounded-lg",
-                  metricTones[index] === "sky" && "bg-sky-500/15 text-sky-400",
-                  metricTones[index] === "orange" && "bg-orange-500/15 text-orange-400",
-                  metricTones[index] === "teal" && "bg-teal-500/15 text-teal-400",
-                )}
-              >
+              <span className={cn(bmIconBubble(metricTones[index]), "mx-auto mb-1.5 size-7")}>
                 <PackageIcon className="size-3.5" aria-hidden />
               </span>
               <p className="text-[11px] font-medium leading-tight text-muted-foreground">
@@ -795,9 +789,8 @@ export function PayoutCard({
             <p className="mt-1 text-2xl font-bold tabular-nums">{formatMoneyPl(displayedPayout)}</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <div className={cn("px-3 py-2.5", bmMetricTileClass)}>
-                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Zysk (Income)
-                </p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground"> Zwykla wyplata
+                                  </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">Podstawa</p>
                 <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
                   +{formatMoneyPl(basePayout)}
@@ -841,7 +834,7 @@ export function PayoutCard({
                 </>
               ) : (
                 <p className="py-2 text-xs text-muted-foreground">
-                  Brak statystyk — bonus nie został policzony (wymagany login z konfiguracji
+                  Brak statystyk -bonus nie został policzony (wymagany login z konfiguracji
                   oraz ident ostatniej akcji).
                 </p>
               )}

@@ -169,7 +169,7 @@ export function SupervisorBulkApproveDialog({
     phase === "done"
       ? `Dodano ${completedCount} ${completedCount === 1 ? "akcję" : completedCount < 5 ? "akcje" : "akcji"}.`
       : phase === "error"
-        ? "Proces przerwany — szczegóły poniżej."
+        ? "Proces przerwany -szczegóły poniżej."
         : total > 0
           ? `Akcja ${Math.min(currentIndex + 1, total)} z ${total}`
           : "Brak akcji do dodania."

@@ -12,7 +12,7 @@ export function getBrandmasterTpUuid(bm: BrandmastersResponse) {
   return bm.tourplannerData?.uuid?.trim() ?? ""
 }
 
-/** Tourplanner UUID — matches `TourPlannerBrandmasterListItem.uuid` from CAS. */
+/** Tourplanner UUID -matches `TourPlannerBrandmasterListItem.uuid` from CAS. */
 export function buildExistingBrandmasterTpUuidSet(brandmasters: BrandmastersResponse[]) {
   const ids = new Set<string>()
   for (const bm of brandmasters) {
