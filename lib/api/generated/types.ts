@@ -598,7 +598,7 @@ export interface ApiResponseListOneTwoOneRivoVirto {
   violations?: Violation[];
 }
 
-/** GET /api/121/zgloszeniaAwaryjne/fetch */
+/** GET /api/121/zgloszeniaAwaryjne/fetch?month=YYYY-MM */
 export interface OneTwoOneAwaryjneZgloszenia {
   numerAkcji?: string;
   dataWpisu?: string;

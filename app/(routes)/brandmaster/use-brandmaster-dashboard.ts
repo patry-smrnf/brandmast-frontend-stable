@@ -5,7 +5,12 @@ import * as React from "react"
 import { brandmastApi, fetchSampleStats, getApiErrorMessage } from "@/lib/api"
 import type { SampleStatsCountsByField, TourPlannerActionListItem } from "@/lib/api"
 import { getConfigState, setConfig } from "@/lib/config/configStore"
-import { formatPlDateTimePoland, nowInPoland, toDateKeyInPoland } from "@/lib/dates/date-utils"
+import {
+  formatPlDateTimePoland,
+  nowInPoland,
+  toDateKeyInPoland,
+  toMonthKey,
+} from "@/lib/dates/date-utils"
 
 import {
   addAwaryjneToGlo,
@@ -72,6 +77,10 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
           monthPeriod === "previous"
             ? getPreviousMonthDateRange(fetchNow)
             : getMonthDateRange(fetchNow)
+        const awaryjneMonth =
+          monthPeriod === "previous"
+            ? toMonthKey(new Date(fetchNow.getFullYear(), fetchNow.getMonth() - 1, 1))
+            : toMonthKey(fetchNow)
 
         const configPromise = brandmastApi.fetchConfig()
 
@@ -158,7 +167,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
         setSampleStatsCounts(nextSampleStats)
         setHasOneTwoOne(configuredOneTwoOne)
 
-        void fetchOneTwoOneData(configuredOneTwoOne)
+        void fetchOneTwoOneData(configuredOneTwoOne, awaryjneMonth)
       } catch (e) {
         if (cancelled) return
         setError(getApiErrorMessage(e, "Nie udało się pobrać danych."))
@@ -179,7 +188,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
       }
     }
 
-    async function fetchOneTwoOneData(configured: boolean) {
+    async function fetchOneTwoOneData(configured: boolean, month: string) {
       if (cancelled) return
 
       if (!configured) {
@@ -193,7 +202,7 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
 
       try {
         const [awaryjneResponse, mojstanResponse] = await Promise.all([
-          brandmastApi.fetchZgloszeniaAwaryjne(),
+          brandmastApi.fetchZgloszeniaAwaryjne({ month }),
           brandmastApi.fetchMojstan(),
         ])
 

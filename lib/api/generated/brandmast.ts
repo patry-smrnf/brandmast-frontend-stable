@@ -393,12 +393,18 @@ export class BrandmastApi {
   }
 
   /**
-   * GET /api/121/zgloszeniaAwaryjne/fetch
+   * GET /api/121/zgloszeniaAwaryjne/fetch?month=YYYY-MM
    */
-  async fetchZgloszeniaAwaryjne(options?: RequestOptions) {
+  async fetchZgloszeniaAwaryjne(
+    params?: { month?: string },
+    options?: RequestOptions,
+  ) {
     const res = await this.http.get<ApiResponseListOneTwoOneAwaryjneZgloszenia>(
       "/api/121/zgloszeniaAwaryjne/fetch",
-      options,
+      {
+        ...options,
+        params,
+      },
     );
     return res.data;
   }
