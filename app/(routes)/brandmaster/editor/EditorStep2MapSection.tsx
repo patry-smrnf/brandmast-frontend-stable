@@ -26,7 +26,7 @@ const EditorShopsMap = dynamic(
 )
 
 const MAP_SHELL_CLASS =
-  "flex min-h-[220px] h-[min(52dvh,380px)] w-full flex-col items-center justify-center rounded-xl border border-border bg-muted sm:h-[min(48vh,420px)]"
+  "flex min-h-[220px] h-[min(52dvh,380px)] w-full flex-col items-center justify-center rounded-2xl border-0 ring-1 ring-border/60 bg-muted sm:h-[min(48vh,420px)]"
 
 function EditorMapPlaceholder({ message }: { message: string }) {
   return (
@@ -192,7 +192,7 @@ export function EditorStep2MapSection({
       ) : null}
 
       {!shopsLoading && mapStats.total > 0 && mapReady ? (
-        <div className="flex flex-col gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
+        <div className="flex flex-col gap-2 rounded-2xl border-0 ring-1 ring-border/60 bg-muted/40 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
           <div className="tabular-nums">
             <span className="font-medium text-foreground">Na mapie:</span> {mapStats.onMap}
             <span className="text-muted-foreground"> / {mapStats.total}</span>

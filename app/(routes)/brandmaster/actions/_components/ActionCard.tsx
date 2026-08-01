@@ -95,14 +95,14 @@ export function ActionCard({
     <>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-[96px_1fr] md:gap-4">
         <div className="md:pt-3">
-          <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold tabular-nums shadow-sm">
-            <ClockIcon className="size-4 text-muted-foreground" />
+          <div className="inline-flex items-center gap-1.5 rounded-2xl bg-card px-3 py-2 text-sm font-semibold tabular-nums shadow-sm ring-1 ring-border/50">
+            <ClockIcon className="size-4 text-primary" />
             {timeLabel}
           </div>
         </div>
 
-        <Card className="group relative overflow-hidden border-border/70 shadow-sm transition-shadow hover:shadow-md">
-          <div className="absolute left-0 top-0 h-full w-1 bg-primary/30 transition-colors group-hover:bg-primary/50" />
+        <Card className="group relative overflow-hidden rounded-2xl border-0 bg-card shadow-md ring-1 ring-border/60 transition-shadow hover:shadow-lg">
+          <div className="absolute left-0 top-0 h-full w-1.5 bg-primary/40 transition-colors group-hover:bg-primary/60" />
           <CardHeader className="space-y-1">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">

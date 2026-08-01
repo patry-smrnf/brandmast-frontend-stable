@@ -39,6 +39,7 @@ import {
   getRegionLabel,
   type SamplingView,
 } from "./121-sampling-utils"
+import { bmSegmentedTab, bmSegmentedTrack } from "../brandmaster-ui"
 import { use121ResolvedTeam } from "./use-121-resolved-team"
 import { use121SamplingList } from "./use-121-sampling-list"
 import { use121SubmitSampling } from "./use-121-submit-sampling"
@@ -61,7 +62,7 @@ function ViewSwitcher({
 }) {
   return (
     <div
-      className="grid grid-cols-2 gap-1 rounded-xl border border-border/80 bg-muted/40 p-1"
+      className={bmSegmentedTrack}
       role="tablist"
       aria-label="Widok 121 Sampling"
     >
@@ -69,12 +70,7 @@ function ViewSwitcher({
         type="button"
         role="tab"
         aria-selected={view === "list"}
-        className={cn(
-          "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:text-sm",
-          view === "list"
-            ? "bg-background text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
+        className={cn(bmSegmentedTab(view === "list"), "min-h-10 gap-1.5")}
         onClick={() => onChange("list")}
       >
         <ListIcon className="size-3.5 shrink-0" aria-hidden />
@@ -84,12 +80,7 @@ function ViewSwitcher({
         type="button"
         role="tab"
         aria-selected={view === "submit"}
-        className={cn(
-          "inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition-colors sm:text-sm",
-          view === "submit"
-            ? "bg-background text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
+        className={cn(bmSegmentedTab(view === "submit"), "min-h-10 gap-1.5")}
         onClick={() => onChange("submit")}
       >
         <PlusCircleIcon className="size-3.5 shrink-0" aria-hidden />
@@ -315,7 +306,7 @@ function SubmitActionsCard({
   }
 
   return (
-    <Card className="overflow-hidden border-border/80 shadow-sm">
+    <Card className="overflow-hidden rounded-2xl border-0 shadow-md ring-1 ring-border/60">
       <button
         type="button"
         className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -566,7 +557,7 @@ export default function OneTwoOneSamplingPage() {
               <ListLoadingSkeleton />
             ) : (
               <>
-                <Card className="border-border/80 shadow-sm">
+                <Card className="rounded-2xl border-0 shadow-md ring-1 ring-border/60">
                   <CardHeader className="space-y-0.5 px-3.5 py-3 sm:px-4">
                     <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                       Zgłoszone samplingi
@@ -620,7 +611,7 @@ export default function OneTwoOneSamplingPage() {
               onSelectAction={setSelectedActionKey}
             />
 
-            <Card className="border-border/80 shadow-sm">
+            <Card className="rounded-2xl border-0 shadow-md ring-1 ring-border/60">
               <CardHeader className="space-y-0.5 px-3.5 py-3 sm:px-4">
                 <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                   <PackageIcon className="size-3.5 text-muted-foreground" aria-hidden />

@@ -33,7 +33,7 @@ function formatCreatedAtLabel(createdAt?: string): string | null {
 function BonusExtraCardSkeleton() {
   return (
     <div
-      className="flex animate-pulse items-center gap-2.5 rounded-lg border border-border/60 bg-background px-3 py-2.5"
+      className="flex animate-pulse items-center gap-2.5 rounded-2xl bg-card px-3 py-2.5 ring-1 ring-border/50"
       aria-hidden
     >
       <div className="min-w-0 flex-1 space-y-1.5">
@@ -90,7 +90,7 @@ function BonusExtraCard({
 
   if (editing) {
     return (
-      <div className="rounded-lg border border-primary/35 bg-background px-3 py-2.5 shadow-sm ring-1 ring-primary/10">
+      <div className="rounded-2xl bg-card px-3 py-2.5 shadow-sm ring-1 ring-primary/25">
         <div className="space-y-2">
           <div className="space-y-1">
             <Label htmlFor={`bonus-title-${item.idBonus}`} className="text-[11px] text-muted-foreground">
@@ -172,7 +172,7 @@ function BonusExtraCard({
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-2.5 rounded-lg border border-border/80 bg-background px-3 py-2.5 text-left transition-colors hover:border-primary/30 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 active:bg-muted/50"
+      className="flex w-full items-center gap-2.5 rounded-2xl bg-card px-3 py-2.5 text-left shadow-sm ring-1 ring-border/50 transition-colors hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 active:bg-muted/40"
       onClick={onStartEdit}
     >
       <div className="min-w-0 flex-1">
@@ -202,7 +202,7 @@ function BonusExtraCreateCard({
   onCancel: () => void
 }) {
   return (
-    <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 px-3 py-2.5">
+    <div className="rounded-2xl bg-primary/5 px-3 py-2.5 ring-1 ring-dashed ring-primary/35">
       <p className="mb-2 text-[11px] font-medium text-muted-foreground">Nowy dodatek</p>
       <div className="space-y-2">
         <div className="space-y-1">
@@ -283,7 +283,7 @@ export function BonusExtrasSection({ extras }: { extras: BrandmasterBonusExtrasS
   } = extras
 
   return (
-    <section className="space-y-2 rounded-lg border border-border/80 bg-muted/25 px-3 py-2.5">
+    <section className="space-y-2 rounded-2xl bg-secondary/40 px-3.5 py-3 ring-1 ring-border/50">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-0.5">
           <p className="flex items-center gap-1.5 text-xs font-semibold">

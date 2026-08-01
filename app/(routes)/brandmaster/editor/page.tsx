@@ -12,7 +12,7 @@ import { useEditorState } from "./use-editor-state"
 
 const EditorStep1DateTime = dynamic(() => import("./EditorStep1DateTime"), {
   loading: () => (
-    <div className="min-h-[320px] rounded-xl border border-border bg-muted/30 p-6 text-sm text-muted-foreground">
+    <div className="min-h-[320px] rounded-2xl border-0 ring-1 ring-border/60 bg-muted/30 p-6 text-sm text-muted-foreground">
       Ładowanie kroku 1…
     </div>
   ),
@@ -20,7 +20,7 @@ const EditorStep1DateTime = dynamic(() => import("./EditorStep1DateTime"), {
 
 const EditorStep3Summary = dynamic(() => import("./EditorStep3Summary"), {
   loading: () => (
-    <div className="min-h-[240px] rounded-xl border border-border bg-muted/30 p-6 text-sm text-muted-foreground">
+    <div className="min-h-[240px] rounded-2xl border-0 ring-1 ring-border/60 bg-muted/30 p-6 text-sm text-muted-foreground">
       Ładowanie podsumowania…
     </div>
   ),

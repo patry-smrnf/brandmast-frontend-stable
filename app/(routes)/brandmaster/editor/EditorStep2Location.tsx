@@ -14,7 +14,7 @@ const EditorStep2ShopFields = dynamic<EditorStep2ShopFieldsProps>(
   () => import("@/app/(routes)/brandmaster/editor/EditorStep2ShopFields"),
   {
     loading: () => (
-      <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+      <div className="space-y-3 rounded-2xl border-0 ring-1 ring-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
         Ładowanie wyszukiwarki…
       </div>
     ),

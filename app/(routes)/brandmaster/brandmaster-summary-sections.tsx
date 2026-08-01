@@ -2,11 +2,14 @@
 
 import * as React from "react"
 import {
+  AlertTriangleIcon,
+  ArrowRightIcon,
   ChevronDownIcon,
   GaugeIcon,
   LayersIcon,
   PackageIcon,
   SparklesIcon,
+  TrophyIcon,
   WalletIcon,
 } from "lucide-react"
 
@@ -30,7 +33,18 @@ import {
   type TierProgressHint,
 } from "./brandmaster-bonus-utils"
 import type { MojstanDisplayItem } from "./brandmaster-mojstan-utils"
+<<<<<<< Updated upstream
 import { formatHoursPl, formatMoneyPl } from "./cas-action-utils"
+=======
+import {
+  bmCardClass,
+  bmCardPadContent,
+  bmCardPadHeader,
+  bmIconBubble,
+  bmMetricTileClass,
+} from "./brandmaster-ui"
+import { formatHoursPl, formatMoneyPl, HOURLY_TOUR_BONUS_LABEL } from "./cas-action-utils"
+>>>>>>> Stashed changes
 import { BonusExtrasSection } from "./brandmaster-bonus-extras-section"
 import { useBrandmasterBonusExtras } from "./use-brandmaster-bonus-extras"
 
@@ -178,7 +192,7 @@ function BonusSection({
   children: React.ReactNode
 }) {
   return (
-    <section className="space-y-2 rounded-lg border border-border/80 bg-muted/25 px-3 py-2.5">
+    <section className="space-y-2 rounded-2xl bg-secondary/40 px-3.5 py-3 ring-1 ring-border/50">
       <BonusSectionHeader title={title} icon={Icon} tierLabel={tierLabel} total={total} />
       {children}
     </section>
@@ -265,7 +279,7 @@ function QualitativeBonusSection({
 }
 
 const MAGAZYN_LIST_SCROLL_CLASS =
-  "max-h-52 overflow-y-auto overscroll-y-contain rounded-lg border border-border/80"
+  "max-h-52 overflow-y-auto overscroll-y-contain rounded-2xl ring-1 ring-border/50 bg-card"
 
 function MagazynWysylkiSkeleton() {
   return (
@@ -333,13 +347,13 @@ function MagazynWysylkiSection({ hasOneTwoOne }: { hasOneTwoOne: boolean }) {
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border border-border/80 bg-muted/20 transition-colors",
-        expanded && "border-border bg-muted/30",
+        "overflow-hidden rounded-2xl bg-secondary/30 transition-colors ring-1 ring-border/50",
+        expanded && "bg-secondary/50",
       )}
     >
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-2 px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         onClick={handleToggle}
         aria-expanded={expanded}
       >
@@ -419,26 +433,28 @@ export function StanyCard({
   loading?: boolean
 }) {
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="space-y-0.5 px-3.5 py-3 pb-2 sm:px-4">
+    <Card className={bmCardClass}>
+      <CardHeader className={bmCardPadHeader}>
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <LayersIcon className="size-3.5 text-muted-foreground" aria-hidden />
+          <span className={bmIconBubble("violet")}>
+            <LayersIcon className="size-3.5" aria-hidden />
+          </span>
           Stany
         </CardTitle>
         <CardDescription className="text-xs">Twój stan (121)</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2.5 px-3.5 pb-3.5 sm:px-4 sm:pb-4">
+      <CardContent className={cn("space-y-2.5", bmCardPadContent)}>
         {loading ? (
           <div className="grid grid-cols-2 gap-2">
             {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="h-10 animate-pulse rounded-lg border border-border/60 bg-muted/40"
+                className="h-12 animate-pulse rounded-2xl bg-muted/50"
               />
             ))}
           </div>
         ) : !hasOneTwoOne ? (
-          <p className="rounded-lg border border-dashed border-border/80 bg-muted/20 px-3 py-4 text-center text-xs leading-snug text-muted-foreground">
+          <p className="rounded-2xl bg-secondary/40 px-3 py-4 text-center text-xs leading-snug text-muted-foreground ring-1 ring-dashed ring-border/70">
             Skonfiguruj 121 w ustawieniach, żeby wyświetlić stan
           </p>
         ) : items.length === 0 ? (
@@ -450,7 +466,10 @@ export function StanyCard({
             {items.map((item) => (
               <li
                 key={item.label}
-                className="flex items-baseline justify-between gap-2 rounded-lg border border-border/80 bg-muted/30 px-2.5 py-2 text-xs"
+                className={cn(
+                  "flex items-baseline justify-between gap-2 px-3 py-2.5 text-xs",
+                  bmMetricTileClass,
+                )}
               >
                 <span className="min-w-0 truncate font-medium text-muted-foreground">
                   {item.label}
@@ -483,24 +502,38 @@ export function GloSamplesCard({
   hasOneTwoOne: boolean
   oneTwoOneLoading?: boolean
 }) {
+  const metricTones = ["sky", "orange", "teal"] as const
+
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="space-y-0.5 px-3.5 py-3 pb-2 sm:px-4">
+    <Card className={bmCardClass}>
+      <CardHeader className={bmCardPadHeader}>
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <PackageIcon className="size-3.5 text-muted-foreground" aria-hidden />
+          <span className={bmIconBubble("orange")}>
+            <PackageIcon className="size-3.5" aria-hidden />
+          </span>
           Wyniki
         </CardTitle>
         <CardDescription className="text-xs" suppressHydrationWarning>
           Bieżący miesiąc · {monthLabel}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2.5 px-3.5 pb-3.5 sm:px-4 sm:pb-4">
+      <CardContent className={cn("space-y-3", bmCardPadContent)}>
         <div className="grid grid-cols-3 gap-2">
-          {CURRENT_MONTH_GLO_METRICS.map(({ key, label }) => (
+          {CURRENT_MONTH_GLO_METRICS.map(({ key, label }, index) => (
             <div
               key={key}
-              className="rounded-lg border border-border/80 bg-muted/30 px-2 py-2.5 text-center"
+              className={cn("px-2 py-3 text-center", bmMetricTileClass)}
             >
+              <span
+                className={cn(
+                  "mx-auto mb-1.5 flex size-7 items-center justify-center rounded-lg",
+                  metricTones[index] === "sky" && "bg-sky-500/15 text-sky-400",
+                  metricTones[index] === "orange" && "bg-orange-500/15 text-orange-400",
+                  metricTones[index] === "teal" && "bg-teal-500/15 text-teal-400",
+                )}
+              >
+                <PackageIcon className="size-3.5" aria-hidden />
+              </span>
               <p className="text-[11px] font-medium leading-tight text-muted-foreground">
                 {label}
               </p>
@@ -516,33 +549,38 @@ export function GloSamplesCard({
             <span className="font-semibold tabular-nums text-foreground">{veloNet}</span>
           </p>
         ) : null}
-        <div className="rounded-lg border border-border/80 bg-muted/25 px-2.5 py-2">
-          <p className="text-[11px] font-medium text-muted-foreground">Awaryjne/Tickety</p>
-          {oneTwoOneLoading ? (
-            <div className="mt-1 flex items-center gap-3">
-              <div className="h-3.5 w-12 animate-pulse rounded bg-muted" />
-              <div className="h-3.5 w-14 animate-pulse rounded bg-muted" />
-            </div>
-          ) : !hasOneTwoOne ? (
-            <p className="mt-1 text-xs leading-snug text-muted-foreground">
-              Skonfiguruj 121 w ustawieniach, żeby wyświetlić awaryjne i tickety
-            </p>
-          ) : (
-            <div className="mt-1 flex items-center gap-3 text-xs">
-              <span className="text-muted-foreground">
-                GLO{" "}
-                <span className="font-semibold tabular-nums text-foreground">
-                  {awaryjne?.glo ?? 0}
+        <div className={cn("flex items-center gap-3 px-3 py-2.5", bmMetricTileClass)}>
+          <span className={bmIconBubble("amber")}>
+            <AlertTriangleIcon className="size-3.5" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-medium text-muted-foreground">Awaryjne/Tickety</p>
+            {oneTwoOneLoading ? (
+              <div className="mt-1 flex items-center gap-3">
+                <div className="h-3.5 w-12 animate-pulse rounded bg-muted" />
+                <div className="h-3.5 w-14 animate-pulse rounded bg-muted" />
+              </div>
+            ) : !hasOneTwoOne ? (
+              <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+                Skonfiguruj 121 w ustawieniach, żeby wyświetlić awaryjne i tickety
+              </p>
+            ) : (
+              <div className="mt-0.5 flex items-center gap-3 text-xs">
+                <span className="text-muted-foreground">
+                  GLO{" "}
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {awaryjne?.glo ?? 0}
+                  </span>
                 </span>
-              </span>
-              <span className="text-muted-foreground">
-                VELO{" "}
-                <span className="font-semibold tabular-nums text-foreground">
-                  {awaryjne?.velo ?? 0}
+                <span className="text-muted-foreground">
+                  VELO{" "}
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {awaryjne?.velo ?? 0}
+                  </span>
                 </span>
-              </span>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -563,42 +601,96 @@ export function EfficiencyCard({
   const gloTimeDivisorLabel = formatTimeDivisor(e.gloTimeDivisor)
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="space-y-0.5 px-3.5 py-3 pb-2 sm:px-4">
+    <Card className={bmCardClass}>
+      <CardHeader className={bmCardPadHeader}>
         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-          <GaugeIcon className="size-3.5 text-muted-foreground" aria-hidden />
+          <span className={bmIconBubble("teal")}>
+            <GaugeIcon className="size-3.5" aria-hidden />
+          </span>
           Efektywność
         </CardTitle>
         <CardDescription className="text-xs" suppressHydrationWarning>
-          {monthLabel} · efektywność 
+          {monthLabel} · efektywność
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2.5 px-3.5 pb-3.5 sm:px-4 sm:pb-4">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg border border-border/80 bg-muted/30 px-2.5 py-2.5">
-            <p className="text-[11px] font-medium text-muted-foreground">Velo</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums leading-none">
+      <CardContent className={cn("space-y-3", bmCardPadContent)}>
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className={cn("px-3 py-3", bmMetricTileClass)}>
+            <div className="flex items-center gap-2">
+              <span className={bmIconBubble("sky")}>
+                <GaugeIcon className="size-3.5" aria-hidden />
+              </span>
+              <p className="text-[11px] font-medium text-muted-foreground">Velo</p>
+            </div>
+            <p className="mt-2 text-2xl font-semibold tabular-nums leading-none">
               {formatEfficiencyPl(e.veloEfficiency)}
             </p>
-            <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+            <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
               {e.veloCount} ÷ {veloTimeDivisorLabel}
             </p>
           </div>
-          <div className="rounded-lg border border-border/80 bg-muted/30 px-2.5 py-2.5">
-            <p className="text-[11px] font-medium text-muted-foreground">Glo</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums leading-none">
+          <div className={cn("px-3 py-3", bmMetricTileClass)}>
+            <div className="flex items-center gap-2">
+              <span className={bmIconBubble("orange")}>
+                <GaugeIcon className="size-3.5" aria-hidden />
+              </span>
+              <p className="text-[11px] font-medium text-muted-foreground">Glo</p>
+            </div>
+            <p className="mt-2 text-2xl font-semibold tabular-nums leading-none">
               {formatEfficiencyPl(e.gloEfficiency)}
             </p>
-            <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+            <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
               {e.gloCount} ÷ {gloTimeDivisorLabel}
             </p>
           </div>
         </div>
-        <p className="text-[11px] leading-snug text-muted-foreground">
-          Schematyka liczenia efektywności: Sprzedaz / (czas / 4)
+        <p className="text-[11px] italic leading-snug text-muted-foreground">
+          Schematyka liczenia efektywności: Sprzedaż / (czas / 4)
         </p>
       </CardContent>
     </Card>
+  )
+}
+
+function BonusTransactionRow({
+  icon: Icon,
+  iconTone,
+  title,
+  subtitle,
+  amount,
+  status,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  iconTone: "sky" | "orange" | "primary" | "teal" | "violet" | "amber"
+  title: string
+  subtitle: string
+  amount: number
+  status: string
+}) {
+  const positive = amount >= 0
+  return (
+    <div className="flex items-center gap-3 py-2.5">
+      <span className={bmIconBubble(iconTone)}>
+        <Icon className="size-3.5" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium leading-tight">{title}</p>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          {subtitle}
+          <span className="text-muted-foreground/50"> · </span>
+          {status}
+        </p>
+      </div>
+      <p
+        className={cn(
+          "shrink-0 text-sm font-semibold tabular-nums",
+          positive ? "text-emerald-600 dark:text-emerald-400" : "text-destructive",
+        )}
+      >
+        {positive ? "+" : "−"}
+        {formatMoneyPl(Math.abs(amount))}
+      </p>
+    </div>
   )
 }
 
@@ -625,62 +717,180 @@ export function PayoutCard({
 }) {
   const bonusExtras = useBrandmasterBonusExtras(includeExtras)
   const qualitativeBonus = bonusBreakdown?.qualitative.total ?? 0
+  const regularBonus = bonusBreakdown?.regular.total ?? 0
   const extrasAmount = includeExtras ? bonusExtras.extrasTotal : 0
+<<<<<<< Updated upstream
   const displayedPayout = basePayout + qualitativeBonus + extrasAmount
+=======
+  const displayedPayout =
+    basePayout + hourlyTourPayout + qualitativeBonus + extrasAmount
+  const incomeTotal = basePayout + qualitativeBonus + extrasAmount
+  const capitalizedMonth =
+    monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)
+>>>>>>> Stashed changes
 
   return (
-    <Card className="overflow-hidden shadow-sm">
+    <Card className={cn(bmCardClass, "ring-0")}>
       <button
         type="button"
         className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         onClick={onToggle}
         aria-expanded={expanded}
       >
-        <CardHeader className="space-y-0.5 px-3.5 py-3 pb-2 sm:px-4">
+        <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/20 via-primary/5 to-card px-4 py-4 sm:px-5">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                <WalletIcon className="size-3.5 text-muted-foreground" aria-hidden />
+              <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <span className={bmIconBubble("primary")}>
+                  <WalletIcon className="size-3.5" aria-hidden />
+                </span>
                 Przewidywalna wypłata
-              </CardTitle>
-              <CardDescription className="text-xs" suppressHydrationWarning>
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground" suppressHydrationWarning>
                 Stawka {hourlyRate} zł + bonus · {monthLabel}
-              </CardDescription>
+              </p>
             </div>
             <ChevronDownIcon
               className={cn(
-                "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform",
+                "mt-1 size-4 shrink-0 text-primary transition-transform",
                 expanded && "rotate-180",
               )}
               aria-hidden
             />
           </div>
-        </CardHeader>
-        <CardContent className="px-3.5 pb-3 pt-0 sm:px-4">
-          <p className="text-2xl font-semibold tabular-nums leading-none sm:text-3xl">
+
+          <p className="mt-4 text-3xl font-bold tabular-nums tracking-tight text-foreground sm:text-4xl">
             {formatMoneyPl(displayedPayout)}
           </p>
+<<<<<<< Updated upstream
           <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
             <span>
               Podstawa: {formatMoneyPl(basePayout)} ({formatHoursPl(totalRoundedHours)})
             </span>
-            {bonusBreakdown ? (
-              <span className="font-medium text-foreground/90">
-                Bonus: {formatMoneyPl(qualitativeBonus)}
+=======
+
+          <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+            <p>
+              Podstawa:{" "}
+              <span className="font-medium text-foreground">
+                {formatMoneyPl(basePayout)} ({formatHoursPl(totalBaseHours)})
               </span>
+            </p>
+            {hourlyTourPayout > 0 ? (
+              <p>
+                {HOURLY_TOUR_BONUS_LABEL}:{" "}
+                <span className="font-medium text-foreground">
+                  {formatMoneyPl(hourlyTourPayout)}
+                </span>
+              </p>
+            ) : null}
+>>>>>>> Stashed changes
+            {bonusBreakdown ? (
+              <p>
+                Bonus:{" "}
+                <span className="font-medium text-foreground">
+                  {formatMoneyPl(qualitativeBonus)}
+                </span>
+              </p>
             ) : null}
             {includeExtras && !bonusExtras.loading && extrasAmount !== 0 ? (
-              <span className="font-medium text-foreground/90">
-                Dodatki: {formatMoneyPl(extrasAmount)}
-              </span>
+              <p>
+                Dodatki:{" "}
+                <span className="font-medium text-foreground">
+                  {formatMoneyPl(extrasAmount)}
+                </span>
+              </p>
             ) : null}
-          </p>
-        </CardContent>
+          </div>
+
+          {!expanded ? (
+            <p className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary">
+              Kliknij, aby rozwinąć rozpiskę bonusu (zwykły i jakościowy)
+              <ArrowRightIcon className="size-3.5" aria-hidden />
+            </p>
+          ) : null}
+        </div>
       </button>
 
       {expanded ? (
-        <CardContent className="space-y-2.5 border-t border-border/80 px-3.5 pb-3.5 pt-2 sm:px-4 sm:pb-4">
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-border/80 bg-muted/25 px-3 py-2 text-xs">
+        <CardContent className="space-y-4 border-t border-border/50 px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">Całkowita wypłata</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums">{formatMoneyPl(displayedPayout)}</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className={cn("px-3 py-2.5", bmMetricTileClass)}>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Zysk (Income)
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Podstawa + Bonus</p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                  +{formatMoneyPl(incomeTotal)}
+                </p>
+              </div>
+              <div className={cn("px-3 py-2.5", bmMetricTileClass)}>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Koszty/Korekty
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Korekty TURA</p>
+                <p
+                  className={cn(
+                    "mt-0.5 text-sm font-semibold tabular-nums",
+                    hourlyTourPayout > 0
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-foreground",
+                  )}
+                >
+                  {hourlyTourPayout > 0 ? "+" : ""}
+                  {formatMoneyPl(hourlyTourPayout)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold">Szczegóły Bonusów</p>
+            </div>
+            <div className="divide-y divide-border/50">
+              {bonusBreakdown ? (
+                <>
+                  <BonusTransactionRow
+                    icon={TrophyIcon}
+                    iconTone="orange"
+                    title={`Bonus Zwykły ${capitalizedMonth}`}
+                    subtitle={bonusBreakdown.regular.tierLabel}
+                    amount={regularBonus}
+                    status={regularBonus > 0 ? "Zatwierdzono" : "Oczekuje"}
+                  />
+                  <BonusTransactionRow
+                    icon={SparklesIcon}
+                    iconTone="violet"
+                    title={`Bonus Jakościowy ${capitalizedMonth}`}
+                    subtitle={bonusBreakdown.qualitative.tierLabel}
+                    amount={qualitativeBonus}
+                    status={qualitativeBonus > 0 ? "Zatwierdzono" : "Oczekuje"}
+                  />
+                </>
+              ) : (
+                <p className="py-2 text-xs text-muted-foreground">
+                  Brak statystyk — bonus nie został policzony (wymagany login z konfiguracji
+                  oraz ident ostatniej akcji).
+                </p>
+              )}
+              {hourlyTourPayout > 0 ? (
+                <BonusTransactionRow
+                  icon={WalletIcon}
+                  iconTone="teal"
+                  title={`${HOURLY_TOUR_BONUS_LABEL} ${capitalizedMonth}`}
+                  subtitle={`${totalRemainderMinutes} min × ${hourlyRate} zł/h`}
+                  amount={hourlyTourPayout}
+                  status="Zatwierdzono"
+                />
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 rounded-2xl bg-secondary/40 px-3 py-2.5 text-xs ring-1 ring-border/50">
             <span className="text-muted-foreground">
               Stawka godzinowa ({hourlyRate} zł × {formatHoursPl(totalRoundedHours)})
             </span>
@@ -699,22 +909,11 @@ export function PayoutCard({
                 veloEfficiency={bonusBreakdown.efficiency.veloEfficiency}
               />
             </>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Brak statystyk bonus nie został policzony (wymagany login z konfiguracji
-              oraz ident ostatniej akcji).
-            </p>
-          )}
+          ) : null}
 
           {includeExtras ? <BonusExtrasSection extras={bonusExtras} /> : null}
         </CardContent>
-      ) : (
-        <CardContent className="border-t border-border/80 px-3.5 pb-3 pt-0 sm:px-4">
-          <p className="py-2 text-xs text-muted-foreground">
-            Kliknij, aby rozwinąć rozpiskę bonusu (zwykły i jakościowy).
-          </p>
-        </CardContent>
-      )}
+      ) : null}
     </Card>
   )
 }

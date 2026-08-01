@@ -266,7 +266,7 @@ export function EditorShopsMap({
       <div
         ref={containerRef}
         className={cn(
-          "z-0 w-full min-h-[220px] rounded-xl border border-border bg-muted",
+          "z-0 w-full min-h-[220px] rounded-2xl border-0 ring-1 ring-border/60 bg-muted",
           // Mobile-first height: comfortable on phones, grows on larger screens
           "h-[min(52dvh,380px)] sm:h-[min(48vh,420px)]"
         )}

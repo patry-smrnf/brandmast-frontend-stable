@@ -293,7 +293,7 @@ export function RoleContextMenu() {
           ref={popoverRef}
           role="menu"
           aria-label="Menu kontekstowe"
-          className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg"
+          className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-lg"
         >
           <div className="px-3 py-2 text-xs text-muted-foreground">
             {role === "brandmaster" ? "Brandmaster" : "Supervisor"}

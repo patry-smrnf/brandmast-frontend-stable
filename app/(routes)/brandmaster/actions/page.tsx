@@ -309,7 +309,7 @@ export default function BrandmasterActionsPage() {
           <div className="shrink-0">
             <Button
               size="sm"
-              className="shadow-sm"
+              className="h-9 rounded-xl shadow-sm"
               disabled={isAddDisabled}
               onClick={() => router.push(buildCreateEditorHref(editorMonthParam, selectedDateKey))}
             >

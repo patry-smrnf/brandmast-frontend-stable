@@ -23,6 +23,8 @@ import type { SettingResponse } from "@/lib/api/generated/types"
 import { getConfigState, setConfig, useConfigState } from "@/lib/config/configStore"
 import { cn } from "@/lib/utils"
 
+import { bmCardClass } from "../brandmaster-ui"
+
 function formatText(value: string | number | null | undefined, empty = "-") {
   if (value === null || value === undefined) return empty
   const s = String(value).trim()
@@ -56,7 +58,7 @@ function InfoRow({
   return (
     <div
       className={cn(
-        "flex flex-col gap-1 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4",
+        "flex flex-col gap-1 rounded-2xl bg-secondary/40 px-3 py-2.5 ring-1 ring-border/50 sm:flex-row sm:items-center sm:justify-between sm:gap-4",
         className
       )}
     >
@@ -275,8 +277,8 @@ export default function BrandmasterSettingsPage() {
       <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-5">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-1">
-            <div className="text-xs text-muted-foreground">Panel Brandmastera</div>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Ustawienia</h1>
+            <div className="text-xs font-medium text-muted-foreground">Panel Brandmastera</div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Ustawienia</h1>
             <p className="max-w-prose text-sm text-muted-foreground">
               Dane i uprawnienia z konfiguracji konta. Zmiany zapisuja sie od razu - po sukcesie lista
               odświeża się automatycznie.
@@ -306,13 +308,13 @@ export default function BrandmasterSettingsPage() {
         <Separator className="my-5" />
 
         {status === "error" && errorMessage ? (
-          <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <div className="mb-4 rounded-2xl bg-destructive/8 px-3 py-2.5 text-sm text-destructive ring-1 ring-destructive/30">
             {errorMessage}
           </div>
         ) : null}
 
         <div className="flex flex-col gap-4">
-          <Card>
+          <Card className={bmCardClass}>
             <CardHeader className="space-y-1">
               <div className="flex items-center gap-2">
                 <UsersIcon className="size-4 text-muted-foreground" aria-hidden />
@@ -402,7 +404,7 @@ export default function BrandmasterSettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={bmCardClass}>
             <CardHeader className="space-y-1">
               <CardTitle className="text-lg">Konfiguracja teamu</CardTitle>
               <CardDescription>
@@ -446,7 +448,7 @@ export default function BrandmasterSettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={bmCardClass}>
             <CardHeader className="space-y-1">
               <div className="flex items-center gap-2">
                 <ShieldIcon className="size-4 text-muted-foreground" aria-hidden />
@@ -457,7 +459,7 @@ export default function BrandmasterSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 rounded-2xl bg-secondary/30 p-3 ring-1 ring-border/50 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0 space-y-1">
                   <div className="text-sm font-medium">Wymagaj hasła</div>
                   <p className="text-xs text-muted-foreground">
