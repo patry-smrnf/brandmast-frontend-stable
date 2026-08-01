@@ -33,9 +33,6 @@ import {
   type TierProgressHint,
 } from "./brandmaster-bonus-utils"
 import type { MojstanDisplayItem } from "./brandmaster-mojstan-utils"
-<<<<<<< Updated upstream
-import { formatHoursPl, formatMoneyPl } from "./cas-action-utils"
-=======
 import {
   bmCardClass,
   bmCardPadContent,
@@ -43,8 +40,7 @@ import {
   bmIconBubble,
   bmMetricTileClass,
 } from "./brandmaster-ui"
-import { formatHoursPl, formatMoneyPl, HOURLY_TOUR_BONUS_LABEL } from "./cas-action-utils"
->>>>>>> Stashed changes
+import { formatHoursPl, formatMoneyPl } from "./cas-action-utils"
 import { BonusExtrasSection } from "./brandmaster-bonus-extras-section"
 import { useBrandmasterBonusExtras } from "./use-brandmaster-bonus-extras"
 
@@ -718,16 +714,11 @@ export function PayoutCard({
   const bonusExtras = useBrandmasterBonusExtras(includeExtras)
   const qualitativeBonus = bonusBreakdown?.qualitative.total ?? 0
   const regularBonus = bonusBreakdown?.regular.total ?? 0
+  const totalBonus = bonusBreakdown?.totalBonus ?? 0
   const extrasAmount = includeExtras ? bonusExtras.extrasTotal : 0
-<<<<<<< Updated upstream
-  const displayedPayout = basePayout + qualitativeBonus + extrasAmount
-=======
-  const displayedPayout =
-    basePayout + hourlyTourPayout + qualitativeBonus + extrasAmount
-  const incomeTotal = basePayout + qualitativeBonus + extrasAmount
+  const displayedPayout = predictedPayout + extrasAmount
   const capitalizedMonth =
     monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)
->>>>>>> Stashed changes
 
   return (
     <Card className={cn(bmCardClass, "ring-0")}>
@@ -762,34 +753,19 @@ export function PayoutCard({
           <p className="mt-4 text-3xl font-bold tabular-nums tracking-tight text-foreground sm:text-4xl">
             {formatMoneyPl(displayedPayout)}
           </p>
-<<<<<<< Updated upstream
-          <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-            <span>
-              Podstawa: {formatMoneyPl(basePayout)} ({formatHoursPl(totalRoundedHours)})
-            </span>
-=======
 
           <div className="mt-3 space-y-1 text-xs text-muted-foreground">
             <p>
               Podstawa:{" "}
               <span className="font-medium text-foreground">
-                {formatMoneyPl(basePayout)} ({formatHoursPl(totalBaseHours)})
+                {formatMoneyPl(basePayout)} ({formatHoursPl(totalRoundedHours)})
               </span>
             </p>
-            {hourlyTourPayout > 0 ? (
-              <p>
-                {HOURLY_TOUR_BONUS_LABEL}:{" "}
-                <span className="font-medium text-foreground">
-                  {formatMoneyPl(hourlyTourPayout)}
-                </span>
-              </p>
-            ) : null}
->>>>>>> Stashed changes
             {bonusBreakdown ? (
               <p>
                 Bonus:{" "}
                 <span className="font-medium text-foreground">
-                  {formatMoneyPl(qualitativeBonus)}
+                  {formatMoneyPl(totalBonus)}
                 </span>
               </p>
             ) : null}
@@ -822,26 +798,18 @@ export function PayoutCard({
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                   Zysk (Income)
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">Podstawa + Bonus</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Podstawa</p>
                 <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                  +{formatMoneyPl(incomeTotal)}
+                  +{formatMoneyPl(basePayout)}
                 </p>
               </div>
               <div className={cn("px-3 py-2.5", bmMetricTileClass)}>
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  Koszty/Korekty
+                  Bonus
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">Korekty TURA</p>
-                <p
-                  className={cn(
-                    "mt-0.5 text-sm font-semibold tabular-nums",
-                    hourlyTourPayout > 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-foreground",
-                  )}
-                >
-                  {hourlyTourPayout > 0 ? "+" : ""}
-                  {formatMoneyPl(hourlyTourPayout)}
+                <p className="mt-1 text-[11px] text-muted-foreground">Zwykły + jakościowy</p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                  +{formatMoneyPl(totalBonus + extrasAmount)}
                 </p>
               </div>
             </div>
@@ -877,16 +845,6 @@ export function PayoutCard({
                   oraz ident ostatniej akcji).
                 </p>
               )}
-              {hourlyTourPayout > 0 ? (
-                <BonusTransactionRow
-                  icon={WalletIcon}
-                  iconTone="teal"
-                  title={`${HOURLY_TOUR_BONUS_LABEL} ${capitalizedMonth}`}
-                  subtitle={`${totalRemainderMinutes} min × ${hourlyRate} zł/h`}
-                  amount={hourlyTourPayout}
-                  status="Zatwierdzono"
-                />
-              ) : null}
             </div>
           </div>
 
