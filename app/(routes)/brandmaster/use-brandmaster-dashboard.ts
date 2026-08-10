@@ -267,7 +267,9 @@ export function useBrandmasterDashboard(monthPeriod: BrandmasterMonthPeriod = "c
     [awaryjneCounts],
   )
 
-  const predictedPayout = basePayout + (bonusBreakdown?.totalBonus ?? 0)
+  // Przewidywana wypłata: godzinówka + tylko bonus jakościowy (bez zwykłego).
+  const predictedPayout =
+    basePayout + (bonusBreakdown?.qualitative.total ?? 0)
 
   const currentAction = startedActions[0] ?? null
 

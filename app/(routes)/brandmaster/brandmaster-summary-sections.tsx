@@ -708,7 +708,6 @@ export function PayoutCard({
   const bonusExtras = useBrandmasterBonusExtras(includeExtras)
   const qualitativeBonus = bonusBreakdown?.qualitative.total ?? 0
   const regularBonus = bonusBreakdown?.regular.total ?? 0
-  const totalBonus = bonusBreakdown?.totalBonus ?? 0
   const extrasAmount = includeExtras ? bonusExtras.extrasTotal : 0
   const displayedPayout = predictedPayout + extrasAmount
   const capitalizedMonth =
@@ -732,7 +731,7 @@ export function PayoutCard({
                 Przewidywalna wypłata
               </p>
               <p className="mt-1 text-xs text-muted-foreground" suppressHydrationWarning>
-                Stawka {hourlyRate} zł + bonus · {monthLabel}
+                Stawka {hourlyRate} zł + bonus jakościowy · {monthLabel}
               </p>
             </div>
             <ChevronDownIcon
@@ -757,9 +756,9 @@ export function PayoutCard({
             </p>
             {bonusBreakdown ? (
               <p>
-                Bonus:{" "}
+                Bonus jakościowy:{" "}
                 <span className="font-medium text-foreground">
-                  {formatMoneyPl(totalBonus)}
+                  {formatMoneyPl(qualitativeBonus)}
                 </span>
               </p>
             ) : null}
@@ -789,7 +788,7 @@ export function PayoutCard({
             <p className="mt-1 text-2xl font-bold tabular-nums">{formatMoneyPl(displayedPayout)}</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <div className={cn("px-3 py-2.5", bmMetricTileClass)}>
-                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground"> Zwykla wyplata
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground"> Godzinowka
                                   </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">Podstawa</p>
                 <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
@@ -800,9 +799,9 @@ export function PayoutCard({
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                   Bonus
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">Zwykły + jakościowy</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">jakościowy</p>
                 <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                  +{formatMoneyPl(totalBonus + extrasAmount)}
+                  +{formatMoneyPl(qualitativeBonus)}
                 </p>
               </div>
             </div>
@@ -821,7 +820,7 @@ export function PayoutCard({
                     title={`Bonus Zwykły ${capitalizedMonth}`}
                     subtitle={bonusBreakdown.regular.tierLabel}
                     amount={regularBonus}
-                    status={regularBonus > 0 ? "Zatwierdzono" : "Oczekuje"}
+                    status={regularBonus > 0 ? "Udalo sie wbic" : "Coraz blizej"}
                   />
                   <BonusTransactionRow
                     icon={SparklesIcon}
@@ -829,7 +828,7 @@ export function PayoutCard({
                     title={`Bonus Jakościowy ${capitalizedMonth}`}
                     subtitle={bonusBreakdown.qualitative.tierLabel}
                     amount={qualitativeBonus}
-                    status={qualitativeBonus > 0 ? "Zatwierdzono" : "Oczekuje"}
+                    status={qualitativeBonus > 0 ? "Udalo sie wbic" : "Coraz blizej"}
                   />
                 </>
               ) : (
