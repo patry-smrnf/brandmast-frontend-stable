@@ -162,7 +162,7 @@ export default function EditorStep1DateTime({
 
           <label
             className={cn(
-              "inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm",
+              "inline-flex items-center gap-2 rounded-2xl border-0 ring-1 ring-border/60 bg-card px-3 py-2 text-sm",
               isEditMode ? "opacity-60" : null
             )}
           >
@@ -176,7 +176,7 @@ export default function EditorStep1DateTime({
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="relative rounded-xl border border-border bg-card p-2 shadow-sm">
+          <div className="relative rounded-2xl border-0 ring-1 ring-border/60 bg-card p-2 shadow-sm">
             {monthActionsLoading ? <CalendarLoadingSkeleton /> : null}
             <div className="flex justify-center">
               {isMultiDatesEffective ? (
@@ -210,7 +210,7 @@ export default function EditorStep1DateTime({
           </div>
 
           <div className="flex-1">
-            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="rounded-2xl border-0 ring-1 ring-border/60 bg-card p-4 shadow-sm">
               <div className="text-sm font-medium">Wybrane daty</div>
               <div className="mt-2 space-y-2">
                 {selectedDates.length ? (

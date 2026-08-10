@@ -326,7 +326,7 @@ export function resolveLastActionIdent(
   return bestIdent
 }
 
-/** Ident akcji do POST /sample/stats — aktywna (started) albo ostatnia zakończona. */
+/** Ident akcji do POST /sample/stats -aktywna (started) albo ostatnia zakończona. */
 export function resolveSampleStatsActionIdent(
   started: TourPlannerActionListItem[],
   finished: TourPlannerActionListItem[],

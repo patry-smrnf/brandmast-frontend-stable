@@ -178,7 +178,7 @@ export function useEditorMapGeolocation() {
 
     setLocationFailed(false)
 
-    // Start geolocation in the same user-gesture tick — before any UI that unmounts the button.
+    // Start geolocation in the same user-gesture tick -before any UI that unmounts the button.
     beginGeolocationRequest((parsed) => {
       setIsLocating(false)
       if (parsed) {

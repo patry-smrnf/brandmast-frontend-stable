@@ -58,7 +58,7 @@ function DevicePhotoField({
   if (photoUrl && photo) {
     return (
       <div className="space-y-2">
-        <div className="overflow-hidden rounded-xl border border-primary/25 bg-primary/5 shadow-sm">
+        <div className="overflow-hidden rounded-2xl bg-primary/5 shadow-sm ring-1 ring-primary/20">
           <div className="relative min-h-[min(52dvh,18rem)] w-full bg-muted/30">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -161,7 +161,7 @@ function DevicePhotoField({
     <div className="overflow-hidden rounded-xl border border-dashed border-border bg-muted/15">
       <div className="flex min-h-[min(44dvh,14rem)] flex-col items-center justify-center px-4 py-6 text-center">
         <span
-          className="flex size-14 items-center justify-center rounded-2xl border border-border/70 bg-background shadow-sm"
+          className="flex size-14 items-center justify-center rounded-2xl bg-card shadow-sm ring-1 ring-border/50"
           aria-hidden
         >
           <CameraIcon className="size-7 text-muted-foreground" />
@@ -369,7 +369,7 @@ export default function OneTwoOneMygloKodyPage() {
           ) : null}
 
           {kodZapasowy ? (
-            <Card className="border-primary/30 bg-primary/5 shadow-sm">
+            <Card className="rounded-2xl border-0 bg-linear-to-br from-primary/10 via-card to-card shadow-md ring-1 ring-primary/20">
               <CardHeader className="space-y-0.5 px-3.5 py-3 sm:px-4">
                 <CardTitle className="text-sm font-semibold">Kod zapasowy</CardTitle>
                 <CardDescription className="text-xs">
@@ -382,7 +382,7 @@ export default function OneTwoOneMygloKodyPage() {
             </Card>
           ) : null}
 
-          <Card className="border-border/80 shadow-sm">
+          <Card className="rounded-2xl border-0 shadow-md ring-1 ring-border/60">
             <CardHeader className="space-y-0.5 px-3.5 py-3 sm:px-4">
               <CardTitle className="text-sm font-semibold">Dane zgłoszenia</CardTitle>
               <CardDescription className="text-xs">
@@ -445,7 +445,7 @@ export default function OneTwoOneMygloKodyPage() {
                 : photoUploadError
                   ? "Popraw błąd przesyłania zdjęcia, aby wysłać zgłoszenie."
                   : savedTeamId == null && !resolvedTeam.isLoading
-                    ? "Brak dopasowanego regionu — odśwież lub skontaktuj się z administratorem."
+                    ? "Brak dopasowanego regionu -odśwież lub skontaktuj się z administratorem."
                     : canSubmit
                       ? "Gotowe do wysłania."
                       : "Uzupełnij numer i dodaj zdjęcie, aby odblokować przycisk."}

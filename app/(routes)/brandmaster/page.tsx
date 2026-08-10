@@ -10,7 +10,7 @@ import {
   RefreshCwIcon,
 } from "lucide-react"
 
-import { fetchSampleStats, getApiErrorMessage } from "@/lib/api"
+import { fetchSampleStats } from "@/lib/api"
 import type { SampleStatsFieldCounts } from "@/lib/api"
 
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import {
   formatHeaderDatePoland,
@@ -37,6 +36,14 @@ import {
   PayoutCard,
   StanyCard,
 } from "./brandmaster-summary-sections"
+import {
+  bmCardClass,
+  bmCardPadContent,
+  bmCardPadHeader,
+  bmIconBubble,
+  bmSegmentedTab,
+  bmSegmentedTrack,
+} from "./brandmaster-ui"
 import { formatHoursPl, getActionRowKey, type ActionWithRoundedTime } from "./cas-action-utils"
 import {
   type BrandmasterMonthPeriod,
@@ -53,7 +60,7 @@ function BrandmasterMonthSwitcher({
 }) {
   return (
     <div
-      className="grid grid-cols-2 gap-1 rounded-xl border border-border/80 bg-muted/40 p-1"
+      className={bmSegmentedTrack}
       role="tablist"
       aria-label="Okres rozliczeniowy"
     >
@@ -61,12 +68,7 @@ function BrandmasterMonthSwitcher({
         type="button"
         role="tab"
         aria-selected={period === "current"}
-        className={cn(
-          "inline-flex min-h-9 items-center justify-center rounded-lg px-2 py-1.5 text-xs font-medium transition-colors sm:text-sm",
-          period === "current"
-            ? "bg-background text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
+        className={bmSegmentedTab(period === "current")}
         onClick={() => onChange("current")}
       >
         Aktualny
@@ -75,12 +77,7 @@ function BrandmasterMonthSwitcher({
         type="button"
         role="tab"
         aria-selected={period === "previous"}
-        className={cn(
-          "inline-flex min-h-9 items-center justify-center rounded-lg px-2 py-1.5 text-xs font-medium transition-colors sm:text-sm",
-          period === "previous"
-            ? "bg-background text-foreground shadow-sm"
-            : "text-muted-foreground hover:text-foreground",
-        )}
+        className={bmSegmentedTab(period === "previous")}
         onClick={() => onChange("previous")}
       >
         Poprzedni
@@ -116,7 +113,7 @@ function ActionSampleStatsPanel({ stats }: { stats: SampleStatsFieldCounts }) {
 
   return (
     <div
-      className="flex items-stretch divide-x divide-primary/15 overflow-hidden rounded-md border border-primary/20 bg-primary/5"
+      className="flex items-stretch divide-x divide-primary/15 overflow-hidden rounded-xl bg-primary/8 ring-1 ring-primary/20"
       role="group"
       aria-label="Wyniki akcji"
     >
@@ -155,12 +152,12 @@ function WorkTimeActionRow({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-lg border bg-muted/30 transition-colors",
+        "overflow-hidden rounded-2xl bg-card shadow-sm ring-1 transition-colors",
         isEmpty
-          ? "border-destructive/50 bg-destructive/8 ring-1 ring-destructive/20"
+          ? "ring-destructive/40 bg-destructive/5"
           : expanded
-            ? "border-primary/40 ring-1 ring-primary/15"
-            : "border-border/80",
+            ? "ring-primary/30"
+            : "ring-border/60",
       )}
     >
       <button
@@ -227,7 +224,7 @@ function WorkTimeActionRow({
           </p>
         </div>
         <p className="shrink-0 pt-0.5 text-sm font-semibold tabular-nums">
-          {formatHoursPl(item.durationHours)}
+          {formatHoursPl(item.roundedHours)}
         </p>
       </div>
       </button>
@@ -277,11 +274,9 @@ export default function BrandmasterPage() {
     currentActionPointLabel,
     currentActionStats,
     monthActions,
-    totalDurationHours,
-    totalBaseHours,
-    totalRemainderMinutes,
+    totalRoundedHours,
     basePayout,
-    hourlyTourPayout,
+    predictedPayout,
     bonusBreakdown,
     hourlyRate,
     monthSalesStats,
@@ -298,7 +293,8 @@ export default function BrandmasterPage() {
     error: emptyHoursError,
     emptyActionKeys,
     statsByActionKey,
-    emptyHours,
+    rawHours: emptyRawHours,
+    roundedHours: emptyRoundedHours,
     calculate: calculateEmptyHours,
     reset: resetEmptyWorkHours,
   } = useEmptyWorkHours(monthActions, hostessCode)
@@ -363,7 +359,7 @@ export default function BrandmasterPage() {
         } catch (e) {
           if (actionStatsRequestRef.current !== requestId) return
           setActionStatsError(
-            getApiErrorMessage(e, "Nie udało się pobrać wyników akcji."),
+            e instanceof Error ? e.message : "Nie udało się pobrać wyników akcji.",
           )
         } finally {
           if (actionStatsRequestRef.current === requestId) {
@@ -388,267 +384,282 @@ export default function BrandmasterPage() {
     }).format(labelDate)
   }, [monthPeriod])
 
+
   return (
     <main className="flex-1 bg-background">
-      <div className="mx-auto w-full max-w-lg px-3 py-4 sm:max-w-xl sm:px-4 sm:py-5">
+      <div className="mx-auto w-full max-w-lg px-3 py-5 sm:max-w-xl sm:px-4 sm:py-6">
         <BrandmasterScheduledNotice />
         {isLoading ? (
           <BrandmasterPageSkeleton />
         ) : (
           <>
             <header className="min-w-0 pr-11">
-          <p className="text-xs text-muted-foreground">Panel home</p>
-          <h1 className="truncate text-lg font-semibold tracking-tight sm:text-xl">
-            Podsumowanie
-          </h1>
-          <div className="mt-1.5 flex items-baseline gap-2.5">
-            <span
-              className="text-3xl font-semibold tabular-nums leading-none sm:text-4xl"
-              suppressHydrationWarning
-            >
-              {headerDate.day}
-            </span>
-            <span
-              className="min-w-0 truncate text-sm font-medium capitalize text-muted-foreground"
-              suppressHydrationWarning
-            >
-              {headerDate.rest}
-            </span>
-          </div>
-        </header>
-
-        <Separator className="my-4" />
-
-        <div className="mb-3">
-          <BrandmasterMonthSwitcher period={monthPeriod} onChange={setMonthPeriod} />
-        </div>
-
-        <div className="mb-3 flex">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 px-3"
-            onClick={() => refetch()}
-            disabled={isRefreshing}
-          >
-            <RefreshCwIcon className={cn("size-3.5", isRefreshing && "animate-spin")} />
-            Odśwież dane
-          </Button>
-        </div>
-
-        {error ? (
-          <div className="mb-3 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
-            <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-            <span>{error}</span>
-          </div>
-        ) : null}
-
-            <div className="space-y-3">
-            {currentAction ? (
-              <Card className="border-primary/30 bg-primary/5 shadow-sm">
-                <CardHeader className="space-y-1 px-3.5 py-3 pb-2 sm:px-4">
-                  <CardDescription className="text-xs">Aktualna akcja</CardDescription>
-                  <CardTitle className="text-base font-semibold leading-snug">
-                    {currentActionTitle}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 px-3.5 pb-3.5 sm:px-4 sm:pb-4">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <p className="flex min-w-0 items-center gap-2 text-sm">
-                      <ClockIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                      <span className="tabular-nums">
-                        Start:{" "}
-                        <span className="font-medium text-foreground">
-                          {currentActionStartLabel}
-                        </span>
-                      </span>
-                    </p>
-                    <div className="flex min-w-0 items-stretch gap-2 sm:max-w-[min(100%,20rem)] sm:shrink-0">
-                      {currentActionStats ? (
-                        <div className="min-w-0 flex-1">
-                          <ActionSampleStatsPanel stats={currentActionStats} />
-                        </div>
-                      ) : null}
-                      {currentActionRoundedHoursLabel ? (
-                        <p className="flex shrink-0 items-center self-center text-sm font-semibold tabular-nums">
-                          {currentActionRoundedHoursLabel}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                  {currentActionPointLabel ? (
-                    <p className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <MapPinIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                      <span className="min-w-0 leading-snug">{currentActionPointLabel}</span>
-                    </p>
-                  ) : null}
-                </CardContent>
-              </Card>
-            ) : null}
-
-            <PayoutCard
-              basePayout={basePayout}
-              hourlyTourPayout={hourlyTourPayout}
-              totalRemainderMinutes={totalRemainderMinutes}
-              bonusBreakdown={bonusBreakdown}
-              hourlyRate={hourlyRate}
-              totalDurationHours={totalDurationHours}
-              totalBaseHours={totalBaseHours}
-              monthLabel={monthLabel}
-              includeExtras={monthPeriod === "current"}
-              expanded={payoutExpanded}
-              onToggle={() => setPayoutExpanded((v) => !v)}
-            />
-
-            {bonusBreakdown ? (
-              <EfficiencyCard bonus={bonusBreakdown} monthLabel={monthLabel} />
-            ) : null}
-
-            {monthSalesStats ? (
-              <GloSamplesCard
-                glo={monthSalesStats.glo}
-                veloNet={monthSalesStats.veloNet}
-                monthLabel={monthLabel}
-                awaryjne={awaryjneSummary}
-                hasOneTwoOne={hasOneTwoOne}
-                oneTwoOneLoading={oneTwoOneLoading}
-              />
-            ) : null}
-
-            <StanyCard
-              hasOneTwoOne={hasOneTwoOne}
-              items={mojstanItems}
-              loading={oneTwoOneLoading}
-            />
-
-            <Card className="overflow-hidden shadow-sm">
-              <CardHeader className="space-y-2 px-3.5 py-3 pb-2 sm:px-4">
-                <button
-                  type="button"
-                  className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  onClick={() => setWorkTimeExpanded((v) => !v)}
-                  aria-expanded={workTimeExpanded}
+              <p className="text-xs font-medium text-muted-foreground">Panel home</p>
+              <h1 className="mt-0.5 truncate text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                Podsumowanie
+              </h1>
+              <div className="mt-2 flex items-baseline gap-2.5">
+                <span
+                  className="text-3xl font-semibold tabular-nums leading-none text-foreground sm:text-4xl"
+                  suppressHydrationWarning
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                        <ClockIcon className="size-3.5 text-muted-foreground" aria-hidden />
-                        Czas pracy
-                      </CardTitle>
-                      <CardDescription className="text-xs" suppressHydrationWarning>
-                        {monthActions.length}{" "}
-                        {monthActions.length === 1
-                          ? "akcja"
-                          : monthActions.length > 1 && monthActions.length < 5
-                            ? "akcje"
-                            : "akcji"}{" "}
-                        · {monthLabel}
-                      </CardDescription>
-                      {emptyHoursCalculated ? (
-                        <p className="mt-1.5 text-xs text-destructive">
-                          Puste godziny:{" "}
-                          <span className="font-semibold tabular-nums">
-                            {formatHoursPl(emptyHours)}
-                          </span>
-                          {emptyActionKeys.size > 0 ? (
-                            <span className="text-destructive/80">
-                              {" "}
-                              · {emptyActionKeys.size}{" "}
-                              {emptyActionKeys.size === 1
-                                ? "akcja pusta"
-                                : emptyActionKeys.size > 1 && emptyActionKeys.size < 5
-                                  ? "akcje puste"
-                                  : "akcji pustych"}
-                            </span>
-                          ) : null}
-                        </p>
-                      ) : null}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2 pt-0.5">
-                      <span className="text-lg font-semibold tabular-nums leading-none">
-                        {formatHoursPl(totalDurationHours)}
-                      </span>
-                      <ChevronDownIcon
-                        className={cn(
-                          "size-4 text-muted-foreground transition-transform",
-                          workTimeExpanded && "rotate-180",
-                        )}
-                        aria-hidden
-                      />
-                    </div>
-                  </div>
-                </button>
+                  {headerDate.day}
+                </span>
+                <span
+                  className="min-w-0 truncate text-sm font-medium capitalize text-muted-foreground"
+                  suppressHydrationWarning
+                >
+                  {headerDate.rest}
+                </span>
+              </div>
+            </header>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2.5 text-xs"
-                    onClick={() => calculateEmptyHours()}
-                    disabled={
-                      emptyHoursCalculated ||
-                      emptyHoursLoading ||
-                      monthActions.length === 0 ||
-                      !hostessCode
-                    }
-                  >
-                    {emptyHoursLoading ? (
-                      <>
-                        <RefreshCwIcon className="mr-1.5 size-3 animate-spin" aria-hidden />
-                        Liczenie…
-                      </>
-                    ) : (
-                      "Policz puste godziny"
-                    )}
-                  </Button>
-                  {emptyHoursError ? (
-                    <p className="text-[11px] leading-snug text-destructive">{emptyHoursError}</p>
-                  ) : null}
-                </div>
-              </CardHeader>
+            <div className="mb-3 mt-5">
+              <BrandmasterMonthSwitcher period={monthPeriod} onChange={setMonthPeriod} />
+            </div>
 
-              {workTimeExpanded ? (
-                <CardContent className="space-y-2 border-t border-border/80 px-3.5 pb-3.5 pt-2 sm:px-4 sm:pb-4">
-                  {monthActions.length === 0 ? (
-                    <p className="py-2 text-center text-xs text-muted-foreground">
-                      {monthPeriod === "previous"
-                        ? "Brak zakończonych akcji w poprzednim miesiącu."
-                        : "Brak zakończonych akcji w tym miesiącu."}
-                    </p>
-                  ) : (
-                    monthActions.map((item) => {
-                      const rowKey = getActionRowKey(item)
-                      const isSelected = selectedActionKey === rowKey
-                      const isEmpty =
-                        emptyHoursCalculated && emptyActionKeys.has(rowKey)
-                      return (
-                        <WorkTimeActionRow
-                          key={rowKey}
-                          item={item}
-                          expanded={isSelected}
-                          isEmpty={isEmpty}
-                          statsLoading={isSelected && actionStatsLoading}
-                          stats={isSelected ? actionStats : null}
-                          statsError={isSelected ? actionStatsError : null}
-                          onToggle={() => handleActionToggle(item)}
-                        />
-                      )
-                    })
+            <div className="mb-4 flex">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 rounded-xl border-primary/40 px-3.5 text-primary hover:bg-primary/5 hover:text-primary"
+                onClick={() => refetch()}
+                disabled={isRefreshing}
+              >
+                <RefreshCwIcon className={cn("size-3.5", isRefreshing && "animate-spin")} />
+                Odśwież dane
+              </Button>
+            </div>
+
+            {error ? (
+              <div className="mb-3 flex items-start gap-2 rounded-2xl bg-destructive/8 px-3 py-2.5 text-sm text-destructive ring-1 ring-destructive/30">
+                <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <span>{error}</span>
+              </div>
+            ) : null}
+
+            <div className="space-y-3.5">
+              {currentAction ? (
+                <Card
+                  className={cn(
+                    bmCardClass,
+                    "bg-linear-to-br from-primary/10 via-card to-card",
                   )}
-                </CardContent>
-              ) : (
-                <CardContent className="px-3.5 pb-3 pt-0 sm:px-4">
-                  <p className="text-xs text-muted-foreground">
-                    Kliknij, aby zobaczyć listę akcji. Wybierz akcję, aby zobaczyć wyniki Hilo,
-                    Hilo+, Hyper Pro i Velo.
-                    {emptyHoursCalculated && emptyActionKeys.size > 0
-                      ? " Puste akcje są podświetlone na czerwono."
-                      : null}
-                  </p>
-                </CardContent>
-              )}
-            </Card>
+                >
+                  <CardHeader className={cn(bmCardPadHeader, "space-y-1")}>
+                    <CardDescription className="text-xs">Aktualna akcja</CardDescription>
+                    <CardTitle className="text-base font-semibold leading-snug">
+                      {currentActionTitle}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className={cn("space-y-2", bmCardPadContent)}>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <p className="flex min-w-0 items-center gap-2 text-sm">
+                        <span className={bmIconBubble("sky")}>
+                          <ClockIcon className="size-3.5" aria-hidden />
+                        </span>
+                        <span className="tabular-nums">
+                          Start:{" "}
+                          <span className="font-medium text-foreground">
+                            {currentActionStartLabel}
+                          </span>
+                        </span>
+                      </p>
+                      <div className="flex min-w-0 items-stretch gap-2 sm:max-w-[min(100%,20rem)] sm:shrink-0">
+                        {currentActionStats ? (
+                          <div className="min-w-0 flex-1">
+                            <ActionSampleStatsPanel stats={currentActionStats} />
+                          </div>
+                        ) : null}
+                        {currentActionRoundedHoursLabel ? (
+                          <p className="flex shrink-0 items-center self-center text-sm font-semibold tabular-nums">
+                            {currentActionRoundedHoursLabel}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                    {currentActionPointLabel ? (
+                      <p className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <span className={cn(bmIconBubble("orange"), "mt-0.5 size-7")}>
+                          <MapPinIcon className="size-3.5" aria-hidden />
+                        </span>
+                        <span className="min-w-0 leading-snug">{currentActionPointLabel}</span>
+                      </p>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              ) : null}
+
+              <PayoutCard
+                basePayout={basePayout}
+                bonusBreakdown={bonusBreakdown}
+                predictedPayout={predictedPayout}
+                hourlyRate={hourlyRate}
+                totalRoundedHours={totalRoundedHours}
+                monthLabel={monthLabel}
+                includeExtras={monthPeriod === "current"}
+                expanded={payoutExpanded}
+                onToggle={() => setPayoutExpanded((v) => !v)}
+              />
+
+              {bonusBreakdown ? (
+                <EfficiencyCard bonus={bonusBreakdown} monthLabel={monthLabel} />
+              ) : null}
+
+              {monthSalesStats ? (
+                <GloSamplesCard
+                  glo={monthSalesStats.glo}
+                  veloNet={monthSalesStats.veloNet}
+                  monthLabel={monthLabel}
+                  awaryjne={awaryjneSummary}
+                  hasOneTwoOne={hasOneTwoOne}
+                  oneTwoOneLoading={oneTwoOneLoading}
+                />
+              ) : null}
+
+              <StanyCard
+                hasOneTwoOne={hasOneTwoOne}
+                items={mojstanItems}
+                loading={oneTwoOneLoading}
+              />
+
+              <Card className={bmCardClass}>
+                <CardHeader className={cn(bmCardPadHeader, "space-y-2")}>
+                  <button
+                    type="button"
+                    className="w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    onClick={() => setWorkTimeExpanded((v) => !v)}
+                    aria-expanded={workTimeExpanded}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                          <span className={bmIconBubble("primary")}>
+                            <ClockIcon className="size-3.5" aria-hidden />
+                          </span>
+                          Czas pracy
+                        </CardTitle>
+                        <CardDescription className="text-xs" suppressHydrationWarning>
+                          {monthActions.length}{" "}
+                          {monthActions.length === 1
+                            ? "akcja"
+                            : monthActions.length > 1 && monthActions.length < 5
+                              ? "akcje"
+                              : "akcji"}{" "}
+                          · {monthLabel}
+                        </CardDescription>
+                        {emptyHoursCalculated ? (
+                          <p className="mt-1.5 text-xs text-destructive">
+                            Puste godziny:{" "}
+                            <span className="font-semibold tabular-nums">
+                              {formatHoursPl(emptyRawHours)}
+                            </span>
+                            {" · "}
+                            zaokrąglone:{" "}
+                            <span className="font-semibold tabular-nums">
+                              {formatHoursPl(emptyRoundedHours)}
+                            </span>
+                            {emptyActionKeys.size > 0 ? (
+                              <span className="text-destructive/80">
+                                {" "}
+                                · {emptyActionKeys.size}{" "}
+                                {emptyActionKeys.size === 1
+                                  ? "akcja pusta"
+                                  : emptyActionKeys.size > 1 && emptyActionKeys.size < 5
+                                    ? "akcje puste"
+                                    : "akcji pustych"}
+                              </span>
+                            ) : null}
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2 pt-0.5">
+                        <span className="text-lg font-semibold tabular-nums leading-none">
+                          {formatHoursPl(totalRoundedHours)}
+                        </span>
+                        <ChevronDownIcon
+                          className={cn(
+                            "size-4 text-muted-foreground transition-transform",
+                            workTimeExpanded && "rotate-180",
+                          )}
+                          aria-hidden
+                        />
+                      </div>
+                    </div>
+                  </button>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-xl px-2.5 text-xs"
+                      onClick={() => calculateEmptyHours()}
+                      disabled={
+                        emptyHoursCalculated ||
+                        emptyHoursLoading ||
+                        monthActions.length === 0 ||
+                        !hostessCode
+                      }
+                    >
+                      {emptyHoursLoading ? (
+                        <>
+                          <RefreshCwIcon className="mr-1.5 size-3 animate-spin" aria-hidden />
+                          Liczenie…
+                        </>
+                      ) : (
+                        "Policz puste godziny"
+                      )}
+                    </Button>
+                    {emptyHoursError ? (
+                      <p className="text-[11px] leading-snug text-destructive">{emptyHoursError}</p>
+                    ) : null}
+                  </div>
+                </CardHeader>
+
+                {workTimeExpanded ? (
+                  <CardContent
+                    className={cn("space-y-2 border-t border-border/50 pt-3", bmCardPadContent)}
+                  >
+                    {monthActions.length === 0 ? (
+                      <p className="py-2 text-center text-xs text-muted-foreground">
+                        {monthPeriod === "previous"
+                          ? "Brak zakończonych akcji w poprzednim miesiącu."
+                          : "Brak zakończonych akcji w tym miesiącu."}
+                      </p>
+                    ) : (
+                      monthActions.map((item) => {
+                        const rowKey = getActionRowKey(item)
+                        const isSelected = selectedActionKey === rowKey
+                        const isEmpty =
+                          emptyHoursCalculated && emptyActionKeys.has(rowKey)
+                        return (
+                          <WorkTimeActionRow
+                            key={rowKey}
+                            item={item}
+                            expanded={isSelected}
+                            isEmpty={isEmpty}
+                            statsLoading={isSelected && actionStatsLoading}
+                            stats={isSelected ? actionStats : null}
+                            statsError={isSelected ? actionStatsError : null}
+                            onToggle={() => handleActionToggle(item)}
+                          />
+                        )
+                      })
+                    )}
+                  </CardContent>
+                ) : (
+                  <CardContent className={cn("pt-0", bmCardPadContent)}>
+                    <p className="text-xs text-muted-foreground">
+                      Kliknij, aby zobaczyć listę akcji. Wybierz akcję, aby zobaczyć wyniki Hilo,
+                      Hilo+, Hyper Pro i Velo.
+                      {emptyHoursCalculated && emptyActionKeys.size > 0
+                        ? " Puste akcje są podświetlone na czerwono."
+                        : null}
+                    </p>
+                  </CardContent>
+                )}
+              </Card>
             </div>
           </>
         )}

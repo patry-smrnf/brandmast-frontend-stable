@@ -257,7 +257,7 @@ input[type="datetime-local"]::-webkit-inner-spin-button {
   height: auto;
 }
 
-/* Full-box invisible hit target — opens native picker without widening the input */
+/* Full-box invisible hit target -opens native picker without widening the input */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="month"]::-webkit-calendar-picker-indicator,
@@ -279,7 +279,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   border: none !important;
 }
 
-/* Supervisor bulk approve — lightweight GPU-friendly motion */
+/* Supervisor bulk approve -lightweight GPU-friendly motion */
 @keyframes sv-enter-left {
   from {
     opacity: 0;

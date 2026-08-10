@@ -31,17 +31,17 @@ export default function EditorStep3Summary({
   onSubmit,
 }: EditorStep3SummaryProps) {
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden rounded-2xl border-0 shadow-md ring-1 ring-border/60">
       <CardHeader className="space-y-1">
         <CardTitle className="inline-flex items-center gap-2">
-          <CheckIcon className="size-5 text-muted-foreground" />
+          <CheckIcon className="size-5 text-primary" />
           Podsumowanie
         </CardTitle>
         <CardDescription>Sprawdź dane przed {isEditMode ? "zapisem" : "utworzeniem"}.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="grid grid-cols-1 gap-3">
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="rounded-2xl border-0 ring-1 ring-border/60 bg-card p-4 shadow-sm">
             <div className="text-xs text-muted-foreground">Daty</div>
             <div className="mt-2 space-y-2">
               {selectedDates
@@ -59,7 +59,7 @@ export default function EditorStep3Summary({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="rounded-2xl border-0 ring-1 ring-border/60 bg-card p-4 shadow-sm">
             <div className="text-xs text-muted-foreground">Godziny</div>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
               <span className="rounded-lg border border-border bg-background px-3 py-2 tabular-nums">
@@ -72,7 +72,7 @@ export default function EditorStep3Summary({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="rounded-2xl border-0 ring-1 ring-border/60 bg-card p-4 shadow-sm">
             <div className="text-xs text-muted-foreground">Sklep</div>
             <div className="mt-2">
               {selectedShop ? (

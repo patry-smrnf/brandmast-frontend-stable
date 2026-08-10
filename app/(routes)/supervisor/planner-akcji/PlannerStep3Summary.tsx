@@ -66,7 +66,7 @@ function ExpandableList({
         {visibleItems.map((item, i) => renderItem(item, i))}
         {!expanded && needsToggle ? (
           <p className="pt-1 text-xs text-muted-foreground">
-            +{count - PREVIEW_LIMIT} kolejnych — kliknij nagłówek, aby rozwinąć
+            +{count - PREVIEW_LIMIT} kolejnych -kliknij nagłówek, aby rozwinąć
           </p>
         ) : null}
       </div>

@@ -195,7 +195,7 @@ export function aggregateCasDayStats(rows: CasDayStatsRow[]): CasDayStatsSummary
 export type CasBrandmasterDayStats = {
   hostessCode: string
   name: string
-  /** Ma nadal aktywną (started) akcję — jest jeszcze na zmianie. */
+  /** Ma nadal aktywną (started) akcję -jest jeszcze na zmianie. */
   hasStarted: boolean
   actionCount: number
   durationHours: number

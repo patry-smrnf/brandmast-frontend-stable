@@ -5,7 +5,7 @@ import { createPortal } from "react-dom"
 import { AlertCircleIcon, CheckCircle2Icon, Loader2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { brandmastApi, getApiErrorMessage } from "@/lib/api"
+import { brandmastApi } from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { formatTime, parseIso } from "@/lib/dates/date-utils"
 
@@ -62,6 +62,7 @@ export type SupervisorBulkApproveDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   rows: SvActionRow[]
+  /** Always called after a finished run (success or partial/error) so the list refetches. */
   onComplete: () => void
 }
 
@@ -78,8 +79,11 @@ export function SupervisorBulkApproveDialog({
   const [completedCount, setCompletedCount] = React.useState(0)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const runIdRef = React.useRef(0)
+  const completedCountRef = React.useRef(0)
   const onCompleteRef = React.useRef(onComplete)
   onCompleteRef.current = onComplete
+  const rowsRef = React.useRef(rows)
+  rowsRef.current = rows
 
   const rowsKey = React.useMemo(
     () => rows.map((r) => r.action.idAction).join(","),
@@ -94,6 +98,35 @@ export function SupervisorBulkApproveDialog({
     if (!currentRow) return []
     return splitActionIntoMaxFourHourSegments(currentRow.action.since, currentRow.action.until)
   }, [currentRow])
+
+  const runFrom = React.useCallback(async (fromIndex: number) => {
+    const runId = ++runIdRef.current
+    const list = rowsRef.current
+    setPhase("running")
+    setErrorMessage(null)
+
+    for (let i = fromIndex; i < list.length; i++) {
+      if (runIdRef.current !== runId) return
+      setCurrentIndex(i)
+      try {
+        await approveSingleAction(list[i]!)
+        if (runIdRef.current !== runId) return
+        const nextCompleted = i + 1
+        completedCountRef.current = nextCompleted
+        setCompletedCount(nextCompleted)
+      } catch (e) {
+        if (runIdRef.current !== runId) return
+        setErrorMessage(e instanceof Error ? e.message : "Nie udało się zaakceptować akcji.")
+        setPhase("error")
+        // Refetch even on partial failure so UI is not stale; retry must not resend completed.
+        onCompleteRef.current()
+        return
+      }
+    }
+    if (runIdRef.current !== runId) return
+    setPhase("done")
+    onCompleteRef.current()
+  }, [])
 
   React.useLayoutEffect(() => {
     setPortalTarget(document.body)
@@ -120,40 +153,25 @@ export function SupervisorBulkApproveDialog({
   React.useEffect(() => {
     if (!open || rows.length === 0) return
 
-    const runId = ++runIdRef.current
-    setPhase("running")
-    setCurrentIndex(0)
+    completedCountRef.current = 0
     setCompletedCount(0)
+    setCurrentIndex(0)
     setErrorMessage(null)
-
-    void (async () => {
-      for (let i = 0; i < rows.length; i++) {
-        if (runIdRef.current !== runId) return
-        setCurrentIndex(i)
-        try {
-          await approveSingleAction(rows[i]!)
-          if (runIdRef.current !== runId) return
-          setCompletedCount(i + 1)
-        } catch (e) {
-          if (runIdRef.current !== runId) return
-          setErrorMessage(getApiErrorMessage(e, "Nie udało się zaakceptować akcji."))
-          setPhase("error")
-          return
-        }
-      }
-      if (runIdRef.current !== runId) return
-      setPhase("done")
-      onCompleteRef.current()
-    })()
+    void runFrom(0)
 
     return () => {
       runIdRef.current++
     }
-  }, [open, rowsKey, rows])
+  }, [open, rowsKey, rows.length, runFrom])
 
   function handleClose() {
     runIdRef.current++
     onOpenChange(false)
+  }
+
+  function handleContinueRemaining() {
+    // Resume from the failed index — already-completed actions are not resent.
+    void runFrom(currentIndex)
   }
 
   if (!open || !portalTarget) return null
@@ -161,15 +179,24 @@ export function SupervisorBulkApproveDialog({
   const progressRatio = total > 0 ? completedCount / total : 0
   const progressPct = Math.round(progressRatio * 100)
   const progressLabel = `${completedCount} / ${total}`
+  const remainingCount = Math.max(0, total - completedCount)
 
   const title =
-    phase === "done" ? "Podsumowanie" : phase === "error" ? "Błąd dodawania" : "Dodawanie do TP"
+    phase === "done"
+      ? "Podsumowanie"
+      : phase === "error"
+        ? completedCount > 0
+          ? "Częściowo dodano"
+          : "Błąd dodawania"
+        : "Dodawanie do TP"
 
   const subtitle =
     phase === "done"
       ? `Dodano ${completedCount} ${completedCount === 1 ? "akcję" : completedCount < 5 ? "akcje" : "akcji"}.`
       : phase === "error"
-        ? "Proces przerwany — szczegóły poniżej."
+        ? completedCount > 0
+          ? `Dodano ${completedCount} z ${total} przed błędem. Już wysłane nie będą ponawiane.`
+          : "Proces przerwany — szczegóły poniżej."
         : total > 0
           ? `Akcja ${Math.min(currentIndex + 1, total)} z ${total}`
           : "Brak akcji do dodania."
@@ -222,7 +249,22 @@ export function SupervisorBulkApproveDialog({
                 className="animate-sv-content-in mb-3 flex gap-2.5 rounded-xl border border-destructive/35 bg-destructive/8 px-3 py-3 text-sm text-destructive motion-reduce:animate-none"
               >
                 <AlertCircleIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-                <p>{errorMessage}</p>
+                <div className="min-w-0 space-y-1">
+                  <p>
+                    Błąd przy akcji {currentIndex + 1}/{total}
+                    {currentRow
+                      ? ` (${currentRow.brandmaster.name} ${currentRow.brandmaster.surname})`
+                      : ""}
+                    .
+                  </p>
+                  <p>{errorMessage}</p>
+                  {completedCount > 0 ? (
+                    <p className="text-destructive/90">
+                      Lista została odświeżona. Dokończenie wyśle tylko pozostałe {remainingCount}{" "}
+                      {remainingCount === 1 ? "akcję" : "akcji"} — bez ponawiania już dodanych.
+                    </p>
+                  ) : null}
+                </div>
               </div>
             ) : null}
 
@@ -302,9 +344,21 @@ export function SupervisorBulkApproveDialog({
             </div>
 
             {(phase === "done" || phase === "error") && (
-              <Button type="button" className="mt-3 h-11 w-full sm:h-9" onClick={handleClose}>
-                Zamknij
-              </Button>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row-reverse">
+                {phase === "error" && remainingCount > 0 ? (
+                  <Button type="button" className="h-11 w-full sm:h-9" onClick={handleContinueRemaining}>
+                    Dokończ pozostałe ({remainingCount})
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  variant={phase === "error" && remainingCount > 0 ? "outline" : "default"}
+                  className="h-11 w-full sm:h-9"
+                  onClick={handleClose}
+                >
+                  Zamknij
+                </Button>
+              </div>
             )}
           </div>
         </div>

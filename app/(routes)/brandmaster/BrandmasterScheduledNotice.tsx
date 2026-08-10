@@ -35,7 +35,7 @@ export function BrandmasterScheduledNotice() {
   return (
     <div
       role="status"
-      className="mb-3 flex items-start gap-2 rounded-lg border border-amber-500/45 bg-amber-500/10 px-3 py-2.5 text-sm text-foreground"
+      className="mb-4 flex items-start gap-2 rounded-2xl border border-amber-500/45 bg-amber-500/10 px-3.5 py-3 text-sm text-foreground shadow-sm"
     >
       <InfoIcon className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" aria-hidden />
       <span className="min-w-0 flex-1 leading-snug">{BRANDMASTER_SCHEDULED_NOTICE.message}</span>

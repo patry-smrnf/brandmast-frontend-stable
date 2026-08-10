@@ -11,7 +11,10 @@ import { cn } from "@/lib/utils"
 import { formatPlDateTimeFromIso, formatTime, parseIso } from "@/lib/dates/date-utils"
 import { getActionStatusPresentation } from "@/lib/action-status"
 import type { SvActionLocalPatch, SvActionRow, SvCasStatusPatch } from "../use-sv-actions"
-import { EXCLUDED_BULK_APPROVE_EVENT_ID } from "../supervisor-constants"
+import {
+  isBulkApproveExcludedEvent,
+  isCollisionExcludedEvent,
+} from "../supervisor-constants"
 import { SupervisorApproveSheet } from "./SupervisorApproveSheet"
 import { SupervisorActionCasDetails } from "./SupervisorActionCasDetails"
 import { SupervisorEditSheet } from "./SupervisorEditSheet"
@@ -23,9 +26,18 @@ export type SupervisorActionCardProps = {
   onCasStatusPatched: (patch: SvCasStatusPatch) => void
   /** Nakładająca się z inną akcją w tym samym sklepie (ten sam dzień). */
   scheduleConflict?: boolean
+  /** Peers from full-day conflict layout (for chips + Approve/Edit gate). */
+  conflictPeers?: SvActionRow[]
   bulkSelectMode?: boolean
   bulkSelected?: boolean
   onBulkSelect?: (idAction: number, selected: boolean) => void
+}
+
+function peerShortLabel(peer: SvActionRow): string {
+  const surname = peer.brandmaster.surname?.trim()
+  const name = peer.brandmaster.name?.trim()
+  if (surname && name) return `${name[0]}. ${surname}`
+  return [name, surname].filter(Boolean).join(" ") || `BM #${peer.brandmaster.idBrandmaster}`
 }
 
 function SupervisorActionCardInner({
@@ -34,6 +46,7 @@ function SupervisorActionCardInner({
   onPatched,
   onCasStatusPatched,
   scheduleConflict,
+  conflictPeers = [],
   bulkSelectMode,
   bulkSelected,
   onBulkSelect,
@@ -53,10 +66,20 @@ function SupervisorActionCardInner({
   const canApprove = pres.supervisorCanApprove
   const isCancelRequested = action.status === "CANCEL_REQUESTED"
   const showBulkCheckbox = bulkSelectMode === true
-  const isBulkApproveExcluded = action.event.idEvent === EXCLUDED_BULK_APPROVE_EVENT_ID
+  const isBulkApproveExcluded = isBulkApproveExcludedEvent(action.event.idEvent)
+  const isCollisionExcluded = isCollisionExcludedEvent(action.event.idEvent)
+  const eventName = action.event.name?.trim() || ""
   const showApproveButton = !isBulkApproveExcluded && !isCancelRequested
   const showRevokeButton = isCancelRequested
   const showCasDetails = action.status === "ACCEPTED" && action.cas.length > 0
+
+  const collisionChipLabel = React.useMemo(() => {
+    if (!scheduleConflict || conflictPeers.length === 0) return null
+    const names = conflictPeers.slice(0, 2).map(peerShortLabel)
+    const extra = conflictPeers.length - names.length
+    const joined = names.join(", ")
+    return extra > 0 ? `Kolizja: ${joined} +${extra}` : `Kolizja: ${joined}`
+  }, [scheduleConflict, conflictPeers])
 
   const openApprove = React.useCallback(() => {
     setApproveMounted(true)
@@ -161,6 +184,50 @@ function SupervisorActionCardInner({
             <span className="min-w-0 text-foreground line-clamp-2">{action.shop.address || "-"}</span>
           </div>
 
+          <div className="mt-1.5 flex flex-wrap gap-1">
+            {eventName ? (
+              <Badge
+                variant="outline"
+                className="max-w-full truncate px-1.5 py-px text-[10px] font-normal leading-tight"
+                title={eventName}
+              >
+                {eventName}
+              </Badge>
+            ) : null}
+            {isCollisionExcluded ? (
+              <Badge
+                variant="secondary"
+                className="px-1.5 py-px text-[10px] font-normal leading-tight"
+                title="Ten event nie wchodzi w wykrywanie kolizji godzinowych w sklepie"
+              >
+                Wyjątek kolizji
+              </Badge>
+            ) : null}
+            {isBulkApproveExcluded ? (
+              <Badge
+                variant="secondary"
+                className="px-1.5 py-px text-[10px] font-normal leading-tight"
+                title="Nie można dodać masowo do TP — tylko indywidualna akceptacja"
+              >
+                Bez Approve
+              </Badge>
+            ) : null}
+            {collisionChipLabel ? (
+              <Badge
+                variant="outline"
+                className="max-w-full truncate border-amber-500/50 bg-amber-500/10 px-1.5 py-px text-[10px] font-medium leading-tight text-amber-950 dark:text-amber-50"
+                title={conflictPeers
+                  .map(
+                    (p) =>
+                      `${p.brandmaster.name} ${p.brandmaster.surname} (${formatTime(parseIso(p.action.since) ?? new Date())}–${formatTime(parseIso(p.action.until) ?? new Date())})`
+                  )
+                  .join("; ")}
+              >
+                {collisionChipLabel}
+              </Badge>
+            ) : null}
+          </div>
+
           <div className="mt-1 flex items-start justify-between gap-2 sm:mt-1.5">
             <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] tabular-nums text-muted-foreground sm:gap-x-2 sm:text-[11px] sm:text-xs">
               <span className="inline-flex items-center gap-1 text-foreground">
@@ -245,11 +312,18 @@ function SupervisorActionCardInner({
           onOpenChange={setApproveOpen}
           row={row}
           onAccepted={onApproved}
+          conflictPeers={conflictPeers}
         />
       ) : null}
 
       {editMounted ? (
-        <SupervisorEditSheet open={editOpen} onOpenChange={setEditOpen} row={row} onPatched={onPatched} />
+        <SupervisorEditSheet
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          row={row}
+          onPatched={onPatched}
+          conflictPeers={conflictPeers}
+        />
       ) : null}
     </article>
   )

@@ -12,16 +12,21 @@ import {
   UsersIcon,
   CalendarRangeIcon,
   ClipboardListIcon,
-  CompassIcon,
   DockIcon,
   FileSpreadsheetIcon,
   PlusIcon,
   SparklesIcon,
+  LogInIcon,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { forceLogout, roleStore, type UserRole } from "@/lib/api"
+import {
+  AUTH_CHANGED_EVENT,
+  clearSessionAndRedirectToLogin,
+  roleStore,
+  type UserRole,
+} from "@/lib/api"
 import { useConfigState } from "@/lib/config/configStore"
 
 type MenuItem = {
@@ -33,23 +38,21 @@ type MenuItem = {
   onSelect?: () => void
 }
 
-const ROLE_CHANGED_EVENT = "brandmast:role-changed"
-
 function subscribeRoleChanges(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {}
 
   function onStorage(e: StorageEvent) {
-    if (e.key === "brandmast.role") onStoreChange()
+    if (e.key === "brandmast.role" || e.key === "brandmast.token") onStoreChange()
   }
-  function onLocalRoleChanged() {
+  function onLocalAuthChanged() {
     onStoreChange()
   }
 
   window.addEventListener("storage", onStorage)
-  window.addEventListener(ROLE_CHANGED_EVENT, onLocalRoleChanged)
+  window.addEventListener(AUTH_CHANGED_EVENT, onLocalAuthChanged)
   return () => {
     window.removeEventListener("storage", onStorage)
-    window.removeEventListener(ROLE_CHANGED_EVENT, onLocalRoleChanged)
+    window.removeEventListener(AUTH_CHANGED_EVENT, onLocalAuthChanged)
   }
 }
 
@@ -77,6 +80,16 @@ function getClientMountedServerSnapshot() {
   return false
 }
 
+function roleFromPathname(pathname: string): UserRole | null {
+  if (pathname === "/supervisor" || pathname.startsWith("/supervisor/")) return "supervisor"
+  if (pathname === "/brandmaster" || pathname.startsWith("/brandmaster/")) return "brandmaster"
+  return null
+}
+
+function logout() {
+  clearSessionAndRedirectToLogin()
+}
+
 export function RoleContextMenu() {
   const router = useRouter()
   const pathname = usePathname()
@@ -92,18 +105,11 @@ export function RoleContextMenu() {
   const buttonRef = React.useRef<HTMLButtonElement | null>(null)
   const popoverRef = React.useRef<HTMLDivElement | null>(null)
 
+  const effectiveRole = role ?? roleFromPathname(pathname)
+
   const isAddingAllowed = config?.actionsConfig?.isAddingAllowed
   const isEditorDisabled = isAddingAllowed === false
   const is121SamplingDisabled = config?.myData?.hasOneTwoOne === false
-
-  const logoutItem: MenuItem = {
-    key: "logout",
-    label: "Wyloguj",
-    icon: <LogOutIcon className="size-4" />,
-    onSelect: () => {
-      forceLogout()
-    },
-  }
 
   const brandmasterItems: MenuItem[] = [
     {
@@ -159,7 +165,12 @@ export function RoleContextMenu() {
       icon: <ClipboardListIcon className="size-4" />,
     },
     { key: "sep-1", label: "-" },
-    logoutItem,
+    {
+      key: "logout",
+      label: "Wyloguj",
+      icon: <LogOutIcon className="size-4" />,
+      onSelect: logout,
+    },
   ]
 
   const supervisorItems: MenuItem[] = [
@@ -212,40 +223,33 @@ export function RoleContextMenu() {
       icon: <SettingsIcon className="size-4" />,
     },
     { key: "sep-1", label: "-" },
-    logoutItem,
+    {
+      key: "logout",
+      label: "Wyloguj",
+      icon: <LogOutIcon className="size-4" />,
+      onSelect: logout,
+    },
   ]
 
-  const adminItems: MenuItem[] = [
+  // Stale cookies block /login in proxy — always clear session before re-auth.
+  const guestItems: MenuItem[] = [
     {
-      key: "admin-home",
-      label: "Panel",
-      href: "/admin",
-      icon: <ShieldIcon className="size-4" />,
+      key: "login",
+      label: "Zaloguj ponownie",
+      icon: <LogInIcon className="size-4" />,
+      onSelect: logout,
     },
-    {
-      key: "admin-discover",
-      label: "Discover",
-      href: "/admin/discover",
-      icon: <CompassIcon className="size-4" />,
-    },
-    { key: "sep-1", label: "-" },
-    logoutItem,
   ]
 
   const items: MenuItem[] =
-    role === "brandmaster"
+    effectiveRole === "brandmaster"
       ? brandmasterItems
-      : role === "admin"
-        ? adminItems
-        : supervisorItems
-
-  const roleLabel =
-    role === "brandmaster" ? "Brandmaster" : role === "admin" ? "Admin" : "Supervisor"
+      : effectiveRole === "supervisor"
+        ? supervisorItems
+        : guestItems
 
   React.useEffect(() => {
     if (!open) return
-    // Don't attach global listeners when the menu isn't even rendered.
-    if (!role) return
     if (pathname === "/login" || pathname === "/no-access") return
 
     function onKeyDown(e: KeyboardEvent) {
@@ -267,12 +271,11 @@ export function RoleContextMenu() {
       window.removeEventListener("keydown", onKeyDown)
       window.removeEventListener("pointerdown", onPointerDown, pointerOpts)
     }
-  }, [open, pathname, role])
+  }, [open, pathname])
 
-  // Hide on public pages (and when role isn't known yet).
-  // Important: keep SSR/CSR markup identical (avoid hydration mismatch).
+  // Hide only on public pages. Keep a guest escape hatch when role is unknown
+  // (cookie/localStorage desync) so the user can always clear session / log in.
   if (!mounted) return null
-  if (!role) return null
   if (pathname === "/login" || pathname === "/no-access") return null
 
   function onSelect(item: MenuItem) {
@@ -307,10 +310,14 @@ export function RoleContextMenu() {
           ref={popoverRef}
           role="menu"
           aria-label="Menu kontekstowe"
-          className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg"
+          className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-border bg-popover text-popover-foreground shadow-lg"
         >
           <div className="px-3 py-2 text-xs text-muted-foreground">
-            {roleLabel}
+            {effectiveRole === "brandmaster"
+              ? "Brandmaster"
+              : effectiveRole === "supervisor"
+                ? "Supervisor"
+                : "Sesja"}
           </div>
           <div className="h-px bg-border" />
           <div className="py-1">

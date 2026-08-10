@@ -79,18 +79,25 @@ function clustersForShop(shopRows: SvActionRow[]): SvActionRow[][] {
   return out
 }
 
-/**
- * Groups rows that belong to the same shop and have pairwise overlapping [since, until].
- * Overlaps where **every** action is ACCEPTED are ignored (no cluster, cards stay in singles).
- * Actions whose event is in {@link EXCLUDED_COLLISION_EVENT_IDS} are ignored for collision detection.
- * If at least one action is EDITABLE, the overlap is shown as a cluster like before.
- * Returns clusters of size ≥2 plus remaining rows as singles.
- */
-export function getScheduleConflictLayout(rows: SvActionRow[]): {
+export type ScheduleConflictLayout = {
   clusters: SvActionRow[][]
   singles: SvActionRow[]
   conflictingActionIds: Set<number>
-} {
+}
+
+/**
+ * Groups rows that belong to the same shop and have pairwise overlapping [since, until].
+ *
+ * **Call with the full day set (all statuses).** Filtering to EDITABLE before this hides
+ * ACCEPTED partners and can mark overlapping EDITABLE rows as bulk-eligible singles.
+ * Apply search/status filters only after layout, for display (and bulk selection UI).
+ *
+ * Overlaps where **every** action is ACCEPTED are ignored (no cluster, cards stay in singles).
+ * Actions whose event is in {@link EXCLUDED_COLLISION_EVENT_IDS} are ignored for collision detection.
+ * If at least one action is EDITABLE, the overlap is shown as a cluster.
+ * Returns clusters of size ≥2 plus remaining rows as singles.
+ */
+export function getScheduleConflictLayout(rows: SvActionRow[]): ScheduleConflictLayout {
   if (rows.length === 0) {
     return { clusters: [], singles: [], conflictingActionIds: new Set() }
   }
@@ -120,4 +127,36 @@ export function getScheduleConflictLayout(rows: SvActionRow[]): {
   clusters.sort((a, b) => intervalMs(a[0]!).start - intervalMs(b[0]!).start)
 
   return { clusters, singles, conflictingActionIds }
+}
+
+/**
+ * Peers for each conflicting action (other rows in the same cluster).
+ * Built from full-day clusters so Approve/Edit gates see ACCEPTED partners too.
+ */
+export function buildConflictPeersByActionId(
+  clusters: SvActionRow[][]
+): Map<number, SvActionRow[]> {
+  const map = new Map<number, SvActionRow[]>()
+  for (const cluster of clusters) {
+    for (const row of cluster) {
+      map.set(
+        row.action.idAction,
+        cluster.filter((p) => p.action.idAction !== row.action.idAction)
+      )
+    }
+  }
+  return map
+}
+
+/**
+ * Display-only filter over a full-day conflict layout.
+ * Clusters stay intact when any member matches (SV still sees who overlaps).
+ */
+export function filterConflictLayoutForDisplay(
+  layout: ScheduleConflictLayout,
+  predicate: (row: SvActionRow) => boolean
+): { clusters: SvActionRow[][]; singles: SvActionRow[] } {
+  const clusters = layout.clusters.filter((cluster) => cluster.some(predicate))
+  const singles = layout.singles.filter(predicate)
+  return { clusters, singles }
 }

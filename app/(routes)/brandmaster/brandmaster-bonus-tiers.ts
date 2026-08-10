@@ -9,7 +9,7 @@ export const REGULAR_MIN_VELO_FOR_GLO = 5.0
 /** Próg Velo, od którego liczony jest bonus jakościowy (informacyjnie / zachęta). */
 export const QUALITATIVE_VELO_TARGET = 9.0
 
-/** Progi efektywności Glo — wartości „od” dla kolejnych stopni (wyższy indeks = wyższy próg). */
+/** Progi efektywności Glo -wartości „od” dla kolejnych stopni (wyższy indeks = wyższy próg). */
 export const GLO_EFFICIENCY_THRESHOLDS = [1.4, 1.9, 2.3] as const
 
 export type GloTierRates = {
@@ -32,7 +32,7 @@ export type RegularVeloBand = {
 }
 
 /**
- * Bonus zwykły — pasma efektywności Velo.
+ * Bonus zwykły -pasma efektywności Velo.
  * Kolejność ma znaczenie: pierwsze pasujące pasmo wygrywa.
  */
 export const REGULAR_VELO_BANDS: readonly RegularVeloBand[] = [
@@ -53,7 +53,7 @@ export const REGULAR_VELO_BANDS: readonly RegularVeloBand[] = [
 ]
 
 /**
- * Bonus jakościowy — stawki Hilo / Hilo+ wg stopnia efektywności Glo.
+ * Bonus jakościowy -stawki Hilo / Hilo+ wg stopnia efektywności Glo.
  * Indeks odpowiada stopniowi z {@link GLO_EFFICIENCY_THRESHOLDS}.
  */
 export const QUALITATIVE_GLO_TIER_RATES: readonly GloTierRates[] = [
@@ -171,7 +171,7 @@ function progressBetween(current: number, from: number, to: number): number | nu
   return clampPercent(((current - from) / (to - from)) * 100)
 }
 
-/** Postęp w bonusie zwykłym — brakująca efektywność do wyższego stopnia Glo lub pasma Velo. */
+/** Postęp w bonusie zwykłym -brakująca efektywność do wyższego stopnia Glo lub pasma Velo. */
 export function buildRegularTierProgress(
   gloEfficiency: number,
   veloEfficiency: number,

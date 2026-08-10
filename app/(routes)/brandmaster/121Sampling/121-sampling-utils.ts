@@ -82,7 +82,7 @@ export function resolveUserTeamFromConfig(
   }
 }
 
-/** @deprecated Użyj resolveUserTeamFromConfig — zwraca samo id (region_id). */
+/** @deprecated Użyj resolveUserTeamFromConfig -zwraca samo id (region_id). */
 export function resolveUserRegionId(
   teams: OneTwoOneTeam[],
   config: SettingResponse | null,
@@ -180,7 +180,7 @@ export function splitActionIdent(ident: string): {
   }
 }
 
-/** data_paczki — data wybranej akcji (YYYY-MM-DD, strefa PL). */
+/** data_paczki -data wybranej akcji (YYYY-MM-DD, strefa PL). */
 export function getActionDataPaczki(action: TourPlannerActionListItem): string | null {
   const start =
     parseCasDatetime(action.history?.start) ??

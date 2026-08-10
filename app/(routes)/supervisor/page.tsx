@@ -21,15 +21,41 @@ import { formatHeaderDate, parseIso, toDateKey, toMonthKey } from "@/lib/dates/d
 import { SupervisorActionCard } from "./_components/SupervisorActionCard"
 import { SupervisorBulkApproveDialog } from "./_components/SupervisorBulkApproveDialog"
 import { SupervisorBulkToolbar } from "./_components/SupervisorBulkToolbar"
-import { getScheduleConflictLayout } from "./conflict-utils"
-import { EXCLUDED_BULK_APPROVE_EVENT_ID } from "./supervisor-constants"
+import {
+  buildConflictPeersByActionId,
+  filterConflictLayoutForDisplay,
+  getScheduleConflictLayout,
+} from "./conflict-utils"
+import { isBulkApproveExcludedEvent } from "./supervisor-constants"
 import type { SvActionRow } from "./use-sv-actions"
 import { useSvActions } from "./use-sv-actions"
 
 type SvStatusFilterMode = "all" | "editable" | "cancel_requested"
 
 function isBulkApproveEligible(row: SvActionRow): boolean {
-  return row.action.event.idEvent !== EXCLUDED_BULK_APPROVE_EVENT_ID
+  return !isBulkApproveExcludedEvent(row.action.event.idEvent)
+}
+
+function rowMatchesDisplayFilters(
+  row: SvActionRow,
+  opts: { search: string; statusFilter: SvStatusFilterMode; eventFilter: string }
+): boolean {
+  const q = opts.search.trim().toLowerCase()
+  if (q) {
+    const addr = (row.action.shop.address ?? "").toLowerCase()
+    const nm = `${row.brandmaster.name} ${row.brandmaster.surname}`.toLowerCase()
+    if (!addr.includes(q) && !nm.includes(q)) return false
+  }
+
+  if (opts.statusFilter === "editable" && row.action.status !== "EDITABLE") return false
+  if (opts.statusFilter === "cancel_requested" && row.action.status !== "CANCEL_REQUESTED") {
+    return false
+  }
+
+  const eventId = opts.eventFilter ? Number(opts.eventFilter) : 0
+  if (eventId && row.action.event.idEvent !== eventId) return false
+
+  return true
 }
 
 function pickRandomBrandmasterFromCluster(
@@ -98,50 +124,52 @@ export default function SupervisorPage() {
   const { rows, isLoading, error, refetch, patchSvActionRow, patchSvActionCasStatus } =
     useSvActions(monthKey)
 
-  const filteredRows = React.useMemo(() => {
-    let list = rows.filter((r) => {
-      const d = parseIso(r.action.since)
-      return d && toDateKey(d) === selectedDateKey
-    })
-
-    const q = search.trim().toLowerCase()
-    if (q) {
-      list = list.filter((r) => {
-        const addr = (r.action.shop.address ?? "").toLowerCase()
-        const nm = `${r.brandmaster.name} ${r.brandmaster.surname}`.toLowerCase()
-        return addr.includes(q) || nm.includes(q)
-      })
-    }
-
-    if (statusFilter === "editable") {
-      list = list.filter((r) => r.action.status === "EDITABLE")
-    } else if (statusFilter === "cancel_requested") {
-      list = list.filter((r) => r.action.status === "CANCEL_REQUESTED")
-    }
-
-    const eventId = eventFilter ? Number(eventFilter) : 0
-    if (eventId) {
-      list = list.filter((r) => r.action.event.idEvent === eventId)
-    }
-
-    return list
-  }, [rows, selectedDateKey, search, statusFilter, eventFilter])
-
-  const countForDayAll = React.useMemo(() => {
+  /** Full day (all statuses) — conflict layout must use this, not the display filter. */
+  const dayRows = React.useMemo(() => {
     return rows.filter((r) => {
       const d = parseIso(r.action.since)
       return d && toDateKey(d) === selectedDateKey
-    }).length
+    })
   }, [rows, selectedDateKey])
 
-  const { clusters, singles } = React.useMemo(
-    () => getScheduleConflictLayout(filteredRows),
-    [filteredRows]
+  const matchesDisplayFilter = React.useCallback(
+    (row: SvActionRow) =>
+      rowMatchesDisplayFilters(row, { search, statusFilter, eventFilter }),
+    [search, statusFilter, eventFilter]
   )
 
+  const filteredRows = React.useMemo(
+    () => dayRows.filter(matchesDisplayFilter),
+    [dayRows, matchesDisplayFilter]
+  )
+
+  const countForDayAll = dayRows.length
+
+  const dayLayout = React.useMemo(() => getScheduleConflictLayout(dayRows), [dayRows])
+
+  const conflictPeersByActionId = React.useMemo(
+    () => buildConflictPeersByActionId(dayLayout.clusters),
+    [dayLayout.clusters]
+  )
+
+  const { clusters, singles } = React.useMemo(
+    () => filterConflictLayoutForDisplay(dayLayout, matchesDisplayFilter),
+    [dayLayout, matchesDisplayFilter]
+  )
+
+  /**
+   * Bulk eligibility from the full-day conflict set (singles only), then display filter.
+   * EDITABLE overlapping ACCEPTED stays in a cluster → never bulk-eligible.
+   */
   const bulkEligibleSingles = React.useMemo(
-    () => singles.filter(isBulkApproveEligible),
-    [singles]
+    () =>
+      dayLayout.singles.filter(
+        (r) =>
+          r.action.status === "EDITABLE" &&
+          isBulkApproveEligible(r) &&
+          matchesDisplayFilter(r)
+      ),
+    [dayLayout.singles, matchesDisplayFilter]
   )
 
   const bulkEligibleIdsKey = React.useMemo(
@@ -451,6 +479,9 @@ export default function SupervisorPage() {
                           onPatched={patchSvActionRow}
                           onCasStatusPatched={patchSvActionCasStatus}
                           scheduleConflict
+                          conflictPeers={
+                            conflictPeersByActionId.get(row.action.idAction) ?? []
+                          }
                         />
                       ))}
                     </div>
@@ -466,6 +497,9 @@ export default function SupervisorPage() {
                       onApproved={refetch}
                       onPatched={patchSvActionRow}
                       onCasStatusPatched={patchSvActionCasStatus}
+                      conflictPeers={
+                        conflictPeersByActionId.get(row.action.idAction) ?? []
+                      }
                       bulkSelectMode={bulkApproveEnabled && isBulkApproveEligible(row)}
                       bulkSelected={bulkSelectedIds.has(row.action.idAction)}
                       onBulkSelect={handleBulkCardSelect}

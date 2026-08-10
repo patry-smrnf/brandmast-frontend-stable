@@ -1,8 +1,6 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
+import axios, { isAxiosError, type AxiosInstance, type AxiosRequestConfig } from "axios";
 import { getBrowserApiBaseUrl } from "@/lib/api/base-url";
-import { notifyAuthSessionError } from "@/lib/api/auth-session-events";
-import { getApiErrorMessage, isAuthApiError } from "@/lib/api/errors";
-import { tokenStore } from "../token";
+import { clearSessionAndRedirectToLogin, tokenStore } from "../token";
 
 export type ApiClientOptions = {
   /**
@@ -22,6 +20,23 @@ export type RequestOptions = AxiosRequestConfig & {
    */
   token?: string | null;
 };
+
+function isAuthLoginRequest(config: AxiosRequestConfig | undefined) {
+  const url = config?.url ?? "";
+  return url.includes("/api/auth/login");
+}
+
+function getErrorCode(data: unknown): string | undefined {
+  if (!data || typeof data !== "object") return undefined;
+  const code = (data as { errorCode?: unknown }).errorCode;
+  return typeof code === "string" ? code : undefined;
+}
+
+function shouldForceLogout(errorCode: string | undefined, status: number | undefined) {
+  if (errorCode === "auth.unauthorized") return true;
+  if (status === 401) return true;
+  return false;
+}
 
 export function createBrandmastHttpClient(opts: ApiClientOptions = {}): AxiosInstance {
   const instance = axios.create({
@@ -44,18 +59,27 @@ export function createBrandmastHttpClient(opts: ApiClientOptions = {}): AxiosIns
   });
 
   instance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (typeof window !== "undefined" && isAuthApiError(error)) {
-        const path = window.location.pathname;
-        if (path !== "/login" && path !== "/no-access") {
-          notifyAuthSessionError(getApiErrorMessage(error, "Sesja wygasła lub token jest nieprawidłowy."));
+    (response) => {
+      // Some endpoints return HTTP 200 with `{ success: false, errorCode: "auth.unauthorized" }`.
+      if (!isAuthLoginRequest(response.config)) {
+        const data = response.data as { success?: boolean; errorCode?: string } | undefined;
+        if (data && data.success === false && shouldForceLogout(data.errorCode, response.status)) {
+          clearSessionAndRedirectToLogin();
+        }
+      }
+      return response;
+    },
+    (error: unknown) => {
+      if (isAxiosError(error) && !isAuthLoginRequest(error.config)) {
+        const status = error.response?.status;
+        const errorCode = getErrorCode(error.response?.data);
+        if (shouldForceLogout(errorCode, status)) {
+          clearSessionAndRedirectToLogin();
         }
       }
       return Promise.reject(error);
-    }
+    },
   );
 
   return instance;
 }
-

@@ -26,6 +26,7 @@ import {
   shopMatchesQuery,
 } from "@/app/(routes)/brandmaster/editor/editor-utils"
 import { buildSvActionLocalPatch, type SvActionLocalPatch, type SvActionRow } from "../use-sv-actions"
+import { SupervisorConflictGate } from "./SupervisorConflictGate"
 
 function dateToLooseTimeInput(d: Date): string {
   const h = d.getHours()
@@ -41,12 +42,21 @@ export type SupervisorEditSheetProps = {
   onOpenChange: (open: boolean) => void
   row: SvActionRow
   onPatched: (patch: SvActionLocalPatch) => void
+  /** Full-day conflict peers for the collision gate. Empty = happy path. */
+  conflictPeers?: SvActionRow[]
 }
 
-export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: SupervisorEditSheetProps) {
+export function SupervisorEditSheet({
+  open,
+  onOpenChange,
+  row,
+  onPatched,
+  conflictPeers = [],
+}: SupervisorEditSheetProps) {
   const { brandmaster, action } = row
   const pres = getActionStatusPresentation(action.status)
   const isEditableStatus = action.status === "EDITABLE"
+  const hasConflict = conflictPeers.length > 0
 
   const actionDate = React.useMemo(() => parseIso(action.since) ?? new Date(), [action.since])
   const untilDate = React.useMemo(() => parseIso(action.until) ?? actionDate, [action.until, actionDate])
@@ -65,6 +75,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
   const [entered, setEntered] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null)
+  const [conflictAcknowledged, setConflictAcknowledged] = React.useState(false)
 
   React.useLayoutEffect(() => {
     setPortalTarget(document.body)
@@ -82,6 +93,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
     setShopQuery([action.shop.address, action.shop.name].filter(Boolean).join(" • "))
     setSelectedShop(null)
     setShowShopSuggestions(false)
+    setConflictAcknowledged(false)
     const id = requestAnimationFrame(() => setEntered(true))
     return () => cancelAnimationFrame(id)
   }, [open, action.idAction, action.since, action.until, action.shop.address, action.shop.name])
@@ -165,6 +177,7 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
     selectedShop != null && buildShopLabel(selectedShop) === shopQuery.trim()
 
   const idShopSelected = selectedShop?.id ?? 0
+  const conflictBlocksSubmit = hasConflict && !conflictAcknowledged
   const canSubmit =
     isEditableStatus &&
     !isSubmitting &&
@@ -172,7 +185,8 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
     shopQueryMatchesSelection &&
     startNorm.ok &&
     endNorm.ok &&
-    timesValid
+    timesValid &&
+    !conflictBlocksSubmit
 
   const displayEventName =
     isEditableStatus && selectedShop
@@ -181,6 +195,10 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
 
   async function handleSave() {
     if (!canSubmit || !startNorm.ok || !endNorm.ok) return
+    if (conflictBlocksSubmit) {
+      toast.error("Potwierdź świadomość kolizji, aby kontynuować.")
+      return
+    }
     const sinceIso = combineDateTimeToIso(actionDate, startNorm.value)
     const untilIso = combineDateTimeToIso(actionDate, endNorm.value)
     const idShop = selectedShop!.id ?? 0
@@ -320,6 +338,14 @@ export function SupervisorEditSheet({ open, onOpenChange, row, onPatched }: Supe
 
           {isEditableStatus ? (
             <>
+              <SupervisorConflictGate
+                peers={conflictPeers}
+                acknowledged={conflictAcknowledged}
+                onAcknowledgedChange={setConflictAcknowledged}
+                disabled={isSubmitting}
+                hint="Zapis mimo kolizji może skutkować podwójnym bookowaniem sklepu."
+              />
+
               <div className="relative z-30 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                   <MapPinIcon className="size-3.5 shrink-0 opacity-80" aria-hidden />
