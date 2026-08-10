@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { isAxiosError } from "axios";
 
-import { brandmastApi, tokenStore } from "@/lib/api";
+import { brandmastApi, hydrateAuthFromCookies, tokenStore } from "@/lib/api";
 import {
   getConfigState,
   hydrateConfigFromStorage,
@@ -24,6 +24,7 @@ type Props = {
 export function ConfigBootstrap({ ttlMs = 60_000 }: Props) {
   const pathname = usePathname();
   const hydratedRef = useRef(false);
+  const authHydratedRef = useRef(false);
 
   useEffect(() => {
     if (hydratedRef.current) return;
@@ -32,6 +33,11 @@ export function ConfigBootstrap({ ttlMs = 60_000 }: Props) {
   }, []);
 
   useEffect(() => {
+    if (!authHydratedRef.current) {
+      authHydratedRef.current = true;
+      hydrateAuthFromCookies();
+    }
+
     const token = tokenStore.get();
     if (!token) return;
 

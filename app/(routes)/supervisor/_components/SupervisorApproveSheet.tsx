@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import { formatTime, parseIso } from "@/lib/dates/date-utils"
 import { sanitizeActionTitle, splitActionIntoMaxFourHourSegments } from "../split-action-segments"
 import type { SvActionRow } from "../use-sv-actions"
+import { SupervisorConflictGate } from "./SupervisorConflictGate"
 
 function segmentDurationLabel(sinceIso: string, untilIso: string): string {
   const a = parseIso(sinceIso)?.getTime() ?? 0
@@ -36,9 +37,17 @@ export type SupervisorApproveSheetProps = {
   onOpenChange: (open: boolean) => void
   row: SvActionRow
   onAccepted: () => void
+  /** Full-day conflict peers (other actions in the same shop overlap). Empty = happy path. */
+  conflictPeers?: SvActionRow[]
 }
 
-export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: SupervisorApproveSheetProps) {
+export function SupervisorApproveSheet({
+  open,
+  onOpenChange,
+  row,
+  onAccepted,
+  conflictPeers = [],
+}: SupervisorApproveSheetProps) {
   const segments = React.useMemo(
     () => splitActionIntoMaxFourHourSegments(row.action.since, row.action.until),
     [row.action.since, row.action.until]
@@ -49,6 +58,15 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
   const [entered, setEntered] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [portalTarget, setPortalTarget] = React.useState<HTMLElement | null>(null)
+  const [conflictAcknowledged, setConflictAcknowledged] = React.useState(false)
+  /** Next segment index to send — advances past successful ones so retry never resends them. */
+  const [nextSegmentIndex, setNextSegmentIndex] = React.useState(0)
+  const [partialError, setPartialError] = React.useState<string | null>(null)
+
+  const hasConflict = conflictPeers.length > 0
+  const conflictBlocksSubmit = hasConflict && !conflictAcknowledged
+  const remainingSegments = Math.max(0, segments.length - nextSegmentIndex)
+  const isPartialResume = nextSegmentIndex > 0 && remainingSegments > 0
 
   React.useLayoutEffect(() => {
     setPortalTarget(document.body)
@@ -61,6 +79,9 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
     }
     setTitle((row.action.event.name ?? "").trim())
     setSelected(new Set(segments.map((_, i) => i)))
+    setConflictAcknowledged(false)
+    setNextSegmentIndex(0)
+    setPartialError(null)
     const id = requestAnimationFrame(() => setEntered(true))
     return () => cancelAnimationFrame(id)
   }, [open, row.action.idAction, row.action.event.name, segments])
@@ -104,42 +125,76 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
       toast.error("Zaznacz co najmniej jedną podakcję.")
       return
     }
+    if (conflictBlocksSubmit) {
+      toast.error("Potwierdź świadomość kolizji, aby kontynuować.")
+      return
+    }
 
     const base = sanitizeActionTitle(title) || sanitizeActionTitle(row.action.event.name ?? "") || "Akcja"
 
     setIsSubmitting(true)
-    const toastId = toast.loading("Akceptowanie…")
+    setPartialError(null)
+    const toastId = toast.loading(
+      isPartialResume ? "Dokańczanie pozostałych podakcji…" : "Akceptowanie…"
+    )
+    let cursor = nextSegmentIndex
     try {
       const n = segments.length
-      for (let i = 0; i < n; i++) {
-        const seg = segments[i]!
-        const partTitle = `[${i + 1}/${n}] ${base}`
+      for (; cursor < n; cursor++) {
+        const seg = segments[cursor]!
+        const partTitle = `[${cursor + 1}/${n}] ${base}`
         const res = await brandmastApi.approveSvAction({
           idAction: row.action.idAction,
           since: seg.since,
           until: seg.until,
           title: partTitle,
-          isActive: selected.has(i),
+          isActive: selected.has(cursor),
         })
         if (res.success === false) {
-          toast.error(res.message ?? `Nie udało się zapisać części ${i + 1}/${n}.`, { id: toastId })
+          setNextSegmentIndex(cursor)
+          const msg = res.message ?? `Nie udało się zapisać części ${cursor + 1}/${n}.`
+          setPartialError(msg)
+          toast.error(
+            cursor > 0
+              ? `Częściowo zapisano (${cursor}/${n}). ${msg} Lista zostanie odświeżona — dokończenie nie ponowi już wysłanych.`
+              : msg,
+            { id: toastId }
+          )
+          onAccepted()
           return
         }
+        setNextSegmentIndex(cursor + 1)
       }
       const activeCount = selected.size
-      toast.success(activeCount > 1 ? `Zaakceptowano (${activeCount} aktywnych podakcji).` : "Akcja zaakceptowana.", {
-        id: toastId,
-      })
+      toast.success(
+        activeCount > 1 ? `Zaakceptowano (${activeCount} aktywnych podakcji).` : "Akcja zaakceptowana.",
+        { id: toastId }
+      )
       onOpenChange(false)
       onAccepted()
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Nie udało się zaakceptować.", { id: toastId })
+      setNextSegmentIndex(cursor)
+      const msg = e instanceof Error ? e.message : "Nie udało się zaakceptować."
+      setPartialError(msg)
+      toast.error(
+        cursor > 0
+          ? `Częściowo zapisano (${cursor}/${segments.length}). ${msg}`
+          : msg,
+        { id: toastId }
+      )
+      onAccepted()
     } finally {
       setIsSubmitting(false)
     }
   }
 
   if (!open || !portalTarget) return null
+
+  const confirmLabel = isSubmitting
+    ? "Zapisywanie…"
+    : isPartialResume
+      ? `Dokończ pozostałe (${remainingSegments})`
+      : "Zatwierdź"
 
   return createPortal(
     <div className="fixed inset-0 z-60 flex flex-col justify-end sm:justify-center" aria-hidden={false}>
@@ -174,9 +229,33 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
               Akceptuj akcję
             </h2>
             <p id="approve-sheet-desc" className="mt-1 text-sm text-muted-foreground">
-              Podakcje (maks. 4 h) trafią do tourplannera z podanym tutaj tytułem oraz statusem ( checkbox zaznaczony oznacza gotowa do odpalenia ). Kazda z akcji jest numerowana [1/1]: <span className="font-medium text-foreground">„… (a/N)”</span>.
+              Podakcje (maks. 4 h) trafią do tourplannera z podanym tutaj tytułem oraz statusem (
+              checkbox zaznaczony oznacza gotowa do odpalenia ). Każda z akcji jest numerowana{" "}
+              <span className="font-medium text-foreground">[i/n]</span>.
             </p>
           </div>
+
+          <SupervisorConflictGate
+            peers={conflictPeers}
+            acknowledged={conflictAcknowledged}
+            onAcknowledgedChange={setConflictAcknowledged}
+            disabled={isSubmitting}
+          />
+
+          {partialError ? (
+            <div
+              role="alert"
+              className="rounded-xl border border-destructive/35 bg-destructive/8 px-3 py-2.5 text-sm text-destructive"
+            >
+              <p>{partialError}</p>
+              {nextSegmentIndex > 0 ? (
+                <p className="mt-1 text-xs text-destructive/90">
+                  Zapisano {nextSegmentIndex}/{segments.length} podakcji. Dokończenie wyśle tylko
+                  pozostałe — bez ponawiania już wysłanych.
+                </p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <Label htmlFor="sv-approve-action-title">Tytuł akcji</Label>
@@ -199,19 +278,24 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
               <ul className="space-y-2">
                 {segments.map((seg, i) => {
                   const checked = selected.has(i)
+                  const alreadySent = i < nextSegmentIndex
                   return (
                     <li key={`${seg.since}-${seg.until}-${i}`}>
                       <div
                         className={cn(
                           "flex gap-3 rounded-xl border border-border/80 bg-muted/20 px-3 py-3 transition-colors",
-                          checked ? "border-primary/35 bg-primary/5" : "opacity-90"
+                          alreadySent
+                            ? "border-primary/40 bg-primary/8 opacity-90"
+                            : checked
+                              ? "border-primary/35 bg-primary/5"
+                              : "opacity-90"
                         )}
                       >
                         <div className="pt-0.5">
                           <Checkbox
                             id={`approve-seg-${row.action.idAction}-${i}`}
-                            checked={checked}
-                            disabled={isSubmitting}
+                            checked={alreadySent ? true : checked}
+                            disabled={isSubmitting || alreadySent}
                             onCheckedChange={(c) => toggleSegment(i, c)}
                             aria-label={`Podakcja ${i + 1}: ${formatSegmentRange(seg.since, seg.until)}`}
                           />
@@ -222,6 +306,9 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
                         >
                           <span className="block text-sm font-medium tabular-nums text-foreground">
                             {formatSegmentRange(seg.since, seg.until)}
+                            {alreadySent ? (
+                              <span className="ml-1.5 text-xs font-normal text-primary">wysłano</span>
+                            ) : null}
                           </span>
                           <span className="block text-xs text-muted-foreground">
                             Czas trwania: {segmentDurationLabel(seg.since, seg.until)} · część {i + 1} z{" "}
@@ -242,10 +329,16 @@ export function SupervisorApproveSheet({ open, onOpenChange, row, onAccepted }: 
             </Button>
             <Button
               type="button"
-              disabled={isSubmitting || segments.length === 0 || selected.size === 0}
+              disabled={
+                isSubmitting ||
+                segments.length === 0 ||
+                selected.size === 0 ||
+                conflictBlocksSubmit ||
+                remainingSegments === 0
+              }
               onClick={() => void handleConfirm()}
             >
-              {isSubmitting ? "Zapisywanie…" : "Zatwierdź"}
+              {confirmLabel}
             </Button>
           </div>
         </div>

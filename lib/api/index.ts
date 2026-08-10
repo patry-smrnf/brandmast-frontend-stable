@@ -7,6 +7,11 @@ export {
   roleStore,
   setAuthCookies,
   clearAuthCookies,
+  clearSessionAndRedirectToLogin,
+  hydrateAuthFromCookies,
+  notifyAuthChanged,
+  AUTH_CHANGED_EVENT,
+  ROLE_CHANGED_EVENT,
   type UserRole,
 } from "@/lib/api/token";
 export type { SettingResponse } from "@/lib/api/generated/types";
