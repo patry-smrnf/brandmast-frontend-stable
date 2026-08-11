@@ -5,7 +5,9 @@ import * as React from "react"
 import { brandmastApi } from "@/lib/api"
 import type { TourPlannerActionListItem } from "@/lib/api/generated/types"
 import type { CasActionStatus } from "@/lib/cas-status"
-export function useCasPanelActions(dateKey: string) {
+import { isCasConnected } from "@/lib/config"
+
+export function useCasPanelActions(dateKey: string, enabled = true) {
   const [actions, setActions] = React.useState<TourPlannerActionListItem[]>([])
   // Ważne dla hydracji: pierwszy render (SSR + pierwszy render klienta) musi mieć
   // identyczne atrybuty. Fetch rusza dopiero po useEffect, więc startujemy od false.
@@ -16,7 +18,12 @@ export function useCasPanelActions(dateKey: string) {
   const refetch = React.useCallback(() => setTick((t) => t + 1), [])
 
   React.useEffect(() => {
-    if (!dateKey) return
+    if (!enabled || !dateKey || !isCasConnected()) {
+      setActions([])
+      setIsLoading(false)
+      setError(null)
+      return
+    }
 
     let cancelled = false
 
@@ -52,7 +59,7 @@ export function useCasPanelActions(dateKey: string) {
     return () => {
       cancelled = true
     }
-  }, [dateKey, tick])
+  }, [dateKey, tick, enabled])
 
   const patchActionStatus = React.useCallback((ident: string, status: CasActionStatus) => {
     setActions((prev) =>
@@ -64,6 +71,10 @@ export function useCasPanelActions(dateKey: string) {
 
   const updateActionStatus = React.useCallback(
     async (ident: string, status: CasActionStatus): Promise<{ synced: boolean }> => {
+      if (!isCasConnected()) {
+        return { synced: false }
+      }
+
       patchActionStatus(ident, status)
 
       const action = actions.find((item) => item.ident?.trim() === ident)

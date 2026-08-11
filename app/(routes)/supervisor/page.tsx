@@ -15,9 +15,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { brandmastApi } from "@/lib/api"
+import { isCasConnected } from "@/lib/config"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 import { formatHeaderDate, parseIso, toDateKey, toMonthKey } from "@/lib/dates/date-utils"
+import { CasDisconnectedBanner } from "./_components/CasDisconnectedBanner"
 import { SupervisorActionCard } from "./_components/SupervisorActionCard"
 import { SupervisorBulkApproveDialog } from "./_components/SupervisorBulkApproveDialog"
 import { SupervisorBulkToolbar } from "./_components/SupervisorBulkToolbar"
@@ -112,6 +116,8 @@ export default function SupervisorPage() {
   const [bulkSelectedIds, setBulkSelectedIds] = React.useState<Set<number>>(() => new Set())
   const [bulkDialogOpen, setBulkDialogOpen] = React.useState(false)
   const [bulkDialogRows, setBulkDialogRows] = React.useState<SvActionRow[]>([])
+  const [isBulkApproving, setIsBulkApproving] = React.useState(false)
+  const casConnected = isCasConnected()
 
   const selectedDate = React.useMemo(() => {
     const d = parseIso(`${selectedDateKey}T12:00:00`)
@@ -229,8 +235,48 @@ export default function SupervisorPage() {
     })
   }, [])
 
-  function handleStartBulkApprove() {
-    if (bulkSelectedRows.length === 0) return
+  async function handleStartBulkApprove() {
+    if (bulkSelectedRows.length === 0 || isBulkApproving) return
+
+    if (!casConnected) {
+      setIsBulkApproving(true)
+      const total = bulkSelectedRows.length
+      const toastId = toast.loading(`Akceptowanie 0/${total}…`)
+      let ok = 0
+      try {
+        for (let i = 0; i < total; i++) {
+          const row = bulkSelectedRows[i]!
+          toast.loading(`Akceptowanie ${i + 1}/${total}…`, { id: toastId })
+          const res = await brandmastApi.approveSvAction({
+            idAction: row.action.idAction,
+            since: row.action.since,
+            until: row.action.until,
+          })
+          if (res.success === false) {
+            toast.error(res.message ?? `Błąd przy akcji ${i + 1}/${total}.`, { id: toastId })
+            void refetch()
+            return
+          }
+          ok += 1
+        }
+        toast.success(
+          ok === 1 ? "Zaakceptowano 1 akcję." : `Zaakceptowano ${ok} akcji.`,
+          { id: toastId },
+        )
+        setBulkSelectedIds(new Set())
+        void refetch()
+      } catch (e) {
+        toast.error(
+          e instanceof Error ? e.message : "Nie udało się zaakceptować akcji.",
+          { id: toastId },
+        )
+        void refetch()
+      } finally {
+        setIsBulkApproving(false)
+      }
+      return
+    }
+
     setBulkDialogRows(bulkSelectedRows)
     setBulkDialogOpen(true)
   }
@@ -265,6 +311,7 @@ export default function SupervisorPage() {
       )}
     >
       <div className="mx-auto w-full min-w-0 max-w-5xl overflow-x-clip px-4 py-6">
+        {!casConnected ? <CasDisconnectedBanner /> : null}
         <header className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -406,8 +453,9 @@ export default function SupervisorPage() {
               enabled={bulkApproveEnabled}
               selectedCount={bulkSelectedCount}
               eligibleCount={bulkEligibleSingles.length}
+              isBusy={isBulkApproving}
               onEnabledChange={handleBulkApproveToggle}
-              onStart={handleStartBulkApprove}
+              onStart={() => void handleStartBulkApprove()}
             />
           ) : null}
         </section>

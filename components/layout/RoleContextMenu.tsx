@@ -110,6 +110,7 @@ export function RoleContextMenu() {
   const isAddingAllowed = config?.actionsConfig?.isAddingAllowed
   const isEditorDisabled = isAddingAllowed === false
   const is121SamplingDisabled = config?.myData?.hasOneTwoOne === false
+  const isCasPanelDisabled = config?.accessConfig?.isCasConnected === false
 
   const brandmasterItems: MenuItem[] = [
     {
@@ -196,6 +197,7 @@ export function RoleContextMenu() {
       key: "sv-cas-panel",
       label: "Panel CAS",
       href: "/supervisor/casPanel",
+      disabled: isCasPanelDisabled,
       icon: <ClipboardListIcon className="size-4" />,
     },
     {

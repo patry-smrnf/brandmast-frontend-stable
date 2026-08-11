@@ -16,8 +16,10 @@ import { Separator } from "@/components/ui/separator"
 import type { TourPlannerActionListItem } from "@/lib/api/generated/types"
 import type { CasActionStatus } from "@/lib/cas-status"
 import { formatPlDatePoland, parseIso, toDateKeyInPoland } from "@/lib/dates/date-utils"
+import { isCasConnected } from "@/lib/config"
 import { cn } from "@/lib/utils"
 
+import { CasDisconnectedBanner } from "../_components/CasDisconnectedBanner"
 import { CasActionCard } from "./_components/CasActionCard"
 import { CasActionDetailSheet } from "./_components/CasActionDetailSheet"
 import { CasDayStatsSheet } from "./_components/CasDayStatsSheet"
@@ -46,6 +48,7 @@ export default function SupervisorCasPanelPage() {
   // Rzeczywistą „dzisiejszą” datę (zależną od czasu) ustawiamy dopiero po zamontowaniu.
   const [dateKey, setDateKey] = React.useState("")
   const [search, setSearch] = React.useState("")
+  const casConnected = isCasConnected()
 
   React.useEffect(() => {
     setDateKey((prev) => prev || toDateKeyInPoland())
@@ -56,7 +59,10 @@ export default function SupervisorCasPanelPage() {
   const [detailOpen, setDetailOpen] = React.useState(false)
   const [statsOpen, setStatsOpen] = React.useState(false)
 
-  const { actions, isLoading, error, refetch, updateActionStatus } = useCasPanelActions(dateKey)
+  const { actions, isLoading, error, refetch, updateActionStatus } = useCasPanelActions(
+    dateKey,
+    casConnected,
+  )
 
   const displayActions = React.useMemo(
     () => filterCasActionsForDisplay(actions, search),
@@ -94,6 +100,7 @@ export default function SupervisorCasPanelPage() {
   return (
     <main className="flex flex-1 flex-col bg-background pb-24">
       <div className="mx-auto w-full min-w-0 max-w-5xl overflow-x-clip px-4 py-6">
+        {!casConnected ? <CasDisconnectedBanner /> : null}
         <header className="flex flex-col gap-4">
           <div className="min-w-0 space-y-1">
             <p className="text-xs text-muted-foreground">Panel Supervisora</p>
@@ -102,129 +109,142 @@ export default function SupervisorCasPanelPage() {
               Widok CAS
             </h1>
             <p className="max-w-prose text-sm text-muted-foreground">
-              Akcje z Tour Plannera dla wybranego dnia. Klikamy karte, aby zobaczyć szczegóły,
-              zmienić status lub wyniki sprzedaży.
+              {casConnected
+                ? "Akcje z Tour Plannera dla wybranego dnia. Klikamy karte, aby zobaczyć szczegóły, zmienić status lub wyniki sprzedaży."
+                : "Panel CAS jest niedostępny, gdy połączenie z CAS jest wyłączone."}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {isLoading ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <RefreshCwIcon className="size-3.5 animate-spin" />
-                  Ładowanie akcji…
-                </span>
-              ) : error ? (
-                <span className="inline-flex items-center gap-1.5 text-destructive">
-                  <AlertTriangleIcon className="size-3.5" />
-                  {error}
-                </span>
-              ) : (
-                <span>
-                  <span className="font-medium text-foreground">{actionsWithBm.length}</span> akcji
-                  {search.trim() ? ` · ${displayActions.length} pasujących` : null}
-                  {" · "}
-                  <span className="font-medium tabular-nums text-foreground">{dateKey}</span>
-                </span>
-              )}
-            </p>
+            {casConnected ? (
+              <p className="text-xs text-muted-foreground">
+                {isLoading ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <RefreshCwIcon className="size-3.5 animate-spin" />
+                    Ładowanie akcji…
+                  </span>
+                ) : error ? (
+                  <span className="inline-flex items-center gap-1.5 text-destructive">
+                    <AlertTriangleIcon className="size-3.5" />
+                    {error}
+                  </span>
+                ) : (
+                  <span>
+                    <span className="font-medium text-foreground">{actionsWithBm.length}</span> akcji
+                    {search.trim() ? ` · ${displayActions.length} pasujących` : null}
+                    {" · "}
+                    <span className="font-medium tabular-nums text-foreground">{dateKey}</span>
+                  </span>
+                )}
+              </p>
+            ) : null}
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="w-full sm:w-auto"
-              disabled={isLoading}
-              onClick={() => refetch()}
-            >
-              <RefreshCwIcon className={cn("size-4", isLoading && "animate-spin")} />
-              <span className="ml-2">Odśwież</span>
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              className="w-full sm:w-auto"
-              disabled={isLoading || actionsWithBm.length === 0}
-              onClick={() => setStatsOpen(true)}
-            >
-              <BarChart3Icon className="size-4" />
-              <span className="ml-2">Statystyki dnia</span>
-            </Button>
-          </div>
+          {casConnected ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={isLoading}
+                onClick={() => refetch()}
+              >
+                <RefreshCwIcon className={cn("size-4", isLoading && "animate-spin")} />
+                <span className="ml-2">Odśwież</span>
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={isLoading || actionsWithBm.length === 0}
+                onClick={() => setStatsOpen(true)}
+              >
+                <BarChart3Icon className="size-4" />
+                <span className="ml-2">Statystyki dnia</span>
+              </Button>
+            </div>
+          ) : null}
         </header>
 
-        <Separator className="my-6" />
+        {casConnected ? (
+          <>
+            <Separator className="my-6" />
 
-        <section className="space-y-4">
-          <div className="grid min-w-0 grid-cols-1 gap-4 sm:max-w-md">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Label htmlFor="cas-day" className="text-xs text-muted-foreground">
-                Dzień
-              </Label>
-              <div className="relative min-w-0">
-                <CalendarDaysIcon
-                  className="pointer-events-none absolute top-1/2 left-3 hidden size-4 -translate-y-1/2 text-muted-foreground sm:block"
-                  aria-hidden
-                />
-                <Input
-                  id="cas-day"
-                  type="date"
-                  value={dateKey}
-                  onChange={(e) => setDateKey(e.target.value)}
-                  className="pl-3 tabular-nums sm:pl-9"
-                />
+            <section className="space-y-4">
+              <div className="grid min-w-0 grid-cols-1 gap-4 sm:max-w-md">
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <Label htmlFor="cas-day" className="text-xs text-muted-foreground">
+                    Dzień
+                  </Label>
+                  <div className="relative min-w-0">
+                    <CalendarDaysIcon
+                      className="pointer-events-none absolute top-1/2 left-3 hidden size-4 -translate-y-1/2 text-muted-foreground sm:block"
+                      aria-hidden
+                    />
+                    <Input
+                      id="cas-day"
+                      type="date"
+                      value={dateKey}
+                      onChange={(e) => setDateKey(e.target.value)}
+                      className="pl-3 tabular-nums sm:pl-9"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">{headerDate}</p>
+                </div>
               </div>
-              <p className="text-[11px] text-muted-foreground">{headerDate}</p>
+
+              <Input
+                type="search"
+                placeholder="Szukaj po akcji, sklepie, brandmasterze, ID…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full"
+                autoComplete="off"
+              />
+            </section>
+
+            <div className="mt-8">
+              {isLoading ? (
+                <LoadingSkeleton />
+              ) : error ? (
+                <p className="rounded-xl border border-dashed border-destructive/40 bg-destructive/5 px-4 py-8 text-center text-sm text-destructive">
+                  {error}
+                </p>
+              ) : displayActions.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+                  {search.trim()
+                    ? "Brak akcji pasujących do wyszukiwania."
+                    : "Brak akcji z przypisanym brandmasterem w tym dniu."}
+                </p>
+              ) : (
+                <ul className="space-y-2.5">
+                  {displayActions.map((action) => (
+                    <li key={getCasActionRowKey(action)}>
+                      <CasActionCard action={action} onClick={() => openAction(action)} />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-          </div>
-
-          <Input
-            type="search"
-            placeholder="Szukaj po akcji, sklepie, brandmasterze, ID…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full"
-            autoComplete="off"
-          />
-        </section>
-
-        <div className="mt-8">
-          {isLoading ? (
-            <LoadingSkeleton />
-          ) : error ? (
-            <p className="rounded-xl border border-dashed border-destructive/40 bg-destructive/5 px-4 py-8 text-center text-sm text-destructive">
-              {error}
-            </p>
-          ) : displayActions.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-              {search.trim()
-                ? "Brak akcji pasujących do wyszukiwania."
-                : "Brak akcji z przypisanym brandmasterem w tym dniu."}
-            </p>
-          ) : (
-            <ul className="space-y-2.5">
-              {displayActions.map((action) => (
-                <li key={getCasActionRowKey(action)}>
-                  <CasActionCard action={action} onClick={() => openAction(action)} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+          </>
+        ) : null}
       </div>
 
-      <CasActionDetailSheet
-        open={detailOpen}
-        onOpenChange={handleDetailOpenChange}
-        action={selectedAction}
-        onStatusChange={handleStatusChange}
-      />
+      {casConnected ? (
+        <>
+          <CasActionDetailSheet
+            open={detailOpen}
+            onOpenChange={handleDetailOpenChange}
+            action={selectedAction}
+            onStatusChange={handleStatusChange}
+          />
 
-      <CasDayStatsSheet
-        open={statsOpen}
-        onOpenChange={setStatsOpen}
-        dateLabel={headerDate}
-        actions={actionsWithBm}
-      />
+          <CasDayStatsSheet
+            open={statsOpen}
+            onOpenChange={setStatsOpen}
+            dateLabel={headerDate}
+            actions={actionsWithBm}
+          />
+        </>
+      ) : null}
     </main>
   )
 }

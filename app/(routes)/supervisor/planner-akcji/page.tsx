@@ -4,8 +4,10 @@ import { ChevronLeftIcon, CalendarRangeIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { isCasConnected } from "@/lib/config"
 import { cn } from "@/lib/utils"
 
+import { CasDisconnectedBanner } from "../_components/CasDisconnectedBanner"
 import PlannerStep1Shops from "./PlannerStep1Shops"
 import PlannerStep2Dates from "./PlannerStep2Dates"
 import PlannerStep3Summary from "./PlannerStep3Summary"
@@ -18,9 +20,37 @@ const STEPS = [
 ]
 
 export default function PlannerAkcjiPage() {
+  const casConnected = isCasConnected()
   const state = useActionPlannerState()
   const { step, stepTitle, goBack, executionPhase } = state
   const isLocked = executionPhase !== "idle"
+
+  if (!casConnected) {
+    return (
+      <main className="flex flex-1 flex-col bg-background pb-24">
+        <div className="mx-auto w-full min-w-0 max-w-5xl px-4 py-6">
+          <CasDisconnectedBanner />
+          <header className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarRangeIcon className="size-3.5" />
+                  <span className="font-medium text-foreground">Planner Akcji</span>
+                </span>
+              </div>
+              <div className="mt-2 text-lg font-semibold tracking-tight">
+                Tworzenie akcji CAS
+              </div>
+              <p className="mt-1 max-w-prose text-sm text-muted-foreground">
+                Planner wymaga aktywnego połączenia z CAS. Połącz CAS w ustawieniach, aby
+                tworzyć puste akcje w Tour Plannerze.
+              </p>
+            </div>
+          </header>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="flex flex-1 flex-col bg-background pb-24">

@@ -6,6 +6,7 @@ import { AlertCircleIcon, CheckCircle2Icon, Loader2Icon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { brandmastApi } from "@/lib/api"
+import { isCasConnected } from "@/lib/config"
 import { cn } from "@/lib/utils"
 import { formatTime, parseIso } from "@/lib/dates/date-utils"
 
@@ -34,6 +35,19 @@ function formatSegmentRange(sinceIso: string, untilIso: string): string {
 type BulkPhase = "running" | "error" | "done"
 
 async function approveSingleAction(row: SvActionRow): Promise<void> {
+  if (!isCasConnected()) {
+    const res = await brandmastApi.approveSvAction({
+      idAction: row.action.idAction,
+      since: row.action.since,
+      until: row.action.until,
+      isActive: true,
+    })
+    if (res.success === false) {
+      throw new Error(res.message ?? "Nie udało się zaakceptować akcji.")
+    }
+    return
+  }
+
   const segments = splitActionIntoMaxFourHourSegments(row.action.since, row.action.until)
   if (segments.length === 0) {
     throw new Error("Nie udało się podzielić przedziału czasu akcji.")

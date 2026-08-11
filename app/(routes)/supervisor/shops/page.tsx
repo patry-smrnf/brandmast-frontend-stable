@@ -14,8 +14,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { shopMatchesQuery } from "@/lib/shops/shop-utils"
+import { isCasConnected } from "@/lib/config"
 import { cn } from "@/lib/utils"
 
+import { CasDisconnectedBanner } from "../_components/CasDisconnectedBanner"
 import { AddShopsSheet } from "./_components/AddShopsSheet"
 import { ShopsListView } from "./_components/ShopsListView"
 import { ShopsMapView } from "./_components/ShopsMapView"
@@ -41,6 +43,7 @@ export default function SupervisorShopsPage() {
   const [search, setSearch] = React.useState("")
   const [addShopsOpen, setAddShopsOpen] = React.useState(false)
   const { shops, isLoading, error, refetch, removeShopLocally } = useShops()
+  const casConnected = isCasConnected()
 
   const filteredShops = React.useMemo(
     () => shops.filter((s) => shopMatchesQuery(s, search)),
@@ -50,6 +53,7 @@ export default function SupervisorShopsPage() {
   return (
     <main className="flex flex-1 flex-col bg-background pb-24">
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
+        {!casConnected ? <CasDisconnectedBanner /> : null}
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0 space-y-1">
             <p className="text-xs text-muted-foreground">Panel Supervisora</p>
@@ -85,7 +89,8 @@ export default function SupervisorShopsPage() {
               type="button"
               size="sm"
               className="w-full sm:w-auto"
-              disabled={isLoading}
+              disabled={isLoading || !casConnected}
+              title={!casConnected ? "CAS jest wyłączony" : undefined}
               onClick={() => setAddShopsOpen(true)}
             >
               <PlusIcon className="size-4" />
@@ -105,12 +110,14 @@ export default function SupervisorShopsPage() {
           </div>
         </header>
 
-        <AddShopsSheet
-          open={addShopsOpen}
-          onOpenChange={setAddShopsOpen}
-          existingShops={shops}
-          onShopsAdded={() => void refetch()}
-        />
+        {casConnected ? (
+          <AddShopsSheet
+            open={addShopsOpen}
+            onOpenChange={setAddShopsOpen}
+            existingShops={shops}
+            onShopsAdded={() => void refetch()}
+          />
+        ) : null}
 
         <Separator className="my-6" />
 

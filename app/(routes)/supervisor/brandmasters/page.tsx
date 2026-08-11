@@ -18,9 +18,11 @@ import { Separator } from "@/components/ui/separator"
 import type { BrandmastersResponse } from "@/lib/api/generated/types"
 import { brandmasterMatchesQuery } from "@/lib/brandmasters/brandmaster-utils"
 import { toDateKey, toMonthKey } from "@/lib/dates/date-utils"
+import { isCasConnected } from "@/lib/config"
 import { cn } from "@/lib/utils"
 
 import { useSvActions } from "../use-sv-actions"
+import { CasDisconnectedBanner } from "../_components/CasDisconnectedBanner"
 import { AddBrandmasterSheet } from "./_components/AddBrandmasterSheet"
 import { BrandmastersDetailPanel } from "./_components/BrandmastersDetailPanel"
 import { BrandmastersListView } from "./_components/BrandmastersListView"
@@ -77,6 +79,7 @@ export default function SupervisorBrandmastersPage() {
   const [selected, setSelected] = React.useState<BrandmastersResponse | null>(null)
   const [statsMonthKey, setStatsMonthKey] = React.useState(() => toMonthKey(new Date()))
   const [statsFromDateKey, setStatsFromDateKey] = React.useState(() => toDateKey(new Date()))
+  const casConnected = isCasConnected()
 
   const { brandmasters, isLoading, error, refetch, removeBrandmasterLocally } = useBrandmasters()
   const {
@@ -151,6 +154,7 @@ export default function SupervisorBrandmastersPage() {
   return (
     <main className="flex flex-1 flex-col bg-background pb-24">
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
+        {!casConnected ? <CasDisconnectedBanner /> : null}
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0 space-y-1">
             <p className="text-xs text-muted-foreground">Panel Supervisora</p>
@@ -211,7 +215,8 @@ export default function SupervisorBrandmastersPage() {
                 type="button"
                 size="sm"
                 className="w-full sm:w-auto"
-                disabled={listBusy}
+                disabled={listBusy || !casConnected}
+                title={!casConnected ? "CAS jest wyłączony" : undefined}
                 onClick={() => setAddBrandmasterOpen(true)}
               >
                 <PlusIcon className="size-4" />
@@ -232,12 +237,14 @@ export default function SupervisorBrandmastersPage() {
           </div>
         </header>
 
-        <AddBrandmasterSheet
-          open={addBrandmasterOpen}
-          onOpenChange={setAddBrandmasterOpen}
-          existingBrandmasters={brandmasters}
-          onBrandmasterAdded={() => void refetch()}
-        />
+        {casConnected ? (
+          <AddBrandmasterSheet
+            open={addBrandmasterOpen}
+            onOpenChange={setAddBrandmasterOpen}
+            existingBrandmasters={brandmasters}
+            onBrandmasterAdded={() => void refetch()}
+          />
+        ) : null}
 
         <Separator className="my-6" />
 

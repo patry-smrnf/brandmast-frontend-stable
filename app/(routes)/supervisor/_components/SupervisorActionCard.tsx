@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { brandmastApi } from "@/lib/api"
+import { isCasConnected } from "@/lib/config"
 import { cn } from "@/lib/utils"
 
 import { formatPlDateTimeFromIso, formatTime, parseIso } from "@/lib/dates/date-utils"
@@ -60,7 +61,9 @@ function SupervisorActionCardInner({
   const [editOpen, setEditOpen] = React.useState(false)
   const [editMounted, setEditMounted] = React.useState(false)
   const [isCancelling, setIsCancelling] = React.useState(false)
+  const [isApproving, setIsApproving] = React.useState(false)
   const bulkCheckboxId = `sv-bulk-card-${action.idAction}`
+  const casConnected = isCasConnected()
 
   const pres = getActionStatusPresentation(action.status)
   const canApprove = pres.supervisorCanApprove
@@ -71,7 +74,8 @@ function SupervisorActionCardInner({
   const eventName = action.event.name?.trim() || ""
   const showApproveButton = !isBulkApproveExcluded && !isCancelRequested
   const showRevokeButton = isCancelRequested
-  const showCasDetails = action.status === "ACCEPTED" && action.cas.length > 0
+  const showCasDetails =
+    casConnected && action.status === "ACCEPTED" && action.cas.length > 0
 
   const collisionChipLabel = React.useMemo(() => {
     if (!scheduleConflict || conflictPeers.length === 0) return null
@@ -90,6 +94,40 @@ function SupervisorActionCardInner({
     setEditMounted(true)
     setEditOpen(true)
   }, [])
+
+  const handleDirectApprove = React.useCallback(async () => {
+    setIsApproving(true)
+    const toastId = toast.loading("Akceptowanie…")
+    try {
+      const res = await brandmastApi.approveSvAction({
+        idAction: action.idAction,
+        since: action.since,
+        until: action.until,
+        isActive: true,
+      })
+      if (res.success === false) {
+        toast.error(res.message ?? "Nie udało się zaakceptować akcji.", { id: toastId })
+        return
+      }
+      toast.success("Akcja została zaakceptowana.", { id: toastId })
+      onApproved()
+    } catch (e) {
+      toast.error(
+        e instanceof Error ? e.message : "Nie udało się zaakceptować akcji.",
+        { id: toastId },
+      )
+    } finally {
+      setIsApproving(false)
+    }
+  }, [action.idAction, action.since, action.until, onApproved])
+
+  const handleApproveClick = React.useCallback(() => {
+    if (!casConnected) {
+      void handleDirectApprove()
+      return
+    }
+    openApprove()
+  }, [casConnected, handleDirectApprove, openApprove])
 
   const handleRevoke = React.useCallback(async () => {
     setIsCancelling(true)
@@ -284,14 +322,14 @@ function SupervisorActionCardInner({
             ) : (
               <Button
                 size="sm"
-                disabled={!canApprove}
+                disabled={!canApprove || isApproving}
                 onClick={(e) => {
                   e.stopPropagation()
-                  openApprove()
+                  handleApproveClick()
                 }}
                 className="h-9 shrink-0 px-3 text-xs sm:h-8"
               >
-                Approve
+                {isApproving ? "Akceptowanie…" : "Approve"}
               </Button>
             )}
           </div>
@@ -306,7 +344,7 @@ function SupervisorActionCardInner({
         ) : null}
       </div>
 
-      {approveMounted ? (
+      {casConnected && approveMounted ? (
         <SupervisorApproveSheet
           open={approveOpen}
           onOpenChange={setApproveOpen}

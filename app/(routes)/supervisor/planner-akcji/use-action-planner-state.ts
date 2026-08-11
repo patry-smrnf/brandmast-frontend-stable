@@ -5,6 +5,7 @@ import { isAxiosError } from "axios"
 
 import { brandmastApi } from "@/lib/api"
 import type { Event, ShopResponse } from "@/lib/api/generated/types"
+import { isCasConnected } from "@/lib/config"
 import { useIsClient } from "@/lib/hooks/use-is-client"
 import { toDateKey } from "@/lib/dates/date-utils"
 import {
@@ -206,6 +207,7 @@ export function useActionPlannerState() {
   }, [executionPhase])
 
   const startPlanning = React.useCallback(async () => {
+    if (!isCasConnected()) return
     if (!startNorm.ok || !endNorm.ok || selectedShopIds.size === 0 || sortedSelectedDates.length === 0) {
       return
     }
