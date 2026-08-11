@@ -1,6 +1,7 @@
 export {
   useConfigState,
   getConfigState,
+  isCasConnected,
   setConfig,
   setConfigLoading,
   setConfigError,

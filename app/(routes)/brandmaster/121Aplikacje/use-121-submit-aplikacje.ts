@@ -3,6 +3,7 @@
 import * as React from "react"
 
 import { brandmastApi, type OneTwoOneRivoVirto, type TourPlannerActionListItem } from "@/lib/api"
+import { isCasConnected } from "@/lib/config"
 import { nowInPoland } from "@/lib/dates/date-utils"
 import { getMonthToTodayCasRange } from "../121Sampling/121-sampling-utils"
 
@@ -27,9 +28,12 @@ export function use121SubmitAplikacje(enabled: boolean, teamId: number | null) {
 
       try {
         const { since, until } = getMonthToTodayCasRange(nowInPoland())
+        const casConnected = isCasConnected()
 
         const [actionsRes, productsRes] = await Promise.all([
-          brandmastApi.fetchBMActions({ since, until, status: "finished" }),
+          casConnected
+            ? brandmastApi.fetchBMActions({ since, until, status: "finished" })
+            : Promise.resolve({ success: true as const, data: [] as TourPlannerActionListItem[] }),
           brandmastApi.fetchProductsRivoVirto(),
         ])
 

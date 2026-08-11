@@ -1,4 +1,5 @@
 import type { AxiosInstance } from "axios";
+import { isCasConnected } from "@/lib/config";
 import { createBrandmastHttpClient, type RequestOptions } from "./client";
 import type {
   ActionApproveRequest,
@@ -154,6 +155,9 @@ export class BrandmastApi {
    * GET /api/cas/brandmaster/sv/fetch
    */
   async fetchCasBrandmasters(options?: RequestOptions) {
+    if (!isCasConnected()) {
+      return { success: true, data: [] } satisfies ApiResponseListTourPlannerBrandmasterListItem;
+    }
     const res = await this.http.get<ApiResponseListTourPlannerBrandmasterListItem>(
       "/api/cas/brandmaster/sv/fetch",
       options,
@@ -294,6 +298,9 @@ export class BrandmastApi {
    * POST /api/cas/point/sv/fetch
    */
   async fetchSVPoints(body: PointCasRequest, options?: RequestOptions) {
+    if (!isCasConnected()) {
+      return { success: true, data: [] } satisfies ApiResponseListTourPlannerPointListItem;
+    }
     const res = await this.http.post<ApiResponseListTourPlannerPointListItem>(
       "/api/cas/point/sv/fetch",
       body,
@@ -306,6 +313,9 @@ export class BrandmastApi {
    * POST /api/cas/action/sv/fetch
    */
   async fetchSVCasActions(body: ActionCasRequest, options?: RequestOptions) {
+    if (!isCasConnected()) {
+      return { success: true, data: [] } satisfies ApiResponseListTourPlannerActionListItem;
+    }
     const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
       "/api/cas/action/sv/fetch",
       body,
@@ -318,6 +328,12 @@ export class BrandmastApi {
    * POST /api/cas/action/create-blank
    */
   async createBlankAction(body: CreateCasActionRequest, options?: RequestOptions) {
+    if (!isCasConnected()) {
+      return {
+        success: false,
+        message: "CAS nie jest podłączony.",
+      } satisfies ApiResponseTourPlannerActionCreateResult;
+    }
     const res = await this.http.post<ApiResponseTourPlannerActionCreateResult>(
       "/api/cas/action/create-blank",
       body,
@@ -330,6 +346,12 @@ export class BrandmastApi {
    * POST /api/cas/action/sv/update-status
    */
   async updateStatus(body: CasActionChangeStatusRequest, options?: RequestOptions) {
+    if (!isCasConnected()) {
+      return {
+        success: false,
+        message: "CAS nie jest podłączony.",
+      } satisfies ApiResponseObject;
+    }
     const res = await this.http.post<ApiResponseObject>(
       "/api/cas/action/sv/update-status",
       body,
@@ -342,6 +364,9 @@ export class BrandmastApi {
    * POST /api/cas/action/bm/fetch
    */
   async fetchBMActions(body: ActionCasRequest, options?: RequestOptions) {
+    if (!isCasConnected()) {
+      return { success: true, data: [] } satisfies ApiResponseListTourPlannerActionListItem;
+    }
     const res = await this.http.post<ApiResponseListTourPlannerActionListItem>(
       "/api/cas/action/bm/fetch",
       body,

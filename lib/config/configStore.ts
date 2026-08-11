@@ -38,6 +38,11 @@ export function getConfigState() {
   return state;
 }
 
+/** `false` only when config explicitly disables CAS; missing config does not block. */
+export function isCasConnected(): boolean {
+  return state.config?.accessConfig?.isCasConnected !== false;
+}
+
 
 export function subscribeConfig(listener: () => void) {
   listeners.add(listener);
