@@ -208,6 +208,8 @@ export interface BrandmasterData {
   surname?: string;
   login?: string;
   mail?: string;
+  /** `false` = brandmaster must accept data-processing consents before using the app. */
+  zgody?: boolean;
 }
 
 /** POST /api/brandmaster/sv/delete */
@@ -273,6 +275,8 @@ export interface ConfigUpdateRequest {
   password?: string;
   oneTwoOnePassword?: string;
   kasoterminalNr?: number; // int64
+  /** Persist brandmaster data-processing consents (`brandmasterData.zgody`). */
+  zgody?: boolean;
 }
 
 export interface ApiResponseSettingResponse {

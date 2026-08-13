@@ -240,6 +240,14 @@ export class BrandmastApi {
   }
 
   /**
+   * GET /api/config/zgody/accept
+   */
+  async acceptZgody(options?: RequestOptions) {
+    const res = await this.http.get<ApiResponseObject>("/api/config/zgody/accept", options);
+    return res.data;
+  }
+
+  /**
    * GET /api/bonus/bm/fetch
    */
   async fetchBonus(options?: RequestOptions) {

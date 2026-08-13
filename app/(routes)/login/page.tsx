@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { brandmastApi, roleStore, tokenStore, type UserRole } from "@/lib/api"
+import { needsBrandmasterConsent, setConfig } from "@/lib/config"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -66,6 +67,22 @@ export default function LoginPage() {
           roleStore.clear()
         }
         toast.success("Zalogowano.", { id: toastId })
+
+        if (role === "brandmaster") {
+          try {
+            const cfg = await brandmastApi.fetchConfig()
+            if (cfg.success && cfg.data) {
+              setConfig(cfg.data)
+              if (needsBrandmasterConsent(cfg.data)) {
+                router.push("/brandmaster/zgody")
+                return
+              }
+            }
+          } catch {
+            // ConfigBootstrap pobierze config po wejściu na panel.
+          }
+        }
+
         router.push("/")
         return
       }

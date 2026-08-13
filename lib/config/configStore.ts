@@ -43,6 +43,11 @@ export function isCasConnected(): boolean {
   return state.config?.accessConfig?.isCasConnected !== false;
 }
 
+/** Brandmaster must accept consents when config explicitly sets `zgody` to false. */
+export function needsBrandmasterConsent(config: SettingResponse | null | undefined): boolean {
+  return config?.brandmasterData?.zgody === false;
+}
+
 
 export function subscribeConfig(listener: () => void) {
   listeners.add(listener);

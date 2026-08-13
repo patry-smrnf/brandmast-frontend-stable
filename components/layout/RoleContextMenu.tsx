@@ -27,7 +27,7 @@ import {
   roleStore,
   type UserRole,
 } from "@/lib/api"
-import { useConfigState } from "@/lib/config/configStore"
+import { needsBrandmasterConsent, useConfigState } from "@/lib/config/configStore"
 
 type MenuItem = {
   key: string
@@ -95,6 +95,7 @@ export function RoleContextMenu() {
   const pathname = usePathname()
   const role = useUserRole()
   const { config } = useConfigState()
+  const needsConsent = needsBrandmasterConsent(config)
 
   const mounted = React.useSyncExternalStore(
     subscribeNoop,
@@ -252,7 +253,7 @@ export function RoleContextMenu() {
 
   React.useEffect(() => {
     if (!open) return
-    if (pathname === "/login" || pathname === "/no-access") return
+    if (pathname === "/login" || pathname === "/no-access" || pathname === "/brandmaster/zgody") return
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false)
@@ -278,7 +279,14 @@ export function RoleContextMenu() {
   // Hide only on public pages. Keep a guest escape hatch when role is unknown
   // (cookie/localStorage desync) so the user can always clear session / log in.
   if (!mounted) return null
-  if (pathname === "/login" || pathname === "/no-access") return null
+  if (
+    pathname === "/login" ||
+    pathname === "/no-access" ||
+    pathname === "/brandmaster/zgody" ||
+    needsConsent
+  ) {
+    return null
+  }
 
   function onSelect(item: MenuItem) {
     if (item.disabled) return
